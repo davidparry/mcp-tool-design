@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.1.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.davidparry</groupId>
+    <artifactId>mcp-tool-design</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>MCP tool design experiment</name>
+    <description>One pet-supply order-support API behind two MCP servers, and the benchmark that compares them.</description>
+
+    <modules>
+        <!-- Declared first: app copies frontend/dist into its jar. -->
+        <module>frontend</module>
+        <module>app</module>
+        <module>mcp-endpoint</module>
+        <module>mcp-workflow</module>
+        <module>benchmark</module>
+    </modules>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- Pins MCP Java SDK 2.1.0, whose newest protocol revision is 2025-11-25. -->
+        <spring-ai.version>2.0.2</spring-ai.version>
+        <!-- Built against Spring Boot 4.1.2. -->
+        <springdoc.version>3.2.0</springdoc.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <!-- Tests run on the fixed business clock, never on the machine's zone. -->
+                        <argLine>-Duser.timezone=America/Chicago</argLine>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

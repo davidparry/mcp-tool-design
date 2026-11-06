@@ -1,0 +1,22 @@
+# Build output
+target/
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Credentials: the runner reads model keys from the environment or from this file.
+.env
+*.env
+
+# Runs in progress. Only the frozen final set under results/final is committed.
+results/pilot/
+results/scratch/
+results/logs/
+
+# Local tooling
+.DS_Store
+.idea/
+*.iml
+.vscode/
+__pycache__/
