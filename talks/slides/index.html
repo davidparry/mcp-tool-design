@@ -52,6 +52,7 @@
   .card { background: #f3f4f6; border-radius: 0.4em; padding: 0.6em 0.8em; font-size: 0.78em; }
   .rule { display: grid; grid-template-columns: 1.6em 1fr; gap: 0.4em; margin: 0.28em 0; }
   .rule b { color: var(--workflow); }
+  .shot { height: 9.5em; width: auto; max-width: 100%; align-self: flex-start; border: 1px solid var(--line); border-radius: 0.3em; margin: 0.3em 0; }
   .notes { display: none; }
   body.show-notes .slide.active { width: min(100vw, calc(70vh * 16 / 9)); font-size: min(2.1vw, 2.59vh); }
   body.show-notes .deck { flex-direction: column; }
@@ -94,6 +95,21 @@
   <p>Every one of those steps is code someone already wrote, and the browser's network panel lists the calls in order.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>http://localhost:8080 · app/ and frontend/</span></div>
   <aside class="notes">0:02. LIVE. Before the talk: scripts/bench-stack.sh up (it builds and starts the app on 8080 and both MCP servers). Open http://localhost:8080 with the network panel already open. Find order 1042, start an exchange on the harness, pick large, set the deadline and the limit, preview. Let the network panel fill up and say: that sequence is the workflow, and the frontend team already wrote it. FALLBACK: if the app won't start, skip to the slide "One preview, twelve backend calls"; it's the same kind of sequence, recorded from the workflow server.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The API was built for the frontend</div>
+  <h2>Four screens, twelve calls, twelve tools</h2>
+  <table>
+    <tr><th>Screen</th><th>Its API calls, one generated tool each</th><th>What the React code adds</th></tr>
+    <tr><td>Order</td><td><code>search_orders</code> <code>get_order</code> <code>get_order_items</code></td><td>Shows the order and its items</td></tr>
+    <tr><td>Item</td><td><code>check_exchange_eligibility</code> <code>check_return_eligibility</code></td><td>Offers a replacement only for an eligible item</td></tr>
+    <tr><td>Preview</td><td><code>get_product_variants</code> <code>get_inventory</code> <code>get_delivery_options</code> <code>create_exchange_quote</code> <code>create_return_quote</code></td><td>Quotes every method at every warehouse with stock, and checks the limits</td></tr>
+    <tr><td>Submit</td><td><code>submit_exchange_quote</code> <code>submit_return_quote</code></td><td>A separate button: "Submit only what the customer approved."</td></tr>
+  </table>
+  <p>The generator copied the middle column. The last one stayed in React, and it's the job the endpoint server hands the model.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>frontend/src/api.js · frontend/src/screens/ · fixtures/catalogs/endpoint-tools.json</span></div>
+  <aside class="notes">0:04. The REST API exists for these four screens. frontend/src/api.js has exactly twelve functions, and they're the twelve operations the generator turned into twelve tools. What it couldn't carry over is the right-hand column: the order of the calls, the loop over the warehouses that have stock, the eligibility gate in front of the replacement picker, the limit check, and a separate button for submit. For order 1042 that's twelve calls, and an e2e test asserts them (frontend/e2e/exchange-preview.spec.js). The workflow server writes that column again, in Java. The endpoint server hands it to the model, which pays for it in tokens on every turn and, later in the talk, sometimes skips it.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -215,12 +231,12 @@
       <li>POST /api/exchange-quotes (twice)</li>
     </ul>
     <div>
-      <p>The endpoint server's model made 10 backend calls for the same answer.</p>
+      <p>The support screens make twelve calls for this preview too. The endpoint server's model made 10 for the same answer.</p>
       <p>The work didn't go away. It moved out of the context window and into code that runs the same way every time.</p>
     </div>
   </div>
-  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-workflow-r1 · backend call log</span></div>
-  <aside class="notes">0:30. This surprises people: the workflow server made more backend calls than the endpoint arm's model did, 12 against 10. Designing around the task didn't save HTTP calls. It saved the model from reading them. The backend is cheap and deterministic; the context window is neither.</aside>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-workflow-r1 · backend call log · frontend/e2e/exchange-preview.spec.js</span></div>
+  <aside class="notes">0:30. This surprises people: the workflow server made more backend calls than the endpoint arm's model did, 12 against 10. Designing around the task didn't save HTTP calls. It saved the model from reading them. The screens make twelve as well, and the e2e test counts them. The backend is cheap and deterministic; the context window is neither.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -393,6 +409,33 @@
 </section>
 
 <section class="slide" data-cuts="60 30">
+  <div class="kicker">What the grades don't show · the app's call log and quotes, 120 task runs per server</div>
+  <h2>The steps the screens take, and the model skipped</h2>
+  <table>
+    <tr><th>What the screens do</th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
+    <tr><td>Quote each method at each warehouse with stock</td><td class="n">103 of 180 options</td><td class="n">180 of 180</td></tr>
+    <tr><td>Check the replacement's stock first</td><td class="n bad">skipped in 14 of 60 runs</td><td class="n">0 of 60</td></tr>
+    <tr><td>Ask only about warehouses that exist</td><td class="n bad">3 calls: WH-ATL, WH-ORD, WH-AUS</td><td class="n">0</td></tr>
+    <tr><td>Quote only what the customer asked about</td><td class="n">12 extra quotes, 3 runs</td><td class="n">0</td></tr>
+    <tr><td>Calls the store refused</td><td class="n">29, in 19 runs</td><td class="n">0</td></tr>
+  </table>
+  <p>All 14 runs that skipped the stock check quoted Columbus and nowhere else. <code>WH-CMH</code> is the example in the generated tool's schema, copied from the API's Swagger annotation.</p>
+  <p class="small">14 of 90 runs skipped the eligibility check too. The store checks it again before it quotes, so nothing got through.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/qwen/export/frontend-steps.csv · docs/decisions.md · Against the frontend's screens</span></div>
+  <aside class="notes">0:50. The grades check the answer. This checks the work, from records the app keeps anyway: the call log and the quote table. The yardstick is the screens' calls, the same for both servers, whoever made the calls. In 14 runs the endpoint model never looked at stock, so it used the one warehouse the tool schema mentions. springdoc put the @Schema example, WH-CMH, into the OpenAPI document for the Swagger page, and the generator passed it through: documentation written for a person became an instruction for the model. Three runs invented warehouses in the same pattern. The other 26 refusals are quotes at warehouses with no stock. Credit to the backend: the runs that skipped the eligibility check couldn't quote anything ineligible, because the store checks again. None of this changed a grade, and I didn't make it one after the fact.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Graded a pass, five runs out of five · task E1</div>
+  <blockquote class="small-quote">Could I exchange the dog bed from order 1025 for an extra large? I can only spend under $30 more. Show me before doing anything.</blockquote>
+  <blockquote class="endpoint-said small-quote">Unfortunately, both options exceed your budget of under $30. The cheapest option would still cost you $47.99 additional.</blockquote>
+  <img class="shot" src="order-1025-options.png" alt="The support screen for order 1025 with a limit of under $30: four options, all marked costs too much, cheapest first. Reno by ground, $45.00, arriving Tuesday, November 10; Columbus by ground, $47.99, arriving Monday, November 16; Reno by express, $49.99; Columbus by express, $56.99.">
+  <p>The support screen, same request: Reno by ground, $45.00, six days sooner. All five workflow runs found it.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-E1-endpoint-r3 · final-qwen-E1-*-r1 to r5 · frontend/e2e/exchange-preview.spec.js</span></div>
+  <aside class="notes">0:51. For a no-match task the verifier checks that nothing is offered as fitting, and nothing was, so all ten runs pass. It doesn't check the lowest price an answer names, and I haven't added that check after the fact. But read what the customer got: an XL bed for $47.99 from Columbus, arriving the 16th, called the cheapest. The screenshot is the same request in the React app, from the e2e test: twelve calls, four options, Reno first at $45.00, arriving the 10th. That's the stock check the model skipped, and the endpoint runs spent a median of 29,482 tokens skipping it, against 13,008 for the workflow runs. Viewer example: "E1, run 3".</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
   <div class="kicker">The workflow server's bill</div>
   <ul>
     <li><b>A plain lookup cost more.</b> "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?" took a median of <span class="workflow">11,285</span> tokens against <span class="endpoint">9,429</span>.</li>
@@ -401,7 +444,7 @@
     <li><b>It can be talked around.</b> Two H2 runs went past its matching.</li>
   </ul>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · mcp-workflow/</span></div>
-  <aside class="notes">0:50. A3 is one lookup on both servers. The workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
+  <aside class="notes">0:52. A3 is one lookup on both servers. The workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -416,7 +459,7 @@
   </table>
   <p class="small">The deadline decided every one of those tasks, so no grade changed, and the verifier doesn't count it. Most answers still told the customer about the limit.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-D3-workflow-r1 · docs/decisions.md · What the verifier doesn't count</span></div>
-  <aside class="notes">0:52. D3 run 1 says "no option meets both your delivery deadline and cost limit of $0.00 additional cost" to a customer who never mentioned cost. One sentence in one parameter description fixed E2 and leaked into D1, D2, and D3. Review and test tool descriptions the way you review code, because the model reads them like instructions.</aside>
+  <aside class="notes">0:53. D3 run 1 says "no option meets both your delivery deadline and cost limit of $0.00 additional cost" to a customer who never mentioned cost. One sentence in one parameter description fixed E2 and leaked into D1, D2, and D3. Review and test tool descriptions the way you review code, because the model reads them like instructions.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -428,7 +471,7 @@
   <div class="rule"><b>5</b><span>Make previews unable to commit, and make submit take an approved quote and check it again</span></div>
   <div class="rule"><b>6</b><span>Return the totals and the verdicts, so the model doesn't do the arithmetic or the calendar</span></div>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>mcp-workflow/</span></div>
-  <aside class="notes">0:55. Each rule maps to a failure we just saw. Rule 2: the toy. Rule 3: under $25. Rule 4 and 6: the weekday and the out-of-stock card. Rule 5: EX-7001. None of this needs a model inside the server; it's plain Java over the same REST API.</aside>
+  <aside class="notes">0:55. Each rule maps to something we just saw. Rule 1: WH-CMH, and the three warehouses that don't exist. Rule 2: the toy. Rule 3: under $25. Rule 4 and 6: the weekday and the out-of-stock card. Rule 5: EX-7001. None of this needs a model inside the server; it's plain Java over the same REST API.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">

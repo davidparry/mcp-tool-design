@@ -260,7 +260,9 @@ verifier grades the card, plus the app's state, rather than parsing prose.
 ## Exports
 
 - `--command=export` writes one row per run, one row per failure, the per-turn input tokens for
-  order 1042 (task C1), and a summary grouped by model, arm, and split, as JSON and Markdown.
+  order 1042 (task C1), and a summary grouped by model, arm, and split, as JSON and Markdown. It
+  also writes `frontend-steps.csv`, one row per task run comparing what the run asked the store for
+  with what the support screens ask for (see "Against the frontend's screens" under the final run).
 - **Tokens.** A task's tokens are every input token plus every output token across all of its model
   calls, the reminder turns included. Anthropic's input count leaves out cache reads and writes, so
   they're added back. Medians and means are reported over all valid runs and over successful runs
@@ -464,3 +466,59 @@ result, which only echoes what the model sent. I've left the grades alone. A che
 be a new requirement written after the results to catch one pattern, which isn't the same as
 fixing a check that misread an answer. So it's reported here and in the talk instead, along with
 its cause: the wording change that fixed E2.
+
+### Against the frontend's screens
+
+The grades check each answer. They don't check whether a run did the work the support screens do,
+so the export measures that apart from them, in `frontend-steps.csv` and the last table in
+`summary.md`. Both arms are read from the same records: the app's call log for the run and the
+quotes the store holds afterward. It makes no difference whether the model made a call or the
+workflow server's code did.
+
+The screens are in `frontend/src/screens/`, and their API client, `frontend/src/api.js`, has the
+same twelve operations the generator turns into twelve tools. A lookup is a search, the order, and
+its items. A return or an exchange adds the eligibility check, and the screen shows the replacement
+picker only when the item is eligible. An exchange then gets the variants and the replacement's
+stock, and for each warehouse with enough of it, the delivery options and a quote for each method.
+For every exchange task those quotes are the task's expected options, so a run's quotes can be
+compared with what the screens would show. Two Playwright tests walk the screens for C1 and E1 and
+assert their twelve calls. The ambiguous tasks aren't measured, because the screens make the person
+pick the item, and neither are the submission scenarios, which end on a person's click.
+
+On the 120 task runs per arm:
+
+| | Endpoint | Workflow |
+| --- | --- | --- |
+| Options quoted, of those the screens quote | 103 of 180 | 180 of 180 |
+| Runs that quoted fewer options than the screens | 35 of 45 | 0 of 45 |
+| Runs that left out an option meeting every limit | 7 | 0 |
+| Exchange runs with no stock check for the replacement | 14 of 60 | 0 of 60 |
+| Return and exchange runs with no eligibility check | 14 of 90 | 0 of 90 |
+| Calls the store refused | 29, in 19 runs | 0 |
+| Quotes for an item or a color nobody asked about | 12, in 3 runs | 0 |
+
+- **No stock check, one warehouse.** All 14 runs that skipped the stock check quoted from Columbus
+  and nowhere else. With no stock lookup, the only warehouse they had was the one the tool schemas
+  name: `create_exchange_quote`'s `warehouseId` has `example: "WH-CMH"`, which springdoc took from
+  the `@Schema` annotation written for the API's own documentation, and `get_delivery_options`
+  describes its parameter as "such as WH-CMH". In E1 that left all five endpoint answers telling the
+  customer the XL bed costs $47.99 and arrives November 16, and run 3 called $47.99 "the cheapest
+  option". Reno has it for $45.00 by November 10, which is what the screens and all five workflow
+  answers show. Nothing fits under $30 either way, so all five pass. `final-qwen-C1-endpoint-r2`,
+  the cheapest endpoint run on order 1042, skipped the stock and delivery checks and passed because
+  Columbus is where the option that fits ships from.
+- **Warehouses that don't exist.** Three refused calls asked for `WH-ATL`, `WH-ORD`, and `WH-AUS`,
+  in the same pattern as `WH-CMH`. The other 26 were quotes at a warehouse without the stock, in
+  D3, E3, and the out-of-stock F tasks.
+- **No eligibility check did no harm.** B1 and B3 went straight to a return quote, and G3 r1 to r4
+  read an order status that says the jacket hasn't been delivered. The quote endpoints check
+  eligibility themselves, so none of these runs could have quoted an item that wasn't eligible.
+- **Quotes nobody asked for.** `final-qwen-C1-endpoint-r4` made three red quotes (the `wrong_item`
+  above), and F1 r2 and r4 made nine quotes for a blue XL harness when the customer asked for red.
+- **The 7 runs that left out a fit** each quoted the cheapest option that fits. C2 r2 and r5 showed
+  two of C2's four, and C3 r3, r4, and r5 one of two options that cost the same.
+
+None of this changes a grade. Grading it would add requirements written after the results, the
+reason the $0.00 limit above isn't graded either. Backend-call counts aren't compared on their own,
+because a model that's given an order number doesn't need the search the screens make, and the
+workflow server makes more calls than the screens on some tasks, all of them in code.

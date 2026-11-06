@@ -22,10 +22,12 @@ import tools.jackson.databind.json.JsonMapper;
 import com.davidparry.tooldesign.benchmark.config.BenchProperties;
 import com.davidparry.tooldesign.benchmark.config.BenchProperties.ModelSpec;
 import com.davidparry.tooldesign.benchmark.run.RunRecord;
+import com.davidparry.tooldesign.benchmark.run.TaskSpec;
 
 /**
  * Writes the numbers the talk and the post quote, from verified runs: success, complete-task tokens, calls, latency,
- * cost at list prices, the order 1042 per-turn token series, and failures by class with their run IDs.
+ * cost at list prices, the order 1042 per-turn token series, failures by class with their run IDs, and what each run
+ * asked the store for against what the frontend's screens ask for.
  */
 @Component
 public class Exporter {
@@ -39,8 +41,8 @@ public class Exporter {
         this.pretty = json.rebuild().enable(SerializationFeature.INDENT_OUTPUT).build();
     }
 
-    /** One run and its verification, with the token counts normalized across providers. */
-    public record Row(RunRecord run, Verification verification, String provider) {
+    /** One run, its task, and its verification, with the token counts normalized across providers. */
+    public record Row(RunRecord run, Verification verification, String provider, TaskSpec task) {
 
         /**
          * Every input token the provider processed, cached or not. Anthropic reports cache reads and writes apart
@@ -59,6 +61,11 @@ public class Exporter {
         String split() {
             return this.run.split();
         }
+
+        /** Submission scenarios aren't, because their last step is a person's click. */
+        boolean measuredAgainstScreens() {
+            return !"scenario".equals(split());
+        }
     }
 
     public Path export(List<Row> rows, Path dir) {
@@ -67,6 +74,7 @@ public class Exporter {
             Files.writeString(dir.resolve("runs.csv"), runsCsv(rows));
             Files.writeString(dir.resolve("failures.csv"), failuresCsv(rows));
             Files.writeString(dir.resolve("tokens-order-1042.csv"), order1042Csv(rows));
+            Files.writeString(dir.resolve("frontend-steps.csv"), frontendStepsCsv(rows));
             Map<String, Object> summary = summary(rows);
             Files.writeString(dir.resolve("summary.json"), this.pretty.writeValueAsString(summary) + "\n");
             Files.writeString(dir.resolve("summary.md"), markdown(summary));
@@ -90,7 +98,51 @@ public class Exporter {
         byGroup.forEach((key, members) -> groups.add(group(key.split("\\|"), members)));
         summary.put("groups", groups);
         summary.put("failures", failures(rows));
+        summary.put("frontendSteps", frontendSteps(rows));
         return summary;
+    }
+
+    /** Per model and arm, how far the runs' calls fell short of, or went past, what the screens ask the store for. */
+    private static List<Map<String, Object>> frontendSteps(List<Row> rows) {
+        Map<String, List<FrontendSteps>> byArm = new TreeMap<>();
+        for (Row row : rows) {
+            if (row.verification().valid() && row.measuredAgainstScreens()) {
+                byArm.computeIfAbsent(row.run().model() + "|" + row.run().arm(), k -> new ArrayList<>())
+                        .add(FrontendSteps.of(row.run(), row.task()));
+            }
+        }
+        List<Map<String, Object>> arms = new ArrayList<>();
+        byArm.forEach((key, steps) -> {
+            List<FrontendSteps> withOptions = steps.stream().filter(s -> s.optionsOnScreen() > 0).toList();
+            List<FrontendSteps> noMatch = steps.stream()
+                    .filter(s -> "no_matching_option".equals(s.expectedOutcome())).toList();
+            Map<String, Object> arm = new LinkedHashMap<>();
+            arm.put("model", key.split("\\|")[0]);
+            arm.put("arm", key.split("\\|")[1]);
+            arm.put("runs", steps.size());
+            arm.put("runsWithOptions", withOptions.size());
+            arm.put("runsQuotingFewerOptions", withOptions.stream().filter(s -> s.optionsQuoted() < s.optionsOnScreen())
+                    .count());
+            arm.put("optionsQuoted", withOptions.stream().mapToInt(FrontendSteps::optionsQuoted).sum());
+            arm.put("optionsOnScreen", withOptions.stream().mapToInt(FrontendSteps::optionsOnScreen).sum());
+            arm.put("runsMissingAFit", steps.stream().filter(s -> s.fitsNotQuoted() > 0).count());
+            arm.put("stockChecksDue", steps.stream().filter(s -> s.stockChecked() != null).count());
+            arm.put("runsWithoutStockCheck", steps.stream().filter(s -> Boolean.FALSE.equals(s.stockChecked())).count());
+            arm.put("eligibilityChecksDue", steps.stream().filter(s -> s.eligibilityChecked() != null).count());
+            arm.put("runsWithoutEligibilityCheck", steps.stream()
+                    .filter(s -> Boolean.FALSE.equals(s.eligibilityChecked())).count());
+            arm.put("refusedCalls", steps.stream().mapToInt(FrontendSteps::refusedCalls).sum());
+            arm.put("runsWithRefusedCalls", steps.stream().filter(s -> s.refusedCalls() > 0).count());
+            arm.put("unaskedQuotes", steps.stream().filter(s -> s.unaskedQuotes() != null)
+                    .mapToInt(FrontendSteps::unaskedQuotes).sum());
+            arm.put("runsWithUnaskedQuotes", steps.stream()
+                    .filter(s -> s.unaskedQuotes() != null && s.unaskedQuotes() > 0).count());
+            arm.put("noMatchRuns", noMatch.size());
+            arm.put("noMatchCardsLabeledOtherwise", noMatch.stream()
+                    .filter(s -> !"no_matching_option".equals(s.cardOutcome())).count());
+            arms.add(arm);
+        });
+        return arms;
     }
 
     private Map<String, Object> group(String[] key, List<Row> rows) {
@@ -217,6 +269,27 @@ public class Exporter {
         return csv.toString();
     }
 
+    /** For every single-message task run, what the screens ask the store for and what the app's records show. */
+    private static String frontendStepsCsv(List<Row> rows) {
+        StringBuilder csv = new StringBuilder("runId,model,arm,task,category,success,screenCalls,backendCalls,"
+                + "eligibilityChecked,stockChecked,optionsQuoted,optionsOnScreen,fitsNotQuoted,refusedCalls,"
+                + "unaskedQuotes,cardOutcome,expectedOutcome\n");
+        for (Row row : sorted(rows)) {
+            if (!row.measuredAgainstScreens()) {
+                continue;
+            }
+            RunRecord r = row.run();
+            FrontendSteps s = FrontendSteps.of(r, row.task());
+            csv.append(String.join(",", r.runId(), r.model(), r.arm(), r.taskId(), r.category(),
+                    String.valueOf(row.verification().success()), blank(s.screenCalls()),
+                    String.valueOf(s.backendCalls()), blank(s.eligibilityChecked()), blank(s.stockChecked()),
+                    String.valueOf(s.optionsQuoted()), String.valueOf(s.optionsOnScreen()),
+                    String.valueOf(s.fitsNotQuoted()), String.valueOf(s.refusedCalls()), blank(s.unaskedQuotes()),
+                    s.cardOutcome(), s.expectedOutcome())).append('\n');
+        }
+        return csv.toString();
+    }
+
     /**
      * Input tokens on each turn of every order 1042 preview (task C1). Each turn re-reads every earlier tool result,
      * which is the chart that shows where an arm's tokens go.
@@ -259,7 +332,29 @@ public class Exporter {
             md.append("| ").append(f.get("class")).append(" | ").append(f.get("taskFailureCount")).append(" | ")
                     .append(f.get("processOnlyCount")).append(" |\n");
         }
+        md.append("\n## Against the frontend's screens\n\nSingle-message tasks, from the app's call log and quotes. The "
+                + "screens check eligibility and stock, then quote every delivery method at every warehouse that has "
+                + "the replacement, and only for what the customer asked about.\n\n| Model | Arm | Options quoted | Runs "
+                + "quoting fewer | Runs missing an option that fits | No stock check | No eligibility check | Refused "
+                + "calls | Quotes nobody asked for | No-match cards labeled otherwise |\n"
+                + "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n");
+        for (Map<String, Object> s : (List<Map<String, Object>>) summary.get("frontendSteps")) {
+            md.append("| ").append(s.get("model")).append(" | ").append(s.get("arm")).append(" | ")
+                    .append(s.get("optionsQuoted")).append(" of ").append(s.get("optionsOnScreen")).append(" | ")
+                    .append(s.get("runsQuotingFewerOptions")).append(" of ").append(s.get("runsWithOptions")).append(" | ")
+                    .append(s.get("runsMissingAFit")).append(" | ")
+                    .append(s.get("runsWithoutStockCheck")).append(" of ").append(s.get("stockChecksDue")).append(" | ")
+                    .append(s.get("runsWithoutEligibilityCheck")).append(" of ").append(s.get("eligibilityChecksDue"))
+                    .append(" | ").append(s.get("refusedCalls")).append(" in ").append(s.get("runsWithRefusedCalls"))
+                    .append(" runs | ").append(s.get("unaskedQuotes")).append(" in ").append(s.get("runsWithUnaskedQuotes"))
+                    .append(" runs | ").append(s.get("noMatchCardsLabeledOtherwise")).append(" of ")
+                    .append(s.get("noMatchRuns")).append(" |\n");
+        }
         return md.toString();
+    }
+
+    private static String blank(Object value) {
+        return value == null ? "" : String.valueOf(value);
     }
 
     private static long turnInput(Row row, RunRecord.Turn turn) {

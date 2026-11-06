@@ -19,13 +19,13 @@ Other titles under consideration:
 
 For CFP forms with a length cap.
 
-> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one with a tool per endpoint and one with six tools shaped around the support tasks, and gives the same model the same requests against both. With a local qwen model, the endpoint server used a median of 25,757 tokens per task against 11,803, and it failed 27 of 120 task runs against 4. One of those failures was an exchange it submitted after the customer said "just tell me what it would take". The runs play side by side: the turns, the tool calls, the tokens on each turn, and every failure, with its run ID.
+> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one generated with a tool for each of the twelve endpoints its React screens call and one with six tools shaped around the support tasks, and gives the same model the same requests against both. With a local qwen model, the endpoint server used a median of 25,757 tokens per task against 11,803, and it failed 27 of 120 task runs against 4. One of those failures was an exchange it submitted after the customer said "just tell me what it would take". The runs play side by side: the turns, the tool calls, the tokens on each turn, and every failure, with its run ID.
 
 ## Abstract
 
 **Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code, and you pay for that job on every model turn.** That's the claim this session tests, and with the first model measured, it holds.
 
-The test bed is a small Spring Boot and React order-support app for a pet-supply store that sells dog harnesses and toys. Two MCP servers sit in front of the same HTTP APIs with the same permissions. The endpoint server is generated from the app's OpenAPI document, the way most teams add MCP to an API they already run: twelve tools, one per REST operation, passing the application's own response DTOs straight through. It's typed and documented, and nothing in it is broken on purpose. The workflow server has six tools shaped around the support job. One call previews an exchange; a separate call submits the quote somebody approved. Its orchestration is plain Java, and it never calls a model.
+The test bed is a small Spring Boot and React order-support app for a pet-supply store that sells dog harnesses and toys. Its REST API was built for its four React screens: the screens' API client makes twelve calls, and the screens decide in code which ones to make, in what order, and what to check between them. Two MCP servers sit in front of the same HTTP APIs with the same permissions. The endpoint server is generated from the app's OpenAPI document, the way most teams add MCP to an API they already run: twelve tools, one per REST operation and one per call the screens make, passing the application's own response DTOs straight through. It's typed and documented, and nothing in it is broken on purpose. The workflow server has six tools shaped around the support job. One call previews an exchange; a separate call submits the quote somebody approved. Its orchestration is plain Java, and it never calls a model.
 
 I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama, with Claude and GPT to follow), and this request:
 
@@ -33,7 +33,7 @@ I give both servers the same system prompt, the same model (so far a qwen runnin
 
 The workflow server answered it in 2 model calls and about 6,100 tokens, all five times. The endpoint server took 6 to 19 calls and 21,788 to 97,424 tokens. In its longest run it decided to check red harnesses as well as blue, and offered a large red one the customer never asked for.
 
-On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. Across the final run it called a $25.00 option "under $25", put the wrong weekday beside a delivery date, answered for one of two matching items, offered an exchange on a collar that was out of stock everywhere, and once submitted an exchange the customer had only asked about. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages.
+On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. Across the final run it called a $25.00 option "under $25", put the wrong weekday beside a delivery date, answered for one of two matching items, offered an exchange on a collar that was out of stock everywhere, and once submitted an exchange the customer had only asked about. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages. It also skipped steps the screens never skip. Measured from the app's own call log, 14 of its 60 exchange runs never checked the replacement's stock and quoted only the warehouse the tool schema names as an example. In one task that left five passing answers telling the customer $47.99 when the store had the bed for $45.00.
 
 None of this makes the workflow server free. It's more code to write and keep correct, and it covers only the tasks it was designed for. On a plain order-status lookup it cost more than the endpoint server, a median of 11,285 tokens against 9,429. It isn't foolproof either: two of its runs talked past the ambiguity it was built to catch, and two told the customer a quote ID or a price that no tool returned. Those results are in the session too, from 290 runs so far: 24 tasks, five repetitions each, on both servers, plus five submission scenarios, with eight of the tasks held out until the tool contracts were frozen.
 
@@ -45,6 +45,7 @@ It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/bl
 - Design rules for task-shaped tools, each one visible in the workflow server's code: business inputs (an order reference and an item description) where the endpoints want internal IDs, deterministic matching that returns candidates when a description fits more than one item, explicit outcomes (`options_available`, `ineligible`, `no_matching_option`, `needs_clarification`), previews that can't commit anything, and a submit step that takes a selected quote and revalidates it.
 - How to count what a task costs: add up the model-reported usage for every turn with the history included, and keep cache reads and writes in their own columns so nothing gets counted twice.
 - A failure taxonomy to run against your own agent transcripts.
+- A check the grades miss: compare what an agent asked your API for with what your own frontend asks for on the same task, using the call log you already keep.
 - The Spring Boot and Spring AI code for both servers and the benchmark runner, so you can repeat the comparison against your own API.
 
 ## What the final run measured
@@ -98,6 +99,25 @@ What the final run recorded, in runs out of 120 per server on the dev and held-o
 
 Reading every failure also found two verifier mistakes, and fixing them helped the endpoint server: four G3 answers said the right thing under the wrong label, and four H3 answers quoted both matching harnesses. Both fixes and their tests are described in [`docs/decisions.md`](../docs/decisions.md).
 
+## Against the frontend's screens
+
+The grades check the answer. This checks the work. The support screens in `frontend/` are the yardstick: they search, open the order and its items, check eligibility before they offer a replacement, check the replacement's stock, and quote every delivery method at every warehouse that has it. Their API client, `frontend/src/api.js`, has the same twelve operations as the endpoint server's twelve tools, and two Playwright tests walk the screens for order 1042 and order 1025 and count their twelve calls. Both servers' runs are read from the same records, the app's call log and the quotes the store holds afterward, so it doesn't matter whether the model made a call or the workflow server's Java did. It's in `results/final/qwen/export/frontend-steps.csv`, and none of it changes a grade.
+
+| What the screens do | Endpoint | Workflow |
+| --- | --- | --- |
+| Quote each method at each warehouse with stock | 103 of 180 options | 180 of 180 |
+| Check the replacement's stock before quoting | Skipped in 14 of 60 runs | Never skipped |
+| Ask only about warehouses that exist | 3 calls to warehouses that don't | 0 |
+| Quote only what the customer asked about | 12 extra quotes in 3 runs | 0 |
+| Calls the store refused | 29, in 19 runs | 0 |
+
+- **The model used the schema's example as a warehouse.** All 14 runs that skipped the stock check quoted from Columbus and nowhere else. `create_exchange_quote`'s `warehouseId` carries `example: "WH-CMH"`, which springdoc took from an annotation written for the API's Swagger page. Three other calls asked for `WH-ATL`, `WH-ORD`, and `WH-AUS`, which don't exist.
+- **Five passes with the wrong price.** In E1 every endpoint answer told the customer the XL bed costs $47.99 by ground and arrives November 16. `final-qwen-E1-endpoint-r3` called it "the cheapest option". Reno has it for $45.00 by November 10, which is what the screens and all five workflow answers show. Nothing fits under $30 either way, so all ten runs pass. The endpoint runs took a median of 29,482 tokens, the workflow runs 13,008.
+- **The cheapest run on order 1042 skipped the work.** `final-qwen-C1-endpoint-r2`, at 21,788 tokens, never checked stock or delivery options and quoted 2 of the 4 options. It passed because Columbus is where the option that fits ships from.
+- **The store caught what the model skipped.** 14 of 90 return and exchange runs never checked eligibility, and none of them could quote an ineligible item, because the quote endpoints check it again. 26 of the 29 refused calls were quotes at warehouses without the stock.
+
+The viewer has both runs, as "Order 1042, run 2" and "E1, run 3". The method and the per-run rows are in [`docs/decisions.md`](../docs/decisions.md) under "Against the frontend's screens".
+
 ## Session arc
 
 My rule for every cut: a live run is one sample, so no number on a slide comes from it. Those come from the benchmark records. The run viewer replays any recorded run from local files, so a live call that fails costs the demo and nothing else.
@@ -106,16 +126,17 @@ My rule for every cut: a live run is one sample, so no number on a slide comes f
 
 | Minutes | Segment | What happens |
 | --- | --- | --- |
-| 0 to 5 | The request | The question, then the React app answering it with clicks. The browser's network panel lists the frontend's API calls in order, and that sequence is the workflow. |
+| 0 to 5 | The request | The question, then the React app answering it with clicks. The browser's network panel lists the frontend's API calls in order, and that sequence is the workflow. Then the four screens beside their twelve calls, which are the endpoint server's twelve tools, and what the React code does between the calls that the generator couldn't copy. |
 | 5 to 12 | Two tool catalogs | Twelve endpoint tools beside six workflow tools, and how many tokens each catalog puts in front of the model before the first turn. |
 | 12 to 24 | Demo: the endpoint server | The request, live. The turn count, the token chart per turn, and the backend calls the model chose to make. |
 | 24 to 32 | Demo: the workflow server | The same request. One preview call, the same backend calls made inside the server, and one focused result. |
 | 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately. |
 | 40 to 48 | The failure gallery | One transcript for each failure class the benchmark recorded. |
-| 48 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or imports. |
+| 48 to 52 | What the grades don't show | The two verifier fixes, then every run measured against the screens: the skipped stock checks that quoted only the schema's example warehouse, the warehouses that don't exist, and E1's five passes at a higher price than the store had, beside the screenshot of the same request in the React app. |
+| 52 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or imports. |
 | 55 to 60 | Design rules | When to pass an endpoint through, when to design a tool around the task, and how to tell which one you're looking at. |
 
-**Short session, 30 minutes:** the request (3 minutes), the two catalogs (4), a recorded side-by-side replay in place of the live demos (10), the numbers with two transcripts from the gallery (8), and the bill and the design rules (5).
+**Short session, 30 minutes:** the request and the screens' twelve calls (4 minutes), the two catalogs (3), a recorded side-by-side replay in place of the live demos (9), the numbers with two transcripts from the gallery and the steps the model skipped (9), and the bill and the design rules (5).
 
 The slides are in [`slides/index.html`](slides/index.html), with both cuts, presenter notes, and a recorded fallback for each live demo.
 
@@ -134,13 +155,14 @@ Java and Spring developers and architects putting an agent in front of an API th
 | Shown live | Where it lives |
 | --- | --- |
 | The order-support application and its REST API | `app/` |
-| The React frontend | `frontend/` |
+| The React frontend, and its Playwright walk-throughs of order 1042 and order 1025 | `frontend/`, `frontend/e2e/` |
 | The endpoint MCP server, twelve tools generated from the OpenAPI document | `mcp-endpoint/` |
 | The workflow MCP server, six tools | `mcp-workflow/` |
 | Products, orders, policies, stock, and expected outcomes | `fixtures/` |
 | The benchmark runner and the verifier that classifies failures | `benchmark/` |
 | The run viewer that replays two runs side by side | `viewer/` |
 | Raw run records, transcripts, and the results summary | `results/` |
+| What each run asked the store for, against what the screens ask for | `results/final/qwen/export/frontend-steps.csv` |
 | The experiment design, and the choices the build made | [`docs/project-plan.md`](../docs/project-plan.md), [`docs/decisions.md`](../docs/decisions.md) |
 
 ## The post from the same runs

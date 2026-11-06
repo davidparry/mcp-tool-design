@@ -71,7 +71,7 @@ public class Results {
                 }
                 Verification verification = this.verifier.verify(record, task);
                 verifications.add(verification);
-                rows.add(new Exporter.Row(record, verification, provider(record.model())));
+                rows.add(new Exporter.Row(record, verification, provider(record.model()), task));
             }
             write(dir.resolve("verification.jsonl"), verifications);
         }

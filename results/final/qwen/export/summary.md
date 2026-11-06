@@ -25,3 +25,12 @@ Runs where the class failed the task, and runs where it was only recorded.
 | unapproved_action | 1 | 0 |
 | off_track | 0 | 28 |
 | false_success | 1 | 0 |
+
+## Against the frontend's screens
+
+Single-message tasks, from the app's call log and quotes. The screens check eligibility and stock, then quote every delivery method at every warehouse that has the replacement, and only for what the customer asked about.
+
+| Model | Arm | Options quoted | Runs quoting fewer | Runs missing an option that fits | No stock check | No eligibility check | Refused calls | Quotes nobody asked for | No-match cards labeled otherwise |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| qwen | endpoint | 103 of 180 | 35 of 45 | 7 | 14 of 60 | 14 of 90 | 29 in 19 runs | 12 in 3 runs | 44 of 45 |
+| qwen | workflow | 180 of 180 | 0 of 45 | 0 | 0 of 60 | 0 of 90 | 0 in 0 runs | 0 in 0 runs | 2 of 45 |
