@@ -401,7 +401,7 @@
     <li><b>It can be talked around.</b> Two H2 runs went past its matching.</li>
   </ul>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · mcp-workflow/</span></div>
-  <aside class="notes">0:50. A3 is one get_order call on the endpoint server, every run, so a task-shaped context call is overkill there. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
+  <aside class="notes">0:50. A3 is one lookup on both servers. The workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
