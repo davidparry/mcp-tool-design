@@ -1,0 +1,24 @@
+{
+  "frozenAt" : "2026-11-06T20:33:35.516505Z",
+  "source" : {
+    "commit" : "73d2f4bed426d94d2cb4ef399256de0793feeaeb",
+    "dirty" : false
+  },
+  "pilotBatches" : [ "pilot-qwen-v2", "pilot-qwen-v2-scenarios" ],
+  "limits" : {
+    "maxModelCalls" : 50,
+    "maxToolCalls" : 60,
+    "modelRetries" : 3,
+    "retryBackoff" : "PT10S"
+  },
+  "hashes" : {
+    "fixtures" : "1e2018fd604914d6d27899552250b16516da8b59767aed9db2b147372fa6ccf4",
+    "tasks" : "a6444061576b309cc778bad87221d1e79f5fcf2e56298a857dced95429f8392e",
+    "conversation" : "a283177ab390b4a5033dce641d0312aec3b6f6a73ec7ed3aeab8d6ae423c29e2",
+    "openapi" : "10c6fd48d71eb1206ee86e6728081d4fcab2b50393d20518548606608c63166a",
+    "catalogs" : {
+      "endpoint" : "e0df774977411952cb7e3c0562f50f7b4ae2ac042d855633fa7148a106d2b99e",
+      "workflow" : "585bb142a3710f2be098f14b047f16a5fb65164250df348008b35ba28dd35cae"
+    }
+  }
+}
