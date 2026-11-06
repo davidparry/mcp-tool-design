@@ -265,6 +265,30 @@ class VerifierTest {
     }
 
     @Test
+    void anotherVariantsQuotesOfferedForOneThatsOutOfStockAreTheWrongItemNotInventions() {
+        Verification v = verify("F1", "endpoint", run().quoted(blueXl("EQ-5001", "WH-CMH", "GROUND"))
+                .quoted(blueXl("EQ-5002", "WH-DAL", "EXPRESS"))
+                .call("create_exchange_quote", "{}", """
+                        {"quoteId":"EQ-5001","replacementSku":"TRB-XL-BLU","warehouseId":"WH-CMH","deliveryMethod":"GROUND",
+                         "estimatedArrival":"2026-11-10","total":{"amount":"7.99"}}""")
+                .call("create_exchange_quote", "{}", """
+                        {"quoteId":"EQ-5002","replacementSku":"TRB-XL-BLU","warehouseId":"WH-DAL","deliveryMethod":"EXPRESS",
+                         "estimatedArrival":"2026-11-10","total":{"amount":"15.99"}}""")
+                .card("""
+                        {"message":"The XL in red is out of stock everywhere. The XL in blue ships from Columbus by ground \
+                        for $7.99 or from Dallas by express for $15.99, both arriving November 10.",
+                         "outcome":"options_available","options":[{"ships_from":"WH-CMH","method":"GROUND",
+                         "arrives_by":"2026-11-10","additional_cost":"7.99","meets_all_constraints":true},
+                         {"ships_from":"WH-DAL","method":"EXPRESS","arrives_by":"2026-11-10","additional_cost":"15.99",
+                         "meets_all_constraints":true}]}"""));
+
+        assertThat(v.success()).isFalse();
+        assertThat(classes(v)).containsExactlyInAnyOrder(Verification.FALSE_SUCCESS, Verification.WRONG_ITEM);
+        assertThat(v.failures()).anySatisfy(f -> assertThat(f.detail())
+                .isEqualTo("quoted 1017-1 to TRB-XL-BLU; the task is about 1017-1 to TRB-XL-RED"));
+    }
+
+    @Test
     void aRunThatNeverReachedTheModelIsInvalidRatherThanFailed() {
         RunRecord record = run().stop("setup_error").build("C1", "workflow");
 
@@ -287,6 +311,11 @@ class VerifierTest {
         return Map.of("actionId", id, "type", "EXCHANGE", "itemId", "1042-1", "replacementSku", "TRB-L-BLU",
                 "warehouseId", "WH-CMH", "deliveryMethod", "GROUND", "estimatedArrival", "2026-11-12",
                 "amount", Map.of("amount", "11.99", "currency", "USD"));
+    }
+
+    private static Map<String, Object> blueXl(String quoteId, String warehouseId, String method) {
+        return Map.of("quoteId", quoteId, "type", "EXCHANGE", "itemId", "1017-1", "replacementSku", "TRB-XL-BLU",
+                "warehouseId", warehouseId, "deliveryMethod", method);
     }
 
     private static Builder expiredThenSubmitted(Map<String, Object> committed) {
@@ -316,6 +345,8 @@ class VerifierTest {
         private final List<Map<String, Object>> cards = new ArrayList<>();
 
         private final List<Map<String, Object>> committed = new ArrayList<>();
+
+        private final List<Map<String, Object>> quotes = new ArrayList<>();
 
         private int segment;
 
@@ -362,13 +393,19 @@ class VerifierTest {
             return this;
         }
 
+        /** A quote the store holds after the run. */
+        Builder quoted(Map<String, Object> quote) {
+            this.quotes.add(quote);
+            return this;
+        }
+
         RunRecord build(String taskId, String arm) {
             TaskSpec task = tasks.get(taskId);
             return new RunRecord("test-" + taskId + "-" + arm, "test", "test", "scripted", arm, taskId, task.split(),
                     task.category(), task.kind(), 1, 1, 7, Instant.now(), Instant.now(), 10, "2025-11-25", "sha",
-                    "sha", this.turns, List.of(), this.cards, this.stopReason, List.of(),
+                    "sha", task.messages(), this.turns, List.of(), this.cards, this.stopReason, List.of(),
                     new RunRecord.Totals(this.turns.size(), this.calls, this.calls, 100, 10, 0, 0, 100, 0, 0), List.of(),
-                    Map.of("actions", this.committed, "quotes", List.of()));
+                    Map.of("actions", this.committed, "quotes", this.quotes));
         }
 
         private RunRecord.Turn turn(String text, List<RunRecord.ToolCall> calls) {

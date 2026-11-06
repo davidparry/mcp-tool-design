@@ -18,9 +18,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public record RunRecord(String runId, String batch, String phase, String model, String arm, String taskId,
         String split, String category, String kind, int repetition, int position, Integer seed, Instant startedAt,
         Instant endedAt, long durationMs, String protocolVersion, String catalogSha256,
-        String toolDefinitionsSha256, List<Turn> turns, List<WorldChangeApplied> worldChanges,
-        List<Map<String, Object>> cards, String stopReason, List<String> errors, Totals totals,
-        List<Map<String, Object>> backendCalls, Map<String, Object> stateAfter) {
+        String toolDefinitionsSha256, List<String> customerMessages, List<Turn> turns,
+        List<WorldChangeApplied> worldChanges, List<Map<String, Object>> cards, String stopReason, List<String> errors,
+        Totals totals, List<Map<String, Object>> backendCalls, Map<String, Object> stateAfter) {
 
     /**
      * One model request and what came back.

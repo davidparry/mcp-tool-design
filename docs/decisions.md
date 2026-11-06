@@ -190,9 +190,9 @@ verifier grades the card, plus the app's state, rather than parsing prose.
 - **Order and seeds.** Each model's runs are shuffled together across arms, tasks, and repetitions
   with the batch seed, so neither arm gets the warmer cache or the quieter hour. Each run's sampling
   seed comes from the batch seed and the run ID, so repetitions differ and a rerun repeats.
-- **Limits.** 30 model calls and 60 tool calls per run, with `final_answer` not counted. Failed
+- **Limits.** 50 model calls and 60 tool calls per run, with `final_answer` not counted. Failed
   model requests are retried 3 times on rate limits, overloads, server errors, and timeouts, never
-  on bad keys or bad requests. The pilot sets the final limits.
+  on bad keys or bad requests. The pilot set the model-call limit; the rule is under "Pilot".
 - **Credentials.** Keys come from the environment or `.env` and never reach a log line or a
   record. Provider errors echo keys back, sometimes masked with a few real characters left, so the
   runner redacts anything key-shaped before it logs or records an error.
@@ -317,6 +317,46 @@ the freeze. The held-out tasks weren't run in the pilot.
 - **A weekday beside a date has to be that date's weekday,** from the first scratch batch, and
   **S2's approval covers the same terms,** from the first scenario smoke run. Both are described
   above.
+
+### The confirmation run
+
+The same 126 runs ran again on the same seed after those changes, as `pilot-qwen-v2` and
+`pilot-qwen-v2-scenarios`:
+
+| Arm | Dev tasks | Scenarios | Median tokens per dev task | Median model calls |
+| --- | --- | --- | --- | --- |
+| endpoint | 32 of 48 | 15 of 15 | 21,144 | 6 |
+| workflow | 46 of 48 | 15 of 15 | 11,832 | 4 |
+
+- **E2 passes in the workflow arm.** All three runs sent "no extra cost" as 0.00 `at_most` on the
+  first call, and `preview_exchange` answered that no option costs at most $0.00.
+- **The schema check sent 7 cards back,** one each in 7 runs, and every one came back valid on the
+  next try.
+- **The workflow arm's two failures are H2,** "the toy from order 1022", where the order has a rope
+  toy and a ball 3-pack. Across both pilots, 3 of the 6 H2 workflow runs read the order first and
+  then passed "Squeaky Rope Toy" to `preview_return` instead of the customer's "toy", so the server
+  matched one item and never saw the ambiguity. The parameter already asks for the item "in the
+  customer's words". I left it alone: another round of tuning on a dev task, after the
+  confirmation run, starts to fit the workflow server to the benchmark, and a task-shaped tool that
+  can still be talked around belongs in the talk.
+- **One verifier change, which moves no success count.** In F1 one endpoint run quoted the XL in
+  blue when the XL in red was out of stock everywhere, then offered the blue quotes as meeting every
+  limit. The verifier called those options invented, but the tools had returned them. An offered
+  option that matches a quote the store holds is no longer a `hallucinated_value`, and an
+  out-of-stock task now checks the quotes behind an offered option, so the run records
+  `false_success` and `wrong_item`.
+- **One run ended without a card.** In G2 qwen answered in text, got the reminder, and sent back
+  107 tokens with no text and no tool call, most likely a tool call Ollama couldn't parse. The run
+  stopped as `missing_card`, and the verifier graded the text, which was right. It's 1 of 252
+  pilot runs.
+
+**The limits.** 2.5 times the most that any answered pilot run needed, rounded up to the next 10,
+and never below the starting limits. The most was 17 model calls and 14 tool calls, so the final
+limits are 50 model calls and 60 tool calls.
+
+**The freeze.** `fixtures/freeze.json` holds those limits and the hashes of the seed data, the
+tasks, the conversation, the OpenAPI document, and both catalogs, taken on the commit after this
+run. The held-out tasks hadn't run before it.
 
 ### The local model
 

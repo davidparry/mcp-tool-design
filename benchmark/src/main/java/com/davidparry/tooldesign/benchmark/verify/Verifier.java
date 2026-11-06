@@ -444,6 +444,9 @@ public class Verifier {
             if (!expectedOptions.isEmpty()) {
                 itemQuoted("EXCHANGE", this.expected.get("replacementSku"), card, !offersOne);
             }
+            else if (offersOne) {
+                itemQuoted("EXCHANGE", this.expected.get("replacementSku"), card, false);
+            }
         }
 
         private void ineligible(Map<String, Object> card) {
@@ -485,7 +488,7 @@ public class Verifier {
                 Map<String, Object> truth = expectedOption(offered, expectedOptions);
                 String label = offered.get("ships_from") + " " + offered.get("method");
                 if (truth == null) {
-                    if (Boolean.TRUE.equals(offered.get("meets_all_constraints"))) {
+                    if (Boolean.TRUE.equals(offered.get("meets_all_constraints")) && quotesFor(offered).isEmpty()) {
                         fail(HALLUCINATED_VALUE, "offers " + label + ", which isn't an option for this exchange");
                     }
                     continue;
@@ -537,7 +540,14 @@ public class Verifier {
                 return;
             }
             Set<String> cited = new LinkedHashSet<>(Extract.quotes(text(card)));
-            options(card).forEach(o -> cited.addAll(Extract.quotes(String.valueOf(o.get("quote_reference")))));
+            for (Map<String, Object> offered : options(card)) {
+                cited.addAll(Extract.quotes(String.valueOf(offered.get("quote_reference"))));
+                List<Map<String, Object>> behind = quotesFor(offered).stream().filter(ofType::contains).toList();
+                if (Boolean.TRUE.equals(offered.get("meets_all_constraints")) && !behind.isEmpty()
+                        && wrong.containsAll(behind)) {
+                    behind.forEach(q -> cited.add(String.valueOf(q.get("quoteId"))));
+                }
+            }
             boolean citesWrong = wrong.stream().anyMatch(q -> cited.contains(String.valueOf(q.get("quoteId"))));
             boolean anyRight = ofType.size() > wrong.size();
             String detail = "quoted " + wrong.stream().map(q -> q.get("itemId") + " to "
@@ -608,6 +618,15 @@ public class Verifier {
 
         private void check(String name, boolean passed, boolean required, String detail) {
             this.checks.add(new Check(name, passed, required, detail));
+        }
+
+        /** The store's exchange quotes from the warehouse and by the method an offered option names. */
+        private List<Map<String, Object>> quotesFor(Map<String, Object> offered) {
+            String warehouse = warehouse(String.valueOf(offered.get("ships_from")));
+            String method = String.valueOf(offered.get("method")).toUpperCase(Locale.ROOT);
+            return this.quotes.stream().filter(q -> "EXCHANGE".equals(q.get("type"))
+                    && Objects.equals(q.get("warehouseId"), warehouse)
+                    && method.contains(String.valueOf(q.get("deliveryMethod")))).toList();
         }
 
         private static Map<String, Object> expectedOption(Map<String, Object> offered,

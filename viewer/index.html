@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Run viewer: endpoint server vs workflow server</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Run viewer</h1>
+    <p class="hint">Load a <code>runs.jsonl</code> on each side, plus its <code>verification.jsonl</code> if you
+      want the grades, then pick a run. Nothing leaves this page.</p>
+    <div class="examples" id="examples" hidden>
+      <label>Example <select id="example"></select></label>
+      <button type="button" id="load-example">Load</button>
+    </div>
+  </header>
+
+  <section class="controls" aria-label="Playback">
+    <button type="button" id="first" title="Back to the start">&#9198; Start</button>
+    <button type="button" id="prev">&#9664; Turn</button>
+    <button type="button" id="play">&#9654; Play</button>
+    <button type="button" id="next">Turn &#9654;</button>
+    <button type="button" id="last" title="Show every turn">All &#9197;</button>
+    <label>Speed
+      <select id="speed">
+        <option value="2500">slow</option>
+        <option value="1200" selected>normal</option>
+        <option value="500">fast</option>
+      </select>
+    </label>
+    <span id="step-label" class="step-label"></span>
+  </section>
+
+  <section class="chart-wrap" aria-label="Input tokens per turn">
+    <h2>Input tokens per model call</h2>
+    <svg id="chart" role="img" aria-label="Input tokens per model call for both runs"></svg>
+    <p class="legend"><span class="swatch a"></span><span id="legend-a">Left run</span>
+      <span class="swatch b"></span><span id="legend-b">Right run</span></p>
+  </section>
+
+  <main class="panes">
+    <section class="pane" id="pane-a" data-side="a">
+      <div class="loaders">
+        <label class="file">Runs <input type="file" accept=".jsonl,.json" data-kind="runs"></label>
+        <label class="file">Verification <input type="file" accept=".jsonl,.json" data-kind="verification"></label>
+      </div>
+      <div class="pick">
+        <input type="search" placeholder="Filter: C1 endpoint" data-role="filter">
+        <select data-role="run"></select>
+        <button type="button" data-role="pair" title="Show the same task and repetition in the other arm on the other side">Pair &#8644;</button>
+      </div>
+      <div data-role="summary" class="summary"></div>
+      <div data-role="turns" class="turns"></div>
+      <div data-role="verdict" class="verdict"></div>
+    </section>
+    <section class="pane" id="pane-b" data-side="b">
+      <div class="loaders">
+        <label class="file">Runs <input type="file" accept=".jsonl,.json" data-kind="runs"></label>
+        <label class="file">Verification <input type="file" accept=".jsonl,.json" data-kind="verification"></label>
+      </div>
+      <div class="pick">
+        <input type="search" placeholder="Filter: C1 workflow" data-role="filter">
+        <select data-role="run"></select>
+        <button type="button" data-role="pair" title="Show the same task and repetition in the other arm on the other side">Pair &#8644;</button>
+      </div>
+      <div data-role="summary" class="summary"></div>
+      <div data-role="turns" class="turns"></div>
+      <div data-role="verdict" class="verdict"></div>
+    </section>
+  </main>
+
+  <script src="examples/examples.js" onerror="window.VIEWER_EXAMPLES = window.VIEWER_EXAMPLES || []"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

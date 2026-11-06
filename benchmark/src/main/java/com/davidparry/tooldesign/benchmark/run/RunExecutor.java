@@ -119,7 +119,8 @@ public class RunExecutor {
         return new RunRecord(spec.runId(), batch, phase, spec.model(), spec.arm(), task.id(), task.split(),
                 task.category(), task.kind(), spec.repetition(), spec.position(), spec.seed(), started, ended,
                 Duration.between(started, ended).toMillis(), protocolVersion, catalogSha, definitionsSha,
-                recorder.turns, worldChanges, cards, stopReason, errors, recorder.totals(backendCalls.size()),
+                task.messages(), recorder.turns, worldChanges, cards, stopReason, errors,
+                recorder.totals(backendCalls.size()),
                 backendCalls, stateAfter);
     }
 

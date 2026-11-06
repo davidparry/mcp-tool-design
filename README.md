@@ -96,3 +96,19 @@ graded and what the token counts include.
 conversation, OpenAPI document, and both catalogs. A `final` batch won't start unless all of them
 still match, `catalog` won't write a snapshot once they're frozen, and a `final` export won't
 combine batches that ran with different hashes or limits. Only `results/final/` is committed.
+
+## Viewer
+
+Open `viewer/index.html` straight from disk; it needs no server and no network. Load a
+`runs.jsonl` on each side, plus its `verification.jsonl` for the grades, pick a run, and press
+Pair to put the same task and repetition from the other arm beside it. Step or play through the
+model calls: each pane shows the customer's messages, the tool calls with their results and the
+backend calls under them, the answer card, and the verifier's checks, and the chart puts both
+runs' input tokens per model call on one scale.
+
+```bash
+node viewer/make-examples.mjs --batches=results/final/final-qwen \
+  --pair="Order 1042=final-qwen-C1-endpoint-r1,final-qwen-C1-workflow-r1"
+```
+
+bundles chosen pairs into `viewer/examples/examples.js`, which the page offers when it opens.

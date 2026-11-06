@@ -30,7 +30,7 @@ bench:
   results-dir: results
   catalog-mode: verify
   limits:
-    max-model-calls: 30
+    max-model-calls: 50
     max-tool-calls: 60
     model-retries: 3
     retry-backoff: 10s
