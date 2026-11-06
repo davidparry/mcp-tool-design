@@ -1,6 +1,7 @@
 package com.davidparry.tooldesign.app.service;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.Optional;
 
@@ -126,10 +127,11 @@ public class SubmissionService {
     private OffsetDateTime requireUnexpired(Quote quote) {
         OffsetDateTime now = this.clock.now();
         if (quote.expiredAt(now)) {
+            String expiresAt = DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(quote.expiresAt());
             throw new BusinessException(HttpStatus.CONFLICT, "quote_expired",
-                    "Quote " + quote.quoteId() + " expired at " + quote.expiresAt()
+                    "Quote " + quote.quoteId() + " expired at " + expiresAt
                             + ". Nothing was submitted; create a new quote to continue.",
-                    Map.of("quoteId", quote.quoteId(), "expiresAt", quote.expiresAt().toString()));
+                    Map.of("quoteId", quote.quoteId(), "expiresAt", expiresAt));
         }
         return now;
     }

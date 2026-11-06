@@ -1,0 +1,5 @@
+# The benchmark profile adds /admin (reset, run tags, clock, stock, call log, state). Nothing else changes:
+# the API, its rules, and its OpenAPI document are the same as without it.
+logging:
+  level:
+    api.calls: INFO

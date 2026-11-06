@@ -52,10 +52,6 @@ public record Money(
                 RoundingMode.HALF_UP), this.currency);
     }
 
-    public boolean isPositive() {
-        return this.amount.signum() > 0;
-    }
-
     @Override
     public int compareTo(Money other) {
         return this.amount.compareTo(sameCurrency(other).amount);
