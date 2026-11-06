@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
+import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
 import com.davidparry.tooldesign.benchmark.config.BenchProperties;
@@ -78,8 +79,37 @@ public class Results {
     }
 
     public Path export(String phase, List<String> batches, String name) {
+        if ("final".equals(phase)) {
+            sameSetup(phase, batches);
+        }
         List<Exporter.Row> rows = verify(phase, batches);
         return this.exporter.export(rows, Path.of(this.properties.resultsDir(), phase, name, "export"));
+    }
+
+    /** Final batches are compared only if they ran against the same limits, contracts, fixtures, and catalogs. */
+    private void sameSetup(String phase, List<String> batches) {
+        String first = null;
+        String setup = null;
+        for (String batch : batches) {
+            Path file = Path.of(this.properties.resultsDir(), phase, batch, "manifest.json");
+            Map<String, Object> manifest;
+            try {
+                manifest = this.json.readValue(Files.readString(file), new TypeReference<Map<String, Object>>() {
+                });
+            }
+            catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            String current = String.valueOf(manifest.get("hashes")) + String.valueOf(manifest.get("limits"));
+            if (first == null) {
+                first = batch;
+                setup = current;
+            }
+            else if (!setup.equals(current)) {
+                throw new IllegalStateException("Batches " + first + " and " + batch + " ran with different hashes "
+                        + "or limits, so they can't be exported together.");
+            }
+        }
     }
 
     private String provider(String model) {

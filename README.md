@@ -75,6 +75,8 @@ $B --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
 $B --command=run --phase=pilot --batch=scenarios --models=qwen --splits=scenario --reps=3
 $B --command=verify --phase=pilot --batch=pilot-qwen      # grade a batch
 $B --command=export --phase=pilot --batches=pilot-qwen,scenarios --name=pilot
+$B --command=freeze --pilot=pilot-qwen,scenarios          # after the pilot, on a clean commit
+$B --command=run --phase=final --models=qwen --splits=dev,heldout --reps=5
 ```
 
 A batch is named `<phase>-<models>` unless `--batch` names it, and writes
@@ -89,3 +91,8 @@ then logs the success count for each model, arm, and split and every failed run.
 the batches it's given and writes `results/<phase>/<name>/export/`: `runs.csv`, `failures.csv`,
 `tokens-order-1042.csv`, `summary.json`, and `summary.md`. `docs/decisions.md` says how runs are
 graded and what the token counts include.
+
+`freeze` writes `fixtures/freeze.json` with the run limits and the hashes of the seed data, tasks,
+conversation, OpenAPI document, and both catalogs. A `final` batch won't start unless all of them
+still match, `catalog` won't write a snapshot once they're frozen, and a `final` export won't
+combine batches that ran with different hashes or limits. Only `results/final/` is committed.

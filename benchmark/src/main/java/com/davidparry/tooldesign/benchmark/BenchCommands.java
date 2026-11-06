@@ -23,6 +23,7 @@ import com.davidparry.tooldesign.benchmark.mcp.McpSession;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
 import com.davidparry.tooldesign.benchmark.model.ModelGateway;
 import com.davidparry.tooldesign.benchmark.run.BatchRunner;
+import com.davidparry.tooldesign.benchmark.run.Provenance;
 import com.davidparry.tooldesign.benchmark.verify.Exporter;
 import com.davidparry.tooldesign.benchmark.verify.Results;
 import com.davidparry.tooldesign.benchmark.verify.Verification;
@@ -39,6 +40,7 @@ import com.davidparry.tooldesign.benchmark.verify.Verification;
  * <li>{@code verify --phase=pilot --batch=pilot-qwen}: grades a batch and writes {@code verification.jsonl}</li>
  * <li>{@code export --phase=final --batches=final-claude,final-gpt,final-qwen --name=final}: grades and writes
  * the summary, CSVs, and the order 1042 token series to {@code results/<phase>/<name>/export}</li>
+ * <li>{@code freeze --pilot=pilot-qwen}: writes {@code fixtures/freeze.json}, which every final batch must match</li>
  * </ul>
  */
 @Component
@@ -77,8 +79,9 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
                 case "run" -> runBatch(args);
                 case "verify" -> verify(args);
                 case "export" -> export(args);
+                case "freeze" -> freeze(args);
                 default -> throw new IllegalArgumentException("Unknown command " + command
-                        + "; use check, catalog, run, verify, or export");
+                        + "; use check, catalog, run, verify, export, or freeze");
             }
         }
         catch (RuntimeException e) {
@@ -118,6 +121,11 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
 
     private void catalog(ApplicationArguments args) {
         boolean force = args.containsOption("force");
+        Path freeze = Path.of(this.properties.fixturesDir(), BatchRunner.FREEZE_FILE);
+        if (Files.exists(freeze)) {
+            throw new IllegalStateException("The catalogs are frozen in " + freeze + "; a new snapshot would need a "
+                    + "new freeze and a new final run.");
+        }
         for (String arm : list(args, "arms", "workflow")) {
             Path file = Catalogs.snapshot(Path.of(this.properties.fixturesDir(), "catalogs"), arm);
             if (Files.exists(file) && !force) {
@@ -160,6 +168,15 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
         String phase = one(args, "phase", "pilot");
         List<String> batches = batches(args);
         log.info("Wrote {}", this.results.export(phase, batches, one(args, "name", String.join("+", batches))));
+    }
+
+    private void freeze(ApplicationArguments args) {
+        if (Boolean.TRUE.equals(Provenance.source().get("dirty"))) {
+            throw new IllegalStateException("Commit first: a freeze records the commit it was taken from.");
+        }
+        Path file = this.batches.freeze(list(args, "arms", "endpoint,workflow"), list(args, "pilot", ""),
+                args.containsOption("force"));
+        log.info("Froze the limits, contracts, fixtures, and catalogs in {}", file);
     }
 
     /** {@code --batches=a,b}, or the single {@code --batch}. */

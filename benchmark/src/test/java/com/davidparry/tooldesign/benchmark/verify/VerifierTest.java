@@ -86,6 +86,25 @@ class VerifierTest {
     }
 
     @Test
+    void aCorrectAmountTheModelWorkedOutItselfIsRecordedWithoutFailingTheTask() {
+        Verification v = verify("E1", "workflow", run().call("preview_exchange", "{}", """
+                {"outcome":"no_matching_option","options":[],"rejectedOptions":[{"warehouseId":"WH-RNO","method":"GROUND",
+                 "arrives":"2026-11-10","additionalCost":{"amount":"45.00"}}],"blockingReasons":["cost_limit"]}""")
+                .card("""
+                        {"message":"No option is under $30. Reno ground is $45.00, which misses your limit by $15.",
+                         "outcome":"no_matching_option","blocking_reasons":["cost_limit"],"options":[{"ships_from":"Reno, NV",
+                         "method":"GROUND","arrives_by":"2026-11-10","additional_cost":"45.00",
+                         "meets_all_constraints":false}]}"""));
+
+        assertThat(v.success()).as("%s %s", v.checks(), v.failures()).isTrue();
+        assertThat(v.failures()).singleElement().satisfies(f -> {
+            assertThat(f.failureClass()).isEqualTo(Verification.MODEL_ARITHMETIC);
+            assertThat(f.failsTask()).isFalse();
+            assertThat(f.detail()).isEqualTo("works out $15.00 itself from amounts the tools returned");
+        });
+    }
+
+    @Test
     void anAmountNoToolReturnedAndNothingAddsUpToIsAHallucinatedValue() {
         Verification v = verify("B1", "endpoint", run().call("create_return_quote", "{}", """
                 {"quoteId":"RQ-6001","itemId":"1019-1","total":{"amount":"60.00"}}""")

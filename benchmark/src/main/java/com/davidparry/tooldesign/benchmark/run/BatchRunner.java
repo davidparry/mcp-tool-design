@@ -6,9 +6,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -35,6 +37,10 @@ import com.davidparry.tooldesign.benchmark.model.ModelGateway;
 public class BatchRunner {
 
     private static final Logger log = LoggerFactory.getLogger(BatchRunner.class);
+
+    public static final String FINAL = "final";
+
+    public static final String FREEZE_FILE = "freeze.json";
 
     private final RunExecutor executor;
 
@@ -75,6 +81,10 @@ public class BatchRunner {
         for (String arm : request.arms()) {
             arms.put(arm, arm(arm));
         }
+        Map<String, Object> hashes = hashes(arms);
+        if (FINAL.equals(request.phase())) {
+            checkFrozen(hashes);
+        }
         for (String model : request.models()) {
             preflight(this.gateways.get(model));
         }
@@ -82,7 +92,7 @@ public class BatchRunner {
         List<RunSpec> plan = RunPlan.plan(request.phase(), request.models(), request.arms(), tasks,
                 request.repetitions(), request.seed());
         Path dir = Path.of(this.properties.resultsDir(), request.phase(), request.batch());
-        writeOrCheckManifest(dir.resolve("manifest.json"), manifest(request, tasks, arms, plan));
+        writeOrCheckManifest(dir.resolve("manifest.json"), manifest(request, tasks, arms, hashes, plan));
 
         RecordFile records = new RecordFile(dir.resolve("runs.jsonl"), this.json);
         Set<String> finished = records.finished();
@@ -151,8 +161,94 @@ public class BatchRunner {
         }
     }
 
+    /**
+     * Writes {@code fixtures/freeze.json} after the pilot: the run limits and the hashes of the seed data, tasks,
+     * conversation, OpenAPI document, and both catalogs. Every final batch has to match it.
+     */
+    public Path freeze(List<String> arms, List<String> pilotBatches, boolean force) {
+        Path file = fixtures().resolve(FREEZE_FILE);
+        if (Files.exists(file) && !force) {
+            throw new IllegalStateException(file + " exists. Use --force to freeze again; final batches run "
+                    + "against the old freeze would then need to be run again.");
+        }
+        Map<String, Map<String, Object>> live = new LinkedHashMap<>();
+        for (String arm : arms) {
+            live.put(arm, arm(arm));
+        }
+        Map<String, Object> freeze = new LinkedHashMap<>();
+        freeze.put("frozenAt", Instant.now().toString());
+        freeze.put("source", Provenance.source());
+        freeze.put("pilotBatches", pilotBatches);
+        freeze.put("limits", this.properties.limits());
+        freeze.put("hashes", hashes(live));
+        try {
+            Files.writeString(file, this.pretty.writeValueAsString(freeze) + "\n");
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return file;
+    }
+
+    /** A final batch runs only against the frozen limits, contracts, fixtures, and catalogs. */
+    private void checkFrozen(Map<String, Object> hashes) {
+        Path file = fixtures().resolve(FREEZE_FILE);
+        if (!Files.isRegularFile(file)) {
+            throw new IllegalStateException("A final batch needs " + file + ". Run --command=freeze after the pilot.");
+        }
+        Map<String, Object> frozen;
+        try {
+            frozen = this.json.readValue(Files.readString(file), new TypeReference<Map<String, Object>>() {
+            });
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        Map<String, Object> current = this.json.readValue(this.json.writeValueAsString(
+                Map.of("limits", this.properties.limits(), "hashes", hashes)), new TypeReference<Map<String, Object>>() {
+                });
+        Map<?, ?> frozenHashes = (Map<?, ?>) frozen.get("hashes");
+        Map<?, ?> currentHashes = (Map<?, ?>) current.get("hashes");
+        List<String> changed = new ArrayList<>();
+        for (String key : List.of("fixtures", "tasks", "conversation", "openapi")) {
+            if (!Objects.equals(frozenHashes.get(key), currentHashes.get(key))) {
+                changed.add(key);
+            }
+        }
+        Map<?, ?> frozenCatalogs = (Map<?, ?>) frozenHashes.get("catalogs");
+        ((Map<?, ?>) currentHashes.get("catalogs")).forEach((arm, sha) -> {
+            if (!Objects.equals(frozenCatalogs.get(arm), sha)) {
+                changed.add(arm + " catalog");
+            }
+        });
+        if (!Objects.equals(String.valueOf(frozen.get("limits")), String.valueOf(current.get("limits")))) {
+            changed.add("limits");
+        }
+        if (!changed.isEmpty()) {
+            throw new IllegalStateException("The final run is frozen, but " + String.join(", ", changed)
+                    + " changed since " + frozen.get("frozenAt") + ". Restore them, or freeze again and rerun every "
+                    + "final batch.");
+        }
+    }
+
+    private Map<String, Object> hashes(Map<String, Map<String, Object>> arms) {
+        Map<String, Object> hashes = new LinkedHashMap<>();
+        hashes.put("fixtures", Tasks.sha256Of(fixtures().resolve("seed")));
+        hashes.put("tasks", Tasks.sha256Of(fixtures().resolve("tasks")));
+        hashes.put("conversation", Catalogs.sha256Text(Conversation.SYSTEM_PROMPT + "\n"
+                + Conversation.FINAL_ANSWER_DESCRIPTION + "\n" + Conversation.FINAL_ANSWER_SCHEMA + "\n"
+                + Conversation.REMINDER));
+        Map<String, Object> openApi = new LinkedHashMap<>(this.admin.openApi());
+        openApi.remove("servers");
+        hashes.put("openapi", Catalogs.sha256Of(openApi));
+        Map<String, Object> catalogs = new LinkedHashMap<>();
+        arms.forEach((arm, info) -> catalogs.put(arm, info.get("snapshotSha256")));
+        hashes.put("catalogs", catalogs);
+        return hashes;
+    }
+
     private Map<String, Object> manifest(Request request, List<TaskSpec> tasks, Map<String, Map<String, Object>> arms,
-            List<RunSpec> plan) {
+            Map<String, Object> hashes, List<RunSpec> plan) {
         Map<String, Object> manifest = new LinkedHashMap<>();
         manifest.put("batch", request.batch());
         manifest.put("phase", request.phase());
@@ -160,12 +256,6 @@ public class BatchRunner {
         manifest.put("repetitions", request.repetitions());
         manifest.put("source", Provenance.source());
         manifest.put("versions", Provenance.versions());
-        Map<String, Object> hashes = new LinkedHashMap<>();
-        hashes.put("fixtures", Tasks.sha256Of(fixtures().resolve("seed")));
-        hashes.put("tasks", Tasks.sha256Of(fixtures().resolve("tasks")));
-        hashes.put("conversation", Catalogs.sha256Text(Conversation.SYSTEM_PROMPT + "\n"
-                + Conversation.FINAL_ANSWER_DESCRIPTION + "\n" + Conversation.FINAL_ANSWER_SCHEMA + "\n"
-                + Conversation.REMINDER));
         manifest.put("hashes", hashes);
         Map<String, Object> models = new LinkedHashMap<>();
         request.models().forEach(m -> models.put(m, this.gateways.get(m).settings()));

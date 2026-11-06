@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.modelcontextprotocol.json.schema.JsonSchemaValidator;
+import io.modelcontextprotocol.json.schema.jackson3.DefaultJsonSchemaValidator;
 import io.modelcontextprotocol.spec.McpSchema;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -50,10 +52,17 @@ public class RunExecutor {
 
     private final JsonMapper json;
 
+    private final JsonSchemaValidator validator;
+
+    private final Map<String, Object> cardSchema;
+
     public RunExecutor(AdminClient admin, BenchProperties properties, JsonMapper json) {
         this.admin = admin;
         this.properties = properties;
         this.json = json;
+        this.validator = new DefaultJsonSchemaValidator(json);
+        this.cardSchema = json.readValue(Conversation.FINAL_ANSWER_SCHEMA, new TypeReference<Map<String, Object>>() {
+        });
     }
 
     /**
@@ -192,10 +201,17 @@ public class RunExecutor {
     private ToolCall run(AssistantMessage.ToolCall call, McpSession session, Set<String> toolNames, int index) {
         Instant started = Instant.now();
         if (Conversation.FINAL_ANSWER.equals(call.name())) {
-            if (parse(call.arguments()) == null) {
+            Map<String, Object> card = parse(call.arguments());
+            if (card == null) {
                 return finished(index, call, "bad_arguments", "{\"status\":\"not_delivered\",\"reason\":\"The "
                         + "arguments aren't a JSON object. Call final_answer again with valid JSON.\"}", true, null,
                         started);
+            }
+            JsonSchemaValidator.ValidationResponse check = this.validator.validate(this.cardSchema, card);
+            if (!check.valid()) {
+                return finished(index, call, "bad_arguments", this.json.writeValueAsString(Map.of("status",
+                        "not_delivered", "reason", check.errorMessage() + ". Call final_answer again with arguments "
+                                + "that match its schema.")), true, null, started);
             }
             return finished(index, call, Conversation.FINAL_ANSWER, DELIVERED, false, null, started);
         }

@@ -94,7 +94,8 @@ public class ExchangeTools {
             @McpToolParam(description = "The latest acceptable arrival date, YYYY-MM-DD. Arriving on that date "
                     + "counts as on time.", required = false) String deliverBy,
             @McpToolParam(description = "The most the customer will pay on top of what they paid: the price "
-                    + "difference plus shipping.", required = false) CostLimit costLimit) {
+                    + "difference plus shipping. \"No extra cost\" is 0.00 at_most.", required = false)
+            CostLimit costLimit) {
         int units;
         LocalDate deadline;
         CostLimit limit;
@@ -262,13 +263,23 @@ public class ExchangeTools {
         String nextStep;
         if (!feasible.isEmpty()) {
             Quoted best = feasible.getFirst();
-            message = feasible.size() + " of " + quoted.size() + " quoted options "
-                    + (feasible.size() == 1 ? "meets" : "meet") + " every limit. The cheapest is $"
-                    + best.quote().additionalCost().amount() + " from " + best.shipsFrom() + " by "
-                    + best.quote().deliveryMethod().toLowerCase(Locale.ROOT) + ", arriving " + best.arrives() + ".";
-            nextStep = "Show the customer these options. Call submit_exchange with the chosen quoteId only after the "
-                    + "customer approves that option. The quotes expire at "
+            String cheapestText = " The cheapest is $" + best.quote().additionalCost().amount() + " from "
+                    + best.shipsFrom() + " by " + best.quote().deliveryMethod().toLowerCase(Locale.ROOT)
+                    + ", arriving " + best.arrives() + ".";
+            String approval = "Call submit_exchange with the chosen quoteId only after the customer approves that "
+                    + "option. The quotes expire at "
                     + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(best.quote().expiresAt()) + ".";
+            if (deadline == null && limit == null) {
+                message = "No delivery date or cost limit was given, so none was checked; all " + quoted.size()
+                        + " quoted options are listed as matches." + cheapestText;
+                nextStep = "If the customer gave a delivery date or a cost limit, such as \"no extra cost\", call "
+                        + "preview_exchange again with it. Otherwise show the customer these options. " + approval;
+            }
+            else {
+                message = feasible.size() + " of " + quoted.size() + " quoted options " + meeting(feasible.size(),
+                        deadline, limit) + "." + cheapestText;
+                nextStep = "Show the customer these options. " + approval;
+            }
         }
         else {
             message = noOptionMessage(blocking, deadline, limit, earliest, lowest);
@@ -280,6 +291,18 @@ public class ExchangeTools {
                 rejectedOptions.isEmpty() ? null : rejectedOptions, quoted.size(), feasible.size(),
                 feasible.size() > optionLimit, optionLimit, earliest, lowest == null ? null : lowest.quote().additionalCost(),
                 blocking, null, null, nextStep);
+    }
+
+    /** The limits that were checked, such as "arrive by 2026-11-13 and cost under $15.00". */
+    private static String meeting(int count, LocalDate deadline, CostLimit limit) {
+        List<String> checked = new ArrayList<>();
+        if (deadline != null) {
+            checked.add((count == 1 ? "arrives" : "arrive") + " by " + deadline);
+        }
+        if (limit != null) {
+            checked.add((count == 1 ? "costs " : "cost ") + limit.describe());
+        }
+        return String.join(" and ", checked);
     }
 
     private static String noOptionMessage(List<String> blocking, LocalDate deadline, CostLimit limit,

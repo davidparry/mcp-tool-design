@@ -189,6 +189,25 @@ class RunnerLoopTest {
         assertThat(line).doesNotContain("support-agent-dev-key", "admin-dev-key", "frontend-dev-key", "X-Api-Key");
     }
 
+    @Test
+    void aCardThatBreaksItsSchemaIsSentBackAndTheCorrectedOneIsKept() {
+        ScriptedChatModel model = new ScriptedChatModel().toolCall("preview_exchange", C1_PREVIEW)
+                .toolCall("final_answer", "{\"message\":\"One option fits.\",\"options\":\"[{ships_from: CMH}]\"}")
+                .toolCall("final_answer", C1_CARD);
+
+        RunRecord record = execute(spec("workflow", c1), model, workflowCatalog());
+
+        assertThat(record.stopReason()).isEqualTo("answered");
+        assertThat(record.turns().get(1).toolCalls()).singleElement().satisfies(call -> {
+            assertThat(call.kind()).isEqualTo("bad_arguments");
+            assertThat(call.isError()).isTrue();
+            assertThat(call.resultText()).contains("not_delivered", "required property 'outcome' not found",
+                    "/options: string found, array expected");
+        });
+        assertThat(record.cards()).singleElement()
+                .satisfies(card -> assertThat(card).containsEntry("outcome", "options_available"));
+    }
+
     private static RunRecord execute(RunSpec spec, ScriptedChatModel model, String catalog) {
         return execute(spec, model, catalog, new Limits(10, 20, 0, Duration.ZERO));
     }

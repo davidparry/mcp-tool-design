@@ -61,6 +61,12 @@ public class AdminClient {
         });
     }
 
+    /** The app's OpenAPI document, the contract the endpoint server is generated from. */
+    public Map<String, Object> openApi() {
+        return this.json.readValue(send("GET", "/v3/api-docs", null), new TypeReference<Map<String, Object>>() {
+        });
+    }
+
     public boolean reachable() {
         try {
             HttpResponse<Void> response = this.http.send(HttpRequest.newBuilder(URI.create(this.baseUrl + "/v3/api-docs"))

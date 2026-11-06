@@ -89,8 +89,6 @@ public class Verifier {
 
         private final List<RunRecord.ToolCall> calls;
 
-        private final Set<BigDecimal> traceAmounts = new LinkedHashSet<>();
-
         private final Set<BigDecimal> groundedAmounts = new LinkedHashSet<>();
 
         private final Set<LocalDate> groundedDates = new LinkedHashSet<>();
@@ -131,8 +129,7 @@ public class Verifier {
             String trace = this.calls.stream().filter(c -> "mcp".equals(c.kind())).map(RunRecord.ToolCall::resultText)
                     .filter(Objects::nonNull).collect(Collectors.joining("\n"));
             String customer = String.join("\n", task.messages());
-            this.traceAmounts.addAll(Extract.decimals(trace));
-            this.groundedAmounts.addAll(this.traceAmounts);
+            this.groundedAmounts.addAll(Extract.decimals(trace));
             this.groundedAmounts.addAll(Extract.dollars(customer));
             this.groundedAmounts.add(BigDecimal.ZERO.setScale(2));
             this.groundedDates.addAll(Extract.dates(trace));
@@ -178,8 +175,8 @@ public class Verifier {
                 for (BigDecimal amount : amounts) {
                     if (!this.groundedAmounts.contains(amount) && seen.add("amount " + amount)) {
                         if (rebuildable(amount)) {
-                            fail(MODEL_ARITHMETIC, "states $" + amount
-                                    + ", which no tool returned but adds up from amounts the tools did return");
+                            this.failures.add(Failure.process(MODEL_ARITHMETIC, "works out $" + amount
+                                    + " itself from amounts the tools returned"));
                         }
                         else {
                             fail(HALLUCINATED_VALUE, "states $" + amount + ", which no tool returned");
@@ -392,8 +389,8 @@ public class Verifier {
             BigDecimal stated = Extract.amount(card.get("refund_amount"));
             boolean right = stated != null ? stated.equals(want) : Extract.dollars(text(card)).contains(want);
             check("states the refund", right, true, "expected $" + want + (stated == null ? "" : ", said $" + stated));
-            if (stated != null && !stated.equals(want) && this.groundedAmounts.contains(stated)) {
-                fail(HALLUCINATED_VALUE, "gives $" + stated + " as the refund; it's $" + want);
+            if (stated != null && !stated.equals(want)) {
+                wrongAmount("gives $" + stated + " as the refund; it's $" + want, stated);
             }
             itemQuoted("RETURN", null, card, right);
         }
@@ -507,9 +504,23 @@ public class Verifier {
                 }
                 BigDecimal cost = Extract.amount(offered.get("additional_cost"));
                 BigDecimal wantCost = Extract.amount(truth.get("additionalCost"));
-                if (cost != null && !cost.equals(wantCost) && this.groundedAmounts.contains(cost)) {
-                    fail(HALLUCINATED_VALUE, "says " + label + " costs $" + cost + "; it costs $" + wantCost);
+                if (cost != null && !cost.equals(wantCost)) {
+                    wrongAmount("says " + label + " costs $" + cost + "; it costs $" + wantCost, cost);
                 }
+            }
+        }
+
+        /**
+         * A stated amount that contradicts the fixture. One the model worked out from trace amounts is model-side
+         * arithmetic gone wrong; one it took from the wrong place in the trace is a hallucinated value. One that's
+         * neither was already counted as a hallucinated value by the grounding check.
+         */
+        private void wrongAmount(String detail, BigDecimal stated) {
+            if (this.groundedAmounts.contains(stated)) {
+                fail(HALLUCINATED_VALUE, detail);
+            }
+            else if (rebuildable(stated)) {
+                fail(MODEL_ARITHMETIC, detail + ", and the model worked it out itself");
             }
         }
 
@@ -564,8 +575,9 @@ public class Verifier {
             return observed;
         }
 
+        /** Whether the amount is a sum, difference, double, or triple of amounts from the tools or the customer. */
         private boolean rebuildable(BigDecimal amount) {
-            List<BigDecimal> values = this.traceAmounts.stream().filter(v -> v.signum() > 0).toList();
+            List<BigDecimal> values = this.groundedAmounts.stream().filter(v -> v.signum() > 0).toList();
             for (BigDecimal a : values) {
                 if (a.multiply(BigDecimal.valueOf(2)).compareTo(amount) == 0
                         || a.multiply(BigDecimal.valueOf(3)).compareTo(amount) == 0) {

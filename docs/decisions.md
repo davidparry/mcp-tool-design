@@ -161,6 +161,8 @@ verifier grades the card, plus the app's state, rather than parsing prose.
 
 - The runner answers `final_answer` with `{"status":"delivered"}` and never forwards it to a
   server. In a scenario, the next customer message follows that acknowledgement.
+- A card that breaks the schema isn't delivered. The runner answers with the validator's error, the
+  same one the MCP SDK gives for bad tool arguments, and the model can call again.
 - A plain reply gets one reminder per customer message, sent as a user turn in the same words for
   both arms. A second plain reply ends that message with no card, recorded as `null` and graded on
   its text where it can be. The reminder turn's tokens count against the run that needed it, and
@@ -235,8 +237,9 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   math in both arms; the first scratch batch had an endpoint answer with the right dates and three
   wrong weekdays, one of them beside the customer's Monday deadline.
 - **Arithmetic.** An amount no tool returned that equals a sum, a difference, or a double or triple
-  of amounts in the trace is `model_arithmetic`, since the prompt tells the model to take amounts
-  from the tools. Any other unsupported amount is a `hallucinated_value`.
+  of amounts from the tools or the customer is `model_arithmetic`. It fails the task when it
+  contradicts a refund or an option's cost; otherwise it's recorded, since a correct "misses your
+  limit by $15" is no error. Any other unsupported amount is a `hallucinated_value`.
 - **The eight classes.** Each failure is task-level, which fails the run, or process-level, which
   is recorded only.
 
@@ -244,7 +247,7 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   | --- | --- | --- |
   | `hallucinated_value` | an amount, date, weekday, SKU, ID, status, or refund isn't what the tools returned | task |
   | `wrong_constraint_verdict` | an option is marked as meeting every limit when it doesn't, or the reverse, or "no option" is given when one exists | task |
-  | `model_arithmetic` | an unsupported amount is the model's own sum or difference | task |
+  | `model_arithmetic` | an unsupported amount is the model's own sum or difference | task if it contradicts a refund or an option's cost, otherwise process |
   | `wrong_item` | a quote or commit is for a different item or replacement than the task asks about | task if the answer rests on it, otherwise process |
   | `skipped_clarification` | an answer picks one of several matching items instead of asking | task |
   | `unapproved_action` | more commits than the task allows, or a commit on terms the customer didn't approve | task |
@@ -266,6 +269,54 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   without the cache-read discount. It's left empty until prices are set.
 
 ## Pilot
+
+### What ran
+
+The plan's pilot is 96 runs: the 16 dev tasks in both arms with all three models. Both hosted keys
+were rejected on the day (401 from Anthropic and from OpenAI), so the pilot ran qwen alone with three
+repetitions, which keeps the count and adds a read on run-to-run variation. That leaves two of the
+plan's pilot checks open until the keys work: that the raw usage fields arrive from all three
+providers, and that `claude-opus-4-8` and `gpt-5` are the right IDs. For qwen, Spring AI's normalized
+counts arrive, Ollama sends no native usage, and the prompt and eval counts and timings come from the
+response metadata.
+
+The first pass was 96 dev runs and 30 scenario runs (5 scenarios, both arms, three repetitions), all
+valid and all answered. Regraded with the verifier as it stands now:
+
+| Arm | Dev tasks | Scenarios | Median tokens per dev task | Median model calls |
+| --- | --- | --- | --- | --- |
+| endpoint | 33 of 48 | 15 of 15 | 20,550 | 6 |
+| workflow | 44 of 48 | 15 of 15 | 11,729 | 4 |
+
+96 of the 126 runs needed the reminder once: qwen often writes its reply as text before it calls
+`final_answer`. Every run still ended with a card, so the plan's fallback isn't needed for qwen.
+
+### What the pilot changed
+
+Every failed run was read in full before anything changed. Five changes came out of that, all before
+the freeze. The held-out tasks weren't run in the pilot.
+
+- **The workflow server named limits it hadn't checked.** In E2 the customer asks for an exchange "at
+  no extra cost". In all three workflow runs the model left out `costLimit`, and `preview_exchange`
+  answered "6 of 6 quoted options meet every limit", which the model repeated, though every option
+  costs at least $4.99 in shipping. The message now names the limits it checked, or says none was
+  given, and the next step tells the model to preview again if the customer gave one. The
+  `costLimit` description now says that "no extra cost" is 0.00 `at_most`. The workflow catalog's
+  hash moved from `2c2d4c9e…` to `585bb142…`. The endpoint server isn't tuned the same way: by
+  design it's the OpenAPI document as the generator renders it.
+- **`final_answer` is checked against its schema.** The runner checks each card with the MCP SDK's
+  own validator, the one that checks MCP tool arguments, so a malformed card gets the validator's
+  error and another try, just as a malformed MCP call does. 4 of 162 pilot cards broke the schema:
+  three in the workflow arm left out `outcome`, and one in the endpoint arm sent `options` as a
+  string, which hid an invented option from the verifier.
+- **Model-side arithmetic fails a task only when it's wrong.** The talk defines it as adding amounts
+  up yourself "and getting it wrong". The first verifier failed any amount the model worked out, so
+  "misses your $30 limit by $15" failed two correct workflow answers. A worked-out amount now fails
+  the task when it contradicts a refund or an option's cost, and is recorded otherwise. The
+  customer's own amounts count when the verifier rebuilds one.
+- **A weekday beside a date has to be that date's weekday,** from the first scratch batch, and
+  **S2's approval covers the same terms,** from the first scenario smoke run. Both are described
+  above.
 
 ### The local model
 

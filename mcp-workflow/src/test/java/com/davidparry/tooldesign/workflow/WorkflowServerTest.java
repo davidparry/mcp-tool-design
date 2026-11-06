@@ -110,6 +110,20 @@ class WorkflowServerTest {
         assertThat(rejected).filteredOn(r -> "WH-RNO".equals(r.get("warehouseId")) && "GROUND".equals(r.get("method")))
                 .singleElement().satisfies(r -> assertThat((List<Map<String, Object>>) r.get("misses"))
                         .singleElement().satisfies(m -> assertThat(m).containsEntry("constraint", "deadline")));
+        assertThat((String) preview.get("message")).startsWith(
+                "1 of 4 quoted options arrives by 2026-11-13 and costs under $15.00. The cheapest is $11.99");
+    }
+
+    @Test
+    void aPreviewWithoutLimitsSaysNoneWasChecked() {
+        Map<String, Object> preview = call("preview_exchange", Map.of("orderReference", "1029", "itemDescription",
+                "GPS collar", "replacementSize", "large"));
+
+        assertThat(preview.get("outcome")).isEqualTo("options_available");
+        assertThat((String) preview.get("message")).startsWith("No delivery date or cost limit was given, so none "
+                + "was checked; all 6 quoted options are listed as matches.");
+        assertThat((String) preview.get("nextStep")).startsWith("If the customer gave a delivery date or a cost "
+                + "limit, such as \"no extra cost\", call preview_exchange again with it.");
     }
 
     @Test

@@ -1,5 +1,5 @@
 {
-  "sha256" : "2c2d4c9e7d6555f3032b83f61a74e754c0b3553bbf2bae52536942373c30501e",
+  "sha256" : "585bb142a3710f2be098f14b047f16a5fb65164250df348008b35ba28dd35cae",
   "tools" : [ {
     "name" : "preview_exchange",
     "title" : "Preview an exchange",
@@ -8,7 +8,7 @@
       "$schema" : "https://json-schema.org/draft/2020-12/schema",
       "properties" : {
         "costLimit" : {
-          "description" : "The most the customer will pay on top of what they paid: the price difference plus shipping.",
+          "description" : "The most the customer will pay on top of what they paid: the price difference plus shipping. \"No extra cost\" is 0.00 at_most.",
           "properties" : {
             "amount" : {
               "description" : "The amount in USD, such as \"15.00\"",
