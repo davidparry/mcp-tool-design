@@ -78,6 +78,8 @@ pinned in `benchmark/src/main/resources/application.yml` and recorded in every r
   git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place.
 - `qwen3:30b` isn't installed on this machine, so the local model is its successor in the same
   mixture-of-experts family, chosen in [the pilot section](#pilot) below.
+- The hosted IDs stay as the plan set them, `claude-opus-4-8` and `gpt-5`, until a valid key lets the
+  `check` command confirm them.
 
 ## Persistence and money
 
@@ -155,5 +157,54 @@ same `-06:00` times and neither has to convert time zones.
 ## The answer card
 
 Both arms finish by calling a `final_answer` tool that the runner supplies with a fixed schema. The
-verifier grades the card, plus the app's state, rather than parsing prose. A run that ends with a
-plain reply and no card is recorded with `card = null` and graded on its text where it can be.
+verifier grades the card, plus the app's state, rather than parsing prose.
+
+- The runner answers `final_answer` with `{"status":"delivered"}` and never forwards it to a
+  server. In a scenario, the next customer message follows that acknowledgement.
+- A plain reply gets one reminder per customer message, sent as a user turn in the same words for
+  both arms. A second plain reply ends that message with no card, recorded as `null` and graded on
+  its text where it can be. The reminder turn's tokens count against the run that needed it, and
+  `totals.reminders` says how many it took.
+- In smoke runs before the pilot, qwen replied in plain text first in 7 of 8 runs. Saying that the
+  customer never sees text outside a tool call cut that to 4 of 8, and a reminder that names the
+  tool and the field got a card in all 8. The plan's fallback, a fenced JSON block in the reply,
+  isn't needed for qwen; the pilot decides for the hosted models.
+
+## The runner's choices
+
+- **One request per turn.** Spring AI 2.0's `ChatModel` sends tool definitions but doesn't run tools
+  (tool execution moved to `ChatClient`), so calling `ChatModel` directly gives the runner every tool
+  call. The plan's `internalToolExecutionEnabled(false)` no longer exists and isn't needed.
+- **What the model is sent.** Each MCP tool's name, description, and input schema, exactly as the
+  server lists them and in its order, plus `final_answer`. Titles, output schemas, and annotations
+  aren't sent, so neither arm gets hints the other doesn't. The manifest keeps the definitions and
+  every record carries their hash.
+- **One run at a time against one app.** Each run resets the store, tags the call log with its run
+  ID, and opens its own MCP session. Backend calls are matched to the tool call whose start and end
+  bracket the moment the app logged them.
+- **Catalogs are checked twice.** Before a batch, each arm's live catalog must match its snapshot in
+  `fixtures/catalogs/`. During the batch, every session's catalog must match the one the batch was
+  planned with, or the run stops as a setup error and the batch stops with it.
+- **Order and seeds.** Each model's runs are shuffled together across arms, tasks, and repetitions
+  with the batch seed, so neither arm gets the warmer cache or the quieter hour. Each run's sampling
+  seed comes from the batch seed and the run ID, so repetitions differ and a rerun repeats.
+- **Limits.** 30 model calls and 60 tool calls per run, with `final_answer` not counted. Failed
+  model requests are retried 3 times on rate limits, overloads, server errors, and timeouts, never
+  on bad keys or bad requests. The pilot sets the final limits.
+- **Credentials.** Keys come from the environment or `.env` and never reach a log line or a
+  record. Provider errors echo keys back, sometimes masked with a few real characters left, so the
+  runner redacts anything key-shaped before it logs or records an error.
+- **Usage.** Each turn keeps Spring AI's normalized counts and the provider's own fields. Anthropic's
+  input tokens leave out cache reads and writes, OpenAI's prompt tokens include cached tokens, and
+  Ollama reports no native usage, so its prompt and eval counts and timings come from the response
+  metadata.
+
+## Pilot
+
+### The local model
+
+`qwen3:30b` isn't installed, so the local model is `qwen3.6:35b-a3b-nvfp4`, the same
+mixture-of-experts family with 3B active parameters. Two builds were installed, and both completed
+the same 8 smoke runs (A1, C1, D1, and H1 in both arms) with a card every time. The `nvfp4` build was
+1.5 to 2 times faster, so it runs the benchmark. Thinking is off, with Qwen's suggested non-thinking
+sampling: temperature 0.7, top-p 0.8, top-k 20, and a 32K context.

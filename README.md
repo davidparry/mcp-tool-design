@@ -45,3 +45,37 @@ java -jar mcp-workflow/target/mcp-workflow-0.1.0-SNAPSHOT.jar
 
 Open http://localhost:8080 for the support screens and http://localhost:8080/swagger-ui.html for
 the API. The business date is fixed at Friday, November 6, 2026, 9:00 a.m. Central.
+
+The Playwright walk-through of the order 1042 exchange preview starts its own app on port 8090:
+
+```bash
+mvn -q -pl frontend,app package -DskipTests && (cd frontend && npx playwright test)
+```
+
+## Benchmark
+
+The benchmark needs the app under the `benchmark` profile, which turns on the admin endpoints
+the runner resets and tags runs with, and both servers. The endpoint server refuses to start
+under that profile unless its catalog matches the frozen snapshot.
+
+```bash
+scripts/bench-stack.sh up        # builds, starts all three, and stops them on Ctrl-C
+```
+
+Hosted model keys come from the environment or a git-ignored `.env` at the repo root
+(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). The local model runs on Ollama. Then, from the repo
+root:
+
+```bash
+mvn -q -pl benchmark package -DskipTests
+B="java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar"
+$B --command=check                                     # app, both catalogs, one request per model
+$B --command=run --phase=pilot --models=qwen --splits=dev --reps=3 --seed=20261106
+$B --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
+```
+
+A batch writes `results/<phase>/<batch>/manifest.json`, which records the commit, versions,
+hashes, model settings, exact tool definitions, and seeded run order, plus `runs.jsonl` with
+one record per run. Starting the same batch again skips finished runs and refuses to continue
+if anything in the manifest changed. `--command=catalog --arms=workflow --force` rewrites a
+catalog snapshot, which is only allowed before the catalogs are frozen.

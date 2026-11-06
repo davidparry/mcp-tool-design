@@ -1,0 +1,932 @@
+{
+  "sha256" : "2c2d4c9e7d6555f3032b83f61a74e754c0b3553bbf2bae52536942373c30501e",
+  "tools" : [ {
+    "name" : "preview_exchange",
+    "title" : "Preview an exchange",
+    "description" : "Find and price replacements for an item in an order. Matches the item from the customer's description, checks that it can be exchanged, finds the replacement in the size and color asked for, and quotes every in-stock warehouse and delivery method against the delivery deadline and cost limit. Returns an explicit outcome, up to 3 options that meet every limit (cheapest first) with quote IDs, and the closest options that don't, with the limit each one misses. Creates draft quotes that expire in 30 minutes. It never submits an exchange, reserves stock, or charges the customer.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "costLimit" : {
+          "description" : "The most the customer will pay on top of what they paid: the price difference plus shipping.",
+          "properties" : {
+            "amount" : {
+              "description" : "The amount in USD, such as \"15.00\"",
+              "type" : "string"
+            },
+            "comparison" : {
+              "description" : "under: the cost must be less than the amount. at_most: it may equal it.",
+              "enum" : [ "under", "at_most" ],
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "comparison" ],
+          "type" : "object"
+        },
+        "deliverBy" : {
+          "description" : "The latest acceptable arrival date, YYYY-MM-DD. Arriving on that date counts as on time.",
+          "type" : "string"
+        },
+        "itemDescription" : {
+          "description" : "The item the customer has now, in their words, such as \"medium dog harness\"",
+          "type" : "string"
+        },
+        "orderReference" : {
+          "description" : "The order reference, such as 1042",
+          "type" : "string"
+        },
+        "quantity" : {
+          "description" : "How many units to exchange. Defaults to 1.",
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "replacementColor" : {
+          "description" : "The color they want instead, such as \"red\". Leave out to keep the current color.",
+          "type" : "string"
+        },
+        "replacementSize" : {
+          "description" : "The size they want instead, such as \"large\", \"XL\", or \"42 in\". Leave out to keep the current size.",
+          "type" : "string"
+        }
+      },
+      "required" : [ "orderReference", "itemDescription" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$defs" : {
+        "Item" : {
+          "properties" : {
+            "color" : {
+              "type" : "string"
+            },
+            "itemId" : {
+              "type" : "string"
+            },
+            "product" : {
+              "type" : "string"
+            },
+            "quantity" : {
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "size" : {
+              "type" : "string"
+            },
+            "sku" : {
+              "type" : "string"
+            },
+            "unitPrice" : {
+              "$ref" : "#/$defs/Money"
+            }
+          },
+          "required" : [ "itemId", "product", "quantity", "sku", "unitPrice" ],
+          "type" : "object"
+        },
+        "Money" : {
+          "properties" : {
+            "amount" : {
+              "type" : "string"
+            },
+            "currency" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "currency" ],
+          "type" : "object"
+        },
+        "Replacement" : {
+          "properties" : {
+            "color" : {
+              "type" : "string"
+            },
+            "price" : {
+              "$ref" : "#/$defs/Money"
+            },
+            "size" : {
+              "type" : "string"
+            },
+            "sku" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "price", "sku" ],
+          "type" : "object"
+        }
+      },
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "availableVariants" : {
+          "items" : {
+            "$ref" : "#/$defs/Replacement"
+          },
+          "type" : "array"
+        },
+        "blockingReasons" : {
+          "description" : "Why no option works: deadline, cost_limit, out_of_stock, or variant_not_found",
+          "items" : {
+            "type" : "string"
+          },
+          "type" : "array"
+        },
+        "candidates" : {
+          "description" : "The order's items that fit the description, when it fits more than one or none",
+          "items" : {
+            "$ref" : "#/$defs/Item"
+          },
+          "type" : "array"
+        },
+        "constraints" : {
+          "properties" : {
+            "costLimit" : {
+              "properties" : {
+                "amount" : {
+                  "description" : "The amount in USD, such as \"15.00\"",
+                  "type" : "string"
+                },
+                "comparison" : {
+                  "description" : "under: the cost must be less than the amount. at_most: it may equal it.",
+                  "enum" : [ "under", "at_most" ],
+                  "type" : "string"
+                }
+              },
+              "required" : [ "amount", "comparison" ],
+              "type" : "object"
+            },
+            "deliverBy" : {
+              "format" : "date",
+              "type" : "string"
+            },
+            "quantity" : {
+              "format" : "int32",
+              "type" : "integer"
+            }
+          },
+          "required" : [ "quantity" ],
+          "type" : "object"
+        },
+        "earliestArrival" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "ineligible" : {
+          "properties" : {
+            "estimatedDelivery" : {
+              "format" : "date",
+              "type" : "string"
+            },
+            "reason" : {
+              "type" : "string"
+            },
+            "reasonCode" : {
+              "type" : "string"
+            },
+            "windowEndedOn" : {
+              "format" : "date",
+              "type" : "string"
+            }
+          },
+          "required" : [ "reason", "reasonCode" ],
+          "type" : "object"
+        },
+        "lowestAdditionalCost" : {
+          "$ref" : "#/$defs/Money"
+        },
+        "matchedItem" : {
+          "$ref" : "#/$defs/Item"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "moreAvailable" : {
+          "description" : "True when more options meet every limit than are listed",
+          "type" : "boolean"
+        },
+        "nextStep" : {
+          "type" : "string"
+        },
+        "optionLimit" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "options" : {
+          "description" : "Options that meet every limit, cheapest first",
+          "items" : {
+            "properties" : {
+              "additionalCost" : {
+                "$ref" : "#/$defs/Money",
+                "description" : "What the customer pays: the price difference plus shipping"
+              },
+              "arrives" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "method" : {
+                "type" : "string"
+              },
+              "priceDifference" : {
+                "$ref" : "#/$defs/Money"
+              },
+              "quoteExpiresAt" : {
+                "format" : "date-time",
+                "type" : "string"
+              },
+              "quoteId" : {
+                "type" : "string"
+              },
+              "shipping" : {
+                "$ref" : "#/$defs/Money"
+              },
+              "shipsFrom" : {
+                "type" : "string"
+              },
+              "warehouseId" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "additionalCost", "arrives", "method", "priceDifference", "quoteExpiresAt", "quoteId", "shipping", "shipsFrom", "warehouseId" ],
+            "type" : "object"
+          },
+          "type" : "array"
+        },
+        "optionsMeetingLimits" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "orderReference" : {
+          "type" : "string"
+        },
+        "outcome" : {
+          "description" : "options_available, no_matching_option, ineligible, needs_clarification, item_not_found, order_not_found, or invalid_request",
+          "type" : "string"
+        },
+        "quotedOptions" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "rejectedOptions" : {
+          "description" : "The closest options that miss a limit, with what each one misses",
+          "items" : {
+            "properties" : {
+              "additionalCost" : {
+                "$ref" : "#/$defs/Money"
+              },
+              "arrives" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "method" : {
+                "type" : "string"
+              },
+              "misses" : {
+                "items" : {
+                  "properties" : {
+                    "actual" : {
+                      "type" : "string"
+                    },
+                    "constraint" : {
+                      "description" : "deadline or cost_limit",
+                      "type" : "string"
+                    },
+                    "limit" : {
+                      "type" : "string"
+                    }
+                  },
+                  "required" : [ "actual", "constraint", "limit" ],
+                  "type" : "object"
+                },
+                "type" : "array"
+              },
+              "quoteId" : {
+                "type" : "string"
+              },
+              "shipsFrom" : {
+                "type" : "string"
+              },
+              "warehouseId" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "additionalCost", "arrives", "method", "misses", "quoteId", "shipsFrom", "warehouseId" ],
+            "type" : "object"
+          },
+          "type" : "array"
+        },
+        "replacement" : {
+          "$ref" : "#/$defs/Replacement"
+        },
+        "stock" : {
+          "items" : {
+            "properties" : {
+              "available" : {
+                "format" : "int32",
+                "type" : "integer"
+              },
+              "shipsFrom" : {
+                "type" : "string"
+              },
+              "warehouseId" : {
+                "type" : "string"
+              }
+            },
+            "required" : [ "available", "shipsFrom", "warehouseId" ],
+            "type" : "object"
+          },
+          "type" : "array"
+        }
+      },
+      "required" : [ "message", "nextStep", "outcome" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Preview an exchange",
+      "readOnlyHint" : false,
+      "destructiveHint" : false,
+      "idempotentHint" : false,
+      "openWorldHint" : false
+    }
+  }, {
+    "name" : "submit_exchange",
+    "title" : "Submit an exchange",
+    "description" : "Submit one exchange quote from preview_exchange after the customer explicitly approves that option. Commits the exchange, takes the replacement from stock, and charges the additional cost. The quote is checked again first: an expired quote, missing stock, or an item that can no longer be exchanged is refused with the reason, and nothing is committed. Submitting the same quote again returns the original exchange and changes nothing.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "quoteId" : {
+          "description" : "The quoteId of the option the customer approved, such as EQ-5001",
+          "type" : "string"
+        }
+      },
+      "required" : [ "quoteId" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "additionalCost" : {
+          "properties" : {
+            "amount" : {
+              "type" : "string"
+            },
+            "currency" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "currency" ],
+          "type" : "object"
+        },
+        "estimatedArrival" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "exchangeId" : {
+          "type" : "string"
+        },
+        "itemId" : {
+          "type" : "string"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "method" : {
+          "type" : "string"
+        },
+        "nextStep" : {
+          "type" : "string"
+        },
+        "orderReference" : {
+          "type" : "string"
+        },
+        "outcome" : {
+          "description" : "submitted, already_submitted, quote_expired, stock_unavailable, ineligible, quote_not_found, or invalid_request",
+          "type" : "string"
+        },
+        "quantity" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "quoteId" : {
+          "type" : "string"
+        },
+        "replacementSku" : {
+          "type" : "string"
+        },
+        "status" : {
+          "type" : "string"
+        },
+        "submittedAt" : {
+          "format" : "date-time",
+          "type" : "string"
+        },
+        "warehouseId" : {
+          "type" : "string"
+        }
+      },
+      "required" : [ "message", "nextStep", "outcome", "quoteId" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Submit an exchange",
+      "readOnlyHint" : false,
+      "destructiveHint" : true,
+      "idempotentHint" : true,
+      "openWorldHint" : false
+    }
+  }, {
+    "name" : "find_orders",
+    "title" : "Find orders",
+    "description" : "Find a customer's orders by order reference, customer name, or email. Returns up to `limit` orders, newest first, each with its status, key dates, items, and total, and says whether more matched. Read-only.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "limit" : {
+          "description" : "How many orders to return, 1 to 10. Defaults to 5.",
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "query" : {
+          "description" : "An order reference such as 1042, or part of a customer's name or email",
+          "type" : "string"
+        },
+        "status" : {
+          "description" : "Only orders with this status: PLACED, SHIPPED, DELIVERED, or CANCELLED",
+          "type" : "string"
+        }
+      },
+      "required" : [ "query" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "limit" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "moreAvailable" : {
+          "type" : "boolean"
+        },
+        "orders" : {
+          "items" : {
+            "properties" : {
+              "customerName" : {
+                "type" : "string"
+              },
+              "deliveredOn" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "estimatedDelivery" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "items" : {
+                "items" : {
+                  "type" : "string"
+                },
+                "type" : "array"
+              },
+              "placedOn" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "reference" : {
+                "type" : "string"
+              },
+              "shippedOn" : {
+                "format" : "date",
+                "type" : "string"
+              },
+              "status" : {
+                "type" : "string"
+              },
+              "total" : {
+                "properties" : {
+                  "amount" : {
+                    "type" : "string"
+                  },
+                  "currency" : {
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "amount", "currency" ],
+                "type" : "object"
+              }
+            },
+            "required" : [ "customerName", "items", "placedOn", "reference", "status", "total" ],
+            "type" : "object"
+          },
+          "type" : "array"
+        },
+        "outcome" : {
+          "description" : "orders_found or no_orders_found",
+          "type" : "string"
+        },
+        "totalMatches" : {
+          "format" : "int64",
+          "type" : "integer"
+        }
+      },
+      "required" : [ "limit", "message", "moreAvailable", "orders", "outcome", "totalMatches" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Find orders",
+      "readOnlyHint" : true,
+      "destructiveHint" : false,
+      "idempotentHint" : true,
+      "openWorldHint" : false
+    }
+  }, {
+    "name" : "get_order_context",
+    "title" : "Get order context",
+    "description" : "Get what's needed to answer a customer about one order: its status and dates (placed, shipped, delivered or expected), where it ships, and each item with its size, color, quantity, and price paid, plus whether the item can still be returned or exchanged, with the last day to do it or the reason it can't. Read-only.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "orderReference" : {
+          "description" : "The order reference, such as 1042",
+          "type" : "string"
+        }
+      },
+      "required" : [ "orderReference" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$defs" : {
+        "Eligibility" : {
+          "properties" : {
+            "eligible" : {
+              "type" : "boolean"
+            },
+            "lastDay" : {
+              "description" : "The last day it can be done, inclusive",
+              "format" : "date",
+              "type" : "string"
+            },
+            "maxQuantity" : {
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "reason" : {
+              "type" : "string"
+            },
+            "reasonCode" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "eligible" ],
+          "type" : "object"
+        },
+        "Money" : {
+          "properties" : {
+            "amount" : {
+              "type" : "string"
+            },
+            "currency" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "currency" ],
+          "type" : "object"
+        }
+      },
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "customerName" : {
+          "type" : "string"
+        },
+        "deliveredOn" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "estimatedDelivery" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "items" : {
+          "items" : {
+            "properties" : {
+              "color" : {
+                "type" : "string"
+              },
+              "exchangeEligibility" : {
+                "$ref" : "#/$defs/Eligibility"
+              },
+              "exchangedQuantity" : {
+                "format" : "int32",
+                "type" : "integer"
+              },
+              "itemId" : {
+                "type" : "string"
+              },
+              "product" : {
+                "type" : "string"
+              },
+              "quantity" : {
+                "format" : "int32",
+                "type" : "integer"
+              },
+              "returnEligibility" : {
+                "$ref" : "#/$defs/Eligibility"
+              },
+              "returnedQuantity" : {
+                "format" : "int32",
+                "type" : "integer"
+              },
+              "size" : {
+                "type" : "string"
+              },
+              "sku" : {
+                "type" : "string"
+              },
+              "unitPrice" : {
+                "$ref" : "#/$defs/Money"
+              }
+            },
+            "required" : [ "exchangeEligibility", "exchangedQuantity", "itemId", "product", "quantity", "returnEligibility", "returnedQuantity", "sku", "unitPrice" ],
+            "type" : "object"
+          },
+          "type" : "array"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "outcome" : {
+          "description" : "found or order_not_found",
+          "type" : "string"
+        },
+        "placedOn" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "reference" : {
+          "type" : "string"
+        },
+        "shipTo" : {
+          "properties" : {
+            "city" : {
+              "type" : "string"
+            },
+            "postalCode" : {
+              "type" : "string"
+            },
+            "state" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "city", "postalCode", "state" ],
+          "type" : "object"
+        },
+        "shippedOn" : {
+          "format" : "date",
+          "type" : "string"
+        },
+        "status" : {
+          "type" : "string"
+        },
+        "total" : {
+          "$ref" : "#/$defs/Money"
+        }
+      },
+      "required" : [ "message", "outcome", "reference" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Get order context",
+      "readOnlyHint" : true,
+      "destructiveHint" : false,
+      "idempotentHint" : true,
+      "openWorldHint" : false
+    }
+  }, {
+    "name" : "preview_return",
+    "title" : "Preview a return",
+    "description" : "Check whether an item in an order can be returned and preview the refund. Matches the item from the customer's description, checks the return policy, and quotes the refund after any return shipping or restocking fee. Creates a draft return quote that expires in 30 minutes. It never submits the return or issues a refund.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "itemDescription" : {
+          "description" : "The item to return, in the customer's words, such as \"dog bed\"",
+          "type" : "string"
+        },
+        "orderReference" : {
+          "description" : "The order reference, such as 1019",
+          "type" : "string"
+        },
+        "quantity" : {
+          "description" : "How many units to return. Defaults to 1.",
+          "format" : "int32",
+          "type" : "integer"
+        }
+      },
+      "required" : [ "orderReference", "itemDescription" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$defs" : {
+        "Item" : {
+          "properties" : {
+            "color" : {
+              "type" : "string"
+            },
+            "itemId" : {
+              "type" : "string"
+            },
+            "product" : {
+              "type" : "string"
+            },
+            "quantity" : {
+              "format" : "int32",
+              "type" : "integer"
+            },
+            "size" : {
+              "type" : "string"
+            },
+            "sku" : {
+              "type" : "string"
+            },
+            "unitPrice" : {
+              "$ref" : "#/$defs/Money"
+            }
+          },
+          "required" : [ "itemId", "product", "quantity", "sku", "unitPrice" ],
+          "type" : "object"
+        },
+        "Money" : {
+          "properties" : {
+            "amount" : {
+              "type" : "string"
+            },
+            "currency" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "currency" ],
+          "type" : "object"
+        }
+      },
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "candidates" : {
+          "items" : {
+            "$ref" : "#/$defs/Item"
+          },
+          "type" : "array"
+        },
+        "ineligible" : {
+          "properties" : {
+            "estimatedDelivery" : {
+              "format" : "date",
+              "type" : "string"
+            },
+            "reason" : {
+              "type" : "string"
+            },
+            "reasonCode" : {
+              "type" : "string"
+            },
+            "windowEndedOn" : {
+              "format" : "date",
+              "type" : "string"
+            }
+          },
+          "required" : [ "reason", "reasonCode" ],
+          "type" : "object"
+        },
+        "itemRefund" : {
+          "$ref" : "#/$defs/Money"
+        },
+        "matchedItem" : {
+          "$ref" : "#/$defs/Item"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "nextStep" : {
+          "type" : "string"
+        },
+        "orderReference" : {
+          "type" : "string"
+        },
+        "outcome" : {
+          "description" : "refund_preview, ineligible, needs_clarification, item_not_found, order_not_found, or invalid_request",
+          "type" : "string"
+        },
+        "policy" : {
+          "type" : "string"
+        },
+        "quantity" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "quoteExpiresAt" : {
+          "format" : "date-time",
+          "type" : "string"
+        },
+        "quoteId" : {
+          "type" : "string"
+        },
+        "refundAmount" : {
+          "$ref" : "#/$defs/Money",
+          "description" : "What the customer gets back after fees"
+        },
+        "restockingFee" : {
+          "$ref" : "#/$defs/Money"
+        },
+        "returnShippingFee" : {
+          "$ref" : "#/$defs/Money"
+        },
+        "windowEndsOn" : {
+          "format" : "date",
+          "type" : "string"
+        }
+      },
+      "required" : [ "message", "nextStep", "outcome" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Preview a return",
+      "readOnlyHint" : false,
+      "destructiveHint" : false,
+      "idempotentHint" : false,
+      "openWorldHint" : false
+    }
+  }, {
+    "name" : "submit_return",
+    "title" : "Submit a return",
+    "description" : "Submit one return quote from preview_return after the customer explicitly approves it. Commits the return; the refund is issued when the item arrives back. The quote is checked again first: an expired quote or an item that can no longer be returned is refused with the reason, and nothing is committed. Submitting the same quote again returns the original return and changes nothing.",
+    "inputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "quoteId" : {
+          "description" : "The quoteId of the return the customer approved, such as RQ-6001",
+          "type" : "string"
+        }
+      },
+      "required" : [ "quoteId" ],
+      "type" : "object"
+    },
+    "outputSchema" : {
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
+      "properties" : {
+        "itemId" : {
+          "type" : "string"
+        },
+        "message" : {
+          "type" : "string"
+        },
+        "nextStep" : {
+          "type" : "string"
+        },
+        "orderReference" : {
+          "type" : "string"
+        },
+        "outcome" : {
+          "description" : "submitted, already_submitted, quote_expired, ineligible, quote_not_found, or invalid_request",
+          "type" : "string"
+        },
+        "quantity" : {
+          "format" : "int32",
+          "type" : "integer"
+        },
+        "quoteId" : {
+          "type" : "string"
+        },
+        "refundAmount" : {
+          "properties" : {
+            "amount" : {
+              "type" : "string"
+            },
+            "currency" : {
+              "type" : "string"
+            }
+          },
+          "required" : [ "amount", "currency" ],
+          "type" : "object"
+        },
+        "returnId" : {
+          "type" : "string"
+        },
+        "status" : {
+          "type" : "string"
+        },
+        "submittedAt" : {
+          "format" : "date-time",
+          "type" : "string"
+        }
+      },
+      "required" : [ "message", "nextStep", "outcome", "quoteId" ],
+      "type" : "object"
+    },
+    "annotations" : {
+      "title" : "Submit a return",
+      "readOnlyHint" : false,
+      "destructiveHint" : true,
+      "idempotentHint" : true,
+      "openWorldHint" : false
+    }
+  } ]
+}
