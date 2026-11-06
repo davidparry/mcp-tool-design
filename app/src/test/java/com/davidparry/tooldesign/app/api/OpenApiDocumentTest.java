@@ -3,6 +3,8 @@ package com.davidparry.tooldesign.app.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +44,16 @@ class OpenApiDocumentTest {
                 "get_delivery_options", "create_exchange_quote", "create_return_quote", "submit_exchange_quote",
                 "submit_return_quote");
         assertThat(paths).allMatch(path -> path.startsWith("/api/"));
+    }
+
+    @Test
+    void theEndpointServersCopyOfTheDocumentIsCurrent() throws Exception {
+        String body = this.mvc.perform(get("/v3/api-docs")).andReturn().getResponse().getContentAsString();
+        Path copy = Path.of("..", "mcp-endpoint", "src", "test", "resources", "openapi", "order-support-api.json");
+        assertThat(this.json.readTree(Files.readString(copy)))
+                .as("The API's description changed. Refresh %s from /v3/api-docs, then the endpoint catalog snapshot",
+                        copy)
+                .isEqualTo(this.json.readTree(body));
     }
 
     @Test

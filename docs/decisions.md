@@ -41,6 +41,33 @@ This is the baseline teams actually ship when they "add MCP" to an existing API,
 is broken on purpose. Whatever quality it has comes from the OpenAPI document, which is written for
 the frontend's developers and holds the same descriptions a careful team would write.
 
+The generator had to make a few choices that any generator makes:
+
+- Tools are listed in operationId order, so the catalog doesn't change when springdoc reorders paths.
+- A tool's description is the summary, a blank line, and the description. Parameter descriptions
+  move onto their argument's schema.
+- The JSON request body's properties become top-level arguments next to the path and query
+  parameters, which is how most generators flatten a body. The forwarder sends everything that isn't
+  a path or query parameter as the body.
+- `readOnlyHint` is true for GET and false otherwise. The generator can't know whether a POST is
+  destructive, so `destructiveHint` stays unset.
+- The document's `servers` entry is ignored. The base URL comes from configuration.
+
+The catalog is frozen by SHA-256 over canonical JSON (keys sorted, no whitespace) of what
+`tools/list` returns. The snapshot is `fixtures/catalogs/endpoint-tools.json`, and under the
+`benchmark` profile the server won't start if the generated catalog's hash differs from it. Two tests
+keep the chain honest: the app checks that the committed copy of its OpenAPI document matches what it
+serves, and the endpoint module checks that the snapshot is what the generator makes from that copy.
+`scripts/refresh-endpoint-catalog.sh` refreshes both, and it stops being allowed once the run is frozen.
+
+## The SDK validates arguments for both servers
+
+MCP Java SDK 2.1.0 checks every `tools/call` against the tool's input schema before the handler
+runs. A violation comes back as `isError=true` with text like `Tool (create_exchange_quote) input
+validation failed: ... [/deliveryMethod: does not have a value in the enumeration ["GROUND",
+"EXPRESS"]]`, and the API is never called. Both servers run on the same SDK, so both arms get the
+same check. The failure classifier counts these refusals as schema errors.
+
 ## Three models
 
 Claude, GPT, and a local qwen through Ollama, as in the Skills vs MCP benchmark. The model IDs are

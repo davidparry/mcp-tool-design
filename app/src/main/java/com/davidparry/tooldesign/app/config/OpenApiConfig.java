@@ -1,10 +1,13 @@
 package com.davidparry.tooldesign.app.config;
 
+import java.util.List;
+
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,6 +22,7 @@ public class OpenApiConfig {
                                 + "eligibility, stock and delivery options, and quotes that are submitted in a separate "
                                 + "step. Amounts are decimal strings with a currency. Dates are ISO 8601 in the store's "
                                 + "time zone, America/Chicago. Errors are RFC 9457 problem details with a code."))
+                .servers(List.of(new Server().url("/").description("The server that serves this document")))
                 .components(new Components().addSecuritySchemes("apiKey",
                         new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER)
                                 .name("X-Api-Key")))

@@ -1,0 +1,1187 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Trailhead Pet Supply order support API",
+    "description": "The API behind the support screens: orders and their items, return and exchange eligibility, stock and delivery options, and quotes that are submitted in a separate step. Amounts are decimal strings with a currency. Dates are ISO 8601 in the store's time zone, America/Chicago. Errors are RFC 9457 problem details with a code.",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "The server that serves this document"
+    }
+  ],
+  "security": [
+    {
+      "apiKey": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Orders",
+      "description": "Order lookup, purchased items, and return and exchange eligibility"
+    },
+    {
+      "name": "Catalog",
+      "description": "Products, warehouse stock, and delivery options"
+    },
+    {
+      "name": "Quotes and submissions",
+      "description": "Draft quotes for exchanges and returns, and committing them"
+    }
+  ],
+  "paths": {
+    "/api/returns": {
+      "post": {
+        "tags": [
+          "Quotes and submissions"
+        ],
+        "summary": "Submit a return quote",
+        "description": "Commits the return an open return quote describes and schedules the refund for when the item arrives. Checks again that the quote hasn't expired and that the item is still eligible, and changes nothing if a check fails. Submitting a quote that was already submitted returns the original return and commits nothing new.",
+        "operationId": "submit_return_quote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/return-quotes": {
+      "post": {
+        "tags": [
+          "Quotes and submissions"
+        ],
+        "summary": "Create a return quote",
+        "description": "Validates and prices returning some or all units of an order item. Returns the item refund, any return shipping or restocking fee, the refund amount, and when the quote expires (30 minutes after it's created). Creates a draft quote only. It doesn't commit a return or issue a refund.",
+        "operationId": "create_return_quote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReturnQuote"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exchanges": {
+      "post": {
+        "tags": [
+          "Quotes and submissions"
+        ],
+        "summary": "Submit an exchange quote",
+        "description": "Commits the exchange an open exchange quote describes: takes the replacement from the quote's warehouse stock, ships it by the quote's method, and charges the additional cost. Checks again that the quote hasn't expired, that the item is still eligible, and that the stock is still there, and changes nothing if any check fails. Submitting a quote that was already submitted returns the original exchange and commits nothing new.",
+        "operationId": "submit_exchange_quote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/exchange-quotes": {
+      "post": {
+        "tags": [
+          "Quotes and submissions"
+        ],
+        "summary": "Create an exchange quote",
+        "description": "Validates and prices exchanging an order item for another variant of the same product, shipped from one warehouse by one delivery method. Returns the price difference, the shipping charge, the additional cost to the customer, the estimated arrival, and when the quote expires (30 minutes after it's created). Creates a draft quote only. It doesn't commit an exchange, reserve stock, or charge the customer.",
+        "operationId": "create_exchange_quote",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExchangeQuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExchangeQuote"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{productId}/variants": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "summary": "List a product's variants",
+        "description": "Returns every size and color a product is sold in, with each variant's SKU and today's price. Stock per warehouse is at /api/inventory. Read-only.",
+        "operationId": "get_product_variants",
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "description": "The product ID from an order item, such as TRB.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductVariants"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Search orders",
+        "description": "Finds orders by order reference, or by part of the customer's name or email address, newest first. Results are paged. Read-only.",
+        "operationId": "search_orders",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "description": "An order reference such as 1042, or part of a customer's name or email address. Leave it out to list every order.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Only return orders in this status.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PLACED",
+                "SHIPPED",
+                "DELIVERED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page number.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Orders per page, from 1 to 50.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderSearchPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{reference}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get an order",
+        "description": "Returns an order's status, dates, customer, shipping address, and totals. The purchased items are at /api/orders/{reference}/items. Read-only.",
+        "operationId": "get_order",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "description": "The order reference, such as 1042.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{reference}/items": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List an order's items",
+        "description": "Returns each purchased line with its item ID, product, variant SKU, size, color, quantity, and the unit price paid, plus how many units were already returned or exchanged. Read-only.",
+        "operationId": "get_order_items",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "description": "The order reference, such as 1042.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderItems"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{reference}/items/{itemId}/return-eligibility": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Check return eligibility",
+        "description": "Says whether an order item can be returned today. The order has to be delivered, the item's category has to allow returns, the return window has to be open, and units have to remain. Returns the reason code when it can't be returned, the last day of the window, and how many units can be returned. Refund amounts and fees come from a return quote. Read-only.",
+        "operationId": "check_return_eligibility",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "description": "The order reference, such as 1042.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "description": "The item ID from the order's items, such as 1042-1.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EligibilityView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{reference}/items/{itemId}/exchange-eligibility": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Check exchange eligibility",
+        "description": "Says whether an order item can be exchanged today. The order has to be delivered, the item's category has to allow exchanges, the exchange window has to be open, and units have to remain. Returns the reason code when it can't be exchanged, the last day of the window, and how many units can be exchanged. Read-only.",
+        "operationId": "check_exchange_eligibility",
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "description": "The order reference, such as 1042.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "itemId",
+            "in": "path",
+            "description": "The item ID from the order's items, such as 1042-1.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EligibilityView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/inventory": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "summary": "Get stock for a variant",
+        "description": "Returns how many units of a variant are available at each warehouse. Reading stock doesn't reserve it. Read-only.",
+        "operationId": "get_inventory",
+        "parameters": [
+          {
+            "name": "sku",
+            "in": "query",
+            "description": "The variant SKU, such as TRB-L-BLU.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/delivery-options": {
+      "get": {
+        "tags": [
+          "Catalog"
+        ],
+        "summary": "Get delivery options",
+        "description": "Returns the ground and express options for a shipment from a warehouse to a postal code: the shipping charge, the business days in transit, and the estimated arrival for a shipment leaving on the ship date. Read-only.",
+        "operationId": "get_delivery_options",
+        "parameters": [
+          {
+            "name": "warehouseId",
+            "in": "query",
+            "description": "The warehouse to ship from, such as WH-CMH.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postalCode",
+            "in": "query",
+            "description": "The destination postal code, such as 78704.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeliveryOptions"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SubmitQuoteRequest": {
+        "type": "object",
+        "properties": {
+          "quoteId": {
+            "type": "string",
+            "example": "EQ-5001",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "quoteId"
+        ]
+      },
+      "Money": {
+        "type": "object",
+        "description": "A monetary amount. The amount is a decimal string with two places.",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "example": "15.00"
+          },
+          "currency": {
+            "type": "string",
+            "example": "USD"
+          }
+        }
+      },
+      "ReturnView": {
+        "type": "object",
+        "description": "A committed return.",
+        "properties": {
+          "returnId": {
+            "type": "string",
+            "example": "RT-8001"
+          },
+          "quoteId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refundAmount": {
+            "$ref": "#/components/schemas/Money",
+            "description": "The amount refunded once the item is received."
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ReturnQuoteRequest": {
+        "type": "object",
+        "description": "A proposed return of some or all units of an order item.",
+        "properties": {
+          "orderReference": {
+            "type": "string",
+            "example": "1019",
+            "minLength": 1
+          },
+          "itemId": {
+            "type": "string",
+            "example": "1019-1",
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "itemId",
+          "orderReference",
+          "quantity"
+        ]
+      },
+      "ReturnQuote": {
+        "type": "object",
+        "description": "A draft return quote. It expires at expiresAt and commits nothing until it's submitted.",
+        "properties": {
+          "quoteId": {
+            "type": "string",
+            "example": "RQ-6001"
+          },
+          "status": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "itemRefund": {
+            "$ref": "#/components/schemas/Money",
+            "description": "The price paid for the returned units."
+          },
+          "returnShippingFee": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "restockingFee": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "refundAmount": {
+            "$ref": "#/components/schemas/Money",
+            "description": "What the customer gets back: the item refund minus the fees."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ExchangeView": {
+        "type": "object",
+        "description": "A committed exchange.",
+        "properties": {
+          "exchangeId": {
+            "type": "string",
+            "example": "EX-7001"
+          },
+          "quoteId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "replacementSku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warehouseId": {
+            "type": "string"
+          },
+          "deliveryMethod": {
+            "type": "string",
+            "enum": [
+              "GROUND",
+              "EXPRESS"
+            ]
+          },
+          "estimatedArrival": {
+            "type": "string",
+            "format": "date"
+          },
+          "additionalCost": {
+            "$ref": "#/components/schemas/Money",
+            "description": "The amount charged to the customer."
+          },
+          "submittedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ExchangeQuoteRequest": {
+        "type": "object",
+        "description": "A proposed exchange of an order item for another variant of the same product.",
+        "properties": {
+          "orderReference": {
+            "type": "string",
+            "example": "1042",
+            "minLength": 1
+          },
+          "itemId": {
+            "type": "string",
+            "example": "1042-1",
+            "minLength": 1
+          },
+          "replacementSku": {
+            "type": "string",
+            "description": "The variant to send instead.",
+            "example": "TRB-L-BLU",
+            "minLength": 1
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "example": 1,
+            "minimum": 1
+          },
+          "warehouseId": {
+            "type": "string",
+            "description": "The warehouse to ship the replacement from.",
+            "example": "WH-CMH",
+            "minLength": 1
+          },
+          "deliveryMethod": {
+            "type": "string",
+            "enum": [
+              "GROUND",
+              "EXPRESS"
+            ]
+          }
+        },
+        "required": [
+          "deliveryMethod",
+          "itemId",
+          "orderReference",
+          "quantity",
+          "replacementSku",
+          "warehouseId"
+        ]
+      },
+      "ExchangeQuote": {
+        "type": "object",
+        "description": "A draft exchange quote. It expires at expiresAt and commits nothing until it's submitted.",
+        "properties": {
+          "quoteId": {
+            "type": "string",
+            "example": "EQ-5001"
+          },
+          "status": {
+            "type": "string"
+          },
+          "orderReference": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "description": "The purchased variant."
+          },
+          "replacementSku": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warehouseId": {
+            "type": "string"
+          },
+          "deliveryMethod": {
+            "type": "string",
+            "enum": [
+              "GROUND",
+              "EXPRESS"
+            ]
+          },
+          "estimatedArrival": {
+            "type": "string",
+            "format": "date"
+          },
+          "priceDifference": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Replacement price minus the price paid, times the quantity. Negative when the replacement costs less."
+          },
+          "shippingCharge": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "additionalCost": {
+            "$ref": "#/components/schemas/Money",
+            "description": "What the customer pays: the price difference plus shipping."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ProductVariants": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VariantView"
+            }
+          }
+        }
+      },
+      "VariantView": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "example": "TRB-L-BLU"
+          },
+          "size": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/Money",
+            "description": "Today's price."
+          }
+        }
+      },
+      "OrderSearchPage": {
+        "type": "object",
+        "description": "A page of orders, newest first.",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderSummary"
+            }
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OrderSummary": {
+        "type": "object",
+        "description": "One order in a search result.",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "1042"
+          },
+          "customerName": {
+            "type": "string"
+          },
+          "customerEmail": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLACED",
+              "SHIPPED",
+              "DELIVERED",
+              "CANCELLED"
+            ]
+          },
+          "placedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "itemCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Number of units across all of the order's items."
+          },
+          "total": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderDetail": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "1042"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PLACED",
+              "SHIPPED",
+              "DELIVERED",
+              "CANCELLED"
+            ]
+          },
+          "placedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "shippedOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Null until the order ships."
+          },
+          "deliveredOn": {
+            "type": "string",
+            "format": "date",
+            "description": "Null until the order is delivered."
+          },
+          "estimatedDelivery": {
+            "type": "string",
+            "format": "date",
+            "description": "The carrier's estimate while the order is in transit; null otherwise."
+          },
+          "customer": {
+            "$ref": "#/components/schemas/Customer"
+          },
+          "shipTo": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "subtotal": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "shippingCharge": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "total": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "ShippingAddress": {
+        "type": "object",
+        "description": "The address the order shipped to, as it was when the order was placed.",
+        "properties": {
+          "line1": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          }
+        }
+      },
+      "OrderItem": {
+        "type": "object",
+        "description": "One purchased line of an order.",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "description": "Identifies this line in eligibility checks and quotes.",
+            "example": "1042-1"
+          },
+          "productId": {
+            "type": "string",
+            "example": "TRB"
+          },
+          "productName": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string",
+            "example": "TRB-M-BLU"
+          },
+          "size": {
+            "type": "string",
+            "description": "Null for products sold in one size."
+          },
+          "color": {
+            "type": "string",
+            "description": "Null for products sold in one color."
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "unitPrice": {
+            "$ref": "#/components/schemas/Money",
+            "description": "The price paid per unit."
+          },
+          "lineTotal": {
+            "$ref": "#/components/schemas/Money"
+          },
+          "returnedQuantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "exchangedQuantity": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "OrderItems": {
+        "type": "object",
+        "properties": {
+          "orderReference": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderItem"
+            }
+          }
+        }
+      },
+      "EligibilityView": {
+        "type": "object",
+        "properties": {
+          "orderReference": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string"
+          },
+          "eligible": {
+            "type": "boolean"
+          },
+          "reasonCode": {
+            "type": "string",
+            "description": "Why the item isn't eligible: order_cancelled, not_delivered, not_returnable, not_exchangeable, window_closed, or nothing_left. Null when eligible."
+          },
+          "reason": {
+            "type": "string",
+            "description": "A sentence explaining the reason code. Null when eligible."
+          },
+          "windowEndsOn": {
+            "type": "string",
+            "format": "date",
+            "description": "The last day of the window, inclusive. Null when the item has no window yet."
+          },
+          "maxQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "How many units can be returned or exchanged now."
+          },
+          "policy": {
+            "$ref": "#/components/schemas/PolicySummary"
+          }
+        }
+      },
+      "PolicySummary": {
+        "type": "object",
+        "properties": {
+          "returnCategory": {
+            "type": "string",
+            "example": "STANDARD"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "InventoryView": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "example": "TRB-L-BLU"
+          },
+          "totalAvailable": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "warehouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WarehouseStock"
+            }
+          }
+        }
+      },
+      "WarehouseStock": {
+        "type": "object",
+        "properties": {
+          "warehouseId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "available": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "DeliveryOptionView": {
+        "type": "object",
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "GROUND",
+              "EXPRESS"
+            ]
+          },
+          "businessDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "estimatedArrival": {
+            "type": "string",
+            "format": "date",
+            "description": "Arrival date for a shipment leaving on shipDate."
+          },
+          "charge": {
+            "$ref": "#/components/schemas/Money"
+          }
+        }
+      },
+      "DeliveryOptions": {
+        "type": "object",
+        "properties": {
+          "warehouseId": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "shipDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeliveryOptionView"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "apiKey": {
+        "type": "apiKey",
+        "name": "X-Api-Key",
+        "in": "header"
+      }
+    }
+  }
+}

@@ -1,0 +1,28 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: mcp-endpoint
+  ai:
+    mcp:
+      server:
+        name: order-support-endpoint
+        version: 1.0.0
+        protocol: STREAMABLE
+        annotation-scanner:
+          enabled: false
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+endpoint:
+  api:
+    base-url: ${APP_BASE_URL:http://localhost:8080}
+    key: ${SUPPORT_AGENT_API_KEY:support-agent-dev-key}
+  catalog:
+    mode: off
+    # Relative to the working directory; run the servers from the repository root.
+    snapshot: fixtures/catalogs/endpoint-tools.json
