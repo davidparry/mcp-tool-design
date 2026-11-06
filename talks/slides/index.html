@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Same API, Two MCP Servers</title>
+<style>
+  :root {
+    --ink: #1f2937; --muted: #6b7280; --line: #e5e7eb; --paper: #fdfcf9;
+    --endpoint: #b45309; --workflow: #0f766e; --bad: #b91c1c; --good: #15803d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #111827; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .deck { height: 100%; display: flex; align-items: center; justify-content: center; }
+  .slide { display: none; width: min(100vw, calc(100vh * 16 / 9)); aspect-ratio: 16 / 9; background: var(--paper);
+    color: var(--ink); padding: 4.5% 6%; position: relative; overflow: hidden; font-size: min(2.1vw, 3.7vh); }
+  .slide.active { display: flex; flex-direction: column; }
+  .slide h1 { font-size: 2.3em; line-height: 1.1; margin: 0 0 0.4em; }
+  .slide h2 { font-size: 1.6em; margin: 0 0 0.6em; }
+  .slide p, .slide li { line-height: 1.35; }
+  .slide ul { margin: 0.2em 0; padding-left: 1.1em; }
+  .slide .kicker { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.7em; margin-bottom: 0.6em; }
+  .slide blockquote { margin: 0.4em 0; padding: 0.5em 0.9em; border-left: 0.25em solid var(--workflow); background: #f3f4f6; font-size: 1.1em; }
+  .slide blockquote.endpoint-said { border-left-color: var(--endpoint); }
+  .slide blockquote.small-quote { font-size: 0.85em; }
+  .slide table { border-collapse: collapse; font-size: 0.85em; width: 100%; }
+  .slide th, .slide td { border-bottom: 1px solid var(--line); padding: 0.35em 0.6em; text-align: left; }
+  .slide td.n, .slide th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .slide code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.85em; background: #f3f4f6; padding: 0.05em 0.3em; border-radius: 0.2em; }
+  .slide pre { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.62em; background: #f3f4f6; padding: 0.8em; border-radius: 0.4em; white-space: pre-wrap; margin: 0.3em 0; }
+  .endpoint { color: var(--endpoint); }
+  .workflow { color: var(--workflow); }
+  .bad { color: var(--bad); }
+  .good { color: var(--good); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2em; }
+  .big { font-size: 2.6em; font-weight: 700; line-height: 1; }
+  .small { font-size: 0.7em; color: var(--muted); }
+  .footer { position: absolute; left: 6%; right: 6%; bottom: 3%; display: flex; justify-content: space-between; font-size: 0.55em; color: var(--muted); }
+  .bars { display: flex; align-items: flex-end; gap: 0.25em; height: 7em; border-bottom: 1px solid var(--line); }
+  .bars span { flex: 1; min-width: 0.4em; border-radius: 0.15em 0.15em 0 0; }
+  .bars .e { background: var(--endpoint); }
+  .bars .w { background: var(--workflow); }
+  .bars .gap { background: transparent; }
+  .chart { display: grid; grid-template-columns: 8em 1fr 7em; gap: 0.5em 0.8em; align-items: end; }
+  .chart .label { font-size: 0.75em; text-align: right; padding-bottom: 0.2em; }
+  .chart .total { font-size: 0.75em; padding-bottom: 0.2em; font-variant-numeric: tabular-nums; }
+  .axis { display: flex; gap: 0.25em; font-size: 0.55em; color: var(--muted); }
+  .axis span { flex: 1; text-align: center; }
+  .trace { list-style: none; padding: 0; margin: 0.2em 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.6em; }
+  .trace li { padding: 0.18em 0; border-bottom: 1px dotted var(--line); }
+  .trace li.hit { color: var(--bad); font-weight: 700; }
+  .card { background: #f3f4f6; border-radius: 0.4em; padding: 0.6em 0.8em; font-size: 0.78em; }
+  .rule { display: grid; grid-template-columns: 1.6em 1fr; gap: 0.4em; margin: 0.28em 0; }
+  .rule b { color: var(--workflow); }
+  .notes { display: none; }
+  body.show-notes .slide.active { width: min(100vw, calc(70vh * 16 / 9)); font-size: min(2.1vw, 2.59vh); }
+  body.show-notes .deck { flex-direction: column; }
+  body.show-notes .slide.active .notes { display: block; position: fixed; left: 0; right: 0; bottom: 0; max-height: 28vh; overflow: auto;
+    background: #fef3c7; color: #111827; font-size: 15px; padding: 10px 18px; border-top: 2px solid #f59e0b; }
+  body.print .deck { display: block; }
+  body.print .slide { display: flex; flex-direction: column; margin: 0 auto 12px; page-break-after: always; }
+  body.print .slide .notes { display: block; position: static; font-size: 0.55em; background: #fef3c7; padding: 0.6em; margin-top: auto; }
+  .hud { position: fixed; right: 10px; bottom: 8px; color: #9ca3af; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Spring Boot · Spring AI · MCP</div>
+  <h1>Same API, Two MCP Servers</h1>
+  <p style="font-size:1.3em;margin:0">The price of one tool per endpoint</p>
+  <p style="margin-top:auto">David Parry · davidparry.com</p>
+  <p class="small">Every number in this talk comes from recorded runs: 290 final runs with a local qwen model. Claude and GPT are next.</p>
+  <aside class="notes">0:00. One Spring Boot app, two MCP servers in front of it, and the same model asking both the same questions. Say up front that every number comes from recorded runs, not from what happens live today, and that so far it's one model: qwen running locally. The Claude and GPT runs are waiting on keys. Don't apologize for it; it's a benchmark in progress and the records are public.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The request</div>
+  <blockquote>Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.</blockquote>
+  <ul>
+    <li>Which item: order 1042 has a medium harness and a rope toy</li>
+    <li>Two limits: arrive by November 13, and under $15 extra</li>
+    <li>Preview only: nothing gets submitted</li>
+  </ul>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>Task C1 · fixtures/tasks/dev/C1.json</span></div>
+  <aside class="notes">0:01. Read it out loud. Then point at what's packed into it: which item (the order also has a Squeaky Rope Toy, so the harness has to be matched), two limits, and "show my options before submitting anything". That last clause is the one that costs real money when a model ignores it. The business date is fixed at Friday, November 6, 2026, so every run sees the same calendar.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Live: the support screen</div>
+  <h2>The frontend already knows the workflow</h2>
+  <p>Find the order. Pick the item. Check it can be exchanged. Find the large. Check stock. Get delivery options. Quote each one. Compare against the limits.</p>
+  <p>Every one of those steps is code someone already wrote, and the browser's network panel lists the calls in order.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>http://localhost:8080 · app/ and frontend/</span></div>
+  <aside class="notes">0:02. LIVE. Before the talk: scripts/bench-stack.sh up (it builds and starts the app on 8080 and both MCP servers). Open http://localhost:8080 with the network panel already open. Find order 1042, start an exchange on the harness, pick large, set the deadline and the limit, preview. Let the network panel fill up and say: that sequence is the workflow, and the frontend team already wrote it. FALLBACK: if the app won't start, skip to the slide "One preview, twelve backend calls"; it's the same kind of sequence, recorded from the workflow server.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The claim</div>
+  <h1 style="font-size:1.9em">Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code.</h1>
+  <p style="font-size:1.2em">And you pay for that job on every model turn.</p>
+  <p class="small" style="margin-top:auto">With the first model measured, it holds. Where it's weaker is in the talk too.</p>
+  <aside class="notes">0:05. This is the claim I set out to test, written before any run. The results support it for qwen. I'll show where it's weaker: a status lookup where the workflow server cost more, and scenarios where both servers got everything right and the difference was only tokens.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Same API, same key, same permissions</div>
+  <div class="two">
+    <div>
+      <h2 class="endpoint">Endpoint server</h2>
+      <ul>
+        <li>12 tools, one per REST operation</li>
+        <li>Generated from the OpenAPI document</li>
+        <li>The app's own response DTOs, passed straight through</li>
+        <li>Typed, documented, nothing broken on purpose</li>
+        <li><b>347</b> lines of Java</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="workflow">Workflow server</h2>
+      <ul>
+        <li>6 tools, one per support task</li>
+        <li>Business inputs: an order reference and the customer's words</li>
+        <li>Explicit outcomes, and previews that can't commit</li>
+        <li>Plain Java orchestration, no model inside</li>
+        <li><b>1,069</b> lines of Java</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>mcp-endpoint/ · mcp-workflow/ · lines without blanks, comments, or imports</span></div>
+  <aside class="notes">0:06. The endpoint server isn't a strawman. It's what you get when you point a generator at a decent OpenAPI document, which is how most teams add MCP to an API they already run. The workflow server is three times the code. That's the price of the design, and I'll come back to the bill near the end.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Two tool catalogs</div>
+  <div class="two">
+    <div>
+      <h2 class="endpoint">12 tools</h2>
+      <p style="font-size:0.75em;line-height:1.6"><code>search_orders</code> <code>get_order</code> <code>get_order_items</code> <code>check_return_eligibility</code> <code>check_exchange_eligibility</code> <code>get_product_variants</code> <code>get_inventory</code> <code>get_delivery_options</code> <code>create_return_quote</code> <code>create_exchange_quote</code> <code>submit_return_quote</code> <code>submit_exchange_quote</code></p>
+    </div>
+    <div>
+      <h2 class="workflow">6 tools</h2>
+      <p style="font-size:0.75em;line-height:1.6"><code>find_orders</code> <code>get_order_context</code> <code>preview_return</code> <code>preview_exchange</code> <code>submit_return</code> <code>submit_exchange</code></p>
+    </div>
+  </div>
+  <table style="margin-top:0.8em">
+    <tr><th>Median input tokens on the first model call</th><td class="n endpoint">2,916</td><td class="n workflow">2,446</td></tr>
+  </table>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>fixtures/catalogs/ · results/final/qwen/export/</span></div>
+  <aside class="notes">0:08. The catalogs are close: the first model call costs about 470 more input tokens with the endpoint catalog. So whatever gap shows up later doesn't come from the tool list. Notice the submit tools in the endpoint list: they sit in the same flat list as the reads.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Live: the endpoint server</div>
+  <h2>Order 1042, against twelve tools</h2>
+  <p>Watch the turn count, the input tokens on each turn, and which backend calls the model decides to make.</p>
+  <p class="small">A live run is one sample. The numbers that follow come from the recorded runs.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>Fallback: viewer/index.html · example "Order 1042, run 1"</span></div>
+  <aside class="notes">0:12. LIVE. With the stack up: java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar --command=run --phase=scratch --batch=stage-endpoint --models=qwen --arms=endpoint --tasks=C1 --reps=1 (a finished batch is skipped, so use a new batch name for each rehearsal). Then load results/scratch/stage-endpoint/runs.jsonl in the viewer, or scripts/show-run.py results/scratch/stage-endpoint scratch-qwen-C1-endpoint-r1. Talk over it: every call re-reads everything before it. Don't promise a number; in the final run this took 6 to 19 calls. FALLBACK: open viewer/index.html from disk and pick "Order 1042, run 1: the same answer for 8 times the tokens", left pane.</aside>
+</section>
+
+<section class="slide" data-cuts="30">
+  <div class="kicker">Recorded: order 1042, run 1</div>
+  <h2>Both servers, side by side</h2>
+  <p>Twelve model calls on the left. Two on the right. Same answer: Columbus by ground, $11.99, arriving November 12.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>viewer/index.html · final-qwen-C1-endpoint-r1 · final-qwen-C1-workflow-r1</span></div>
+  <aside class="notes">0:07 (30-minute cut). Open viewer/index.html from disk, pick the first example, press Start, then step with Turn. Show model call 1 on both sides, then the workflow side's one preview_exchange call and its result. Press All to finish the left side. Open one "backend calls" list on the right: twelve calls the model never had to read. About 10 minutes here, including the chart on the next slide.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Input tokens per model call · order 1042, run 1</div>
+  <div class="chart">
+    <div class="label endpoint">Endpoint</div>
+    <div class="bars">
+      <span class="e" style="height:51.4%" title="2,929"></span><span class="e" style="height:55.3%" title="3,150"></span><span class="e" style="height:57.8%" title="3,293"></span><span class="e" style="height:63.3%" title="3,610"></span><span class="e" style="height:65.7%" title="3,746"></span><span class="e" style="height:69.4%" title="3,955"></span><span class="e" style="height:72.4%" title="4,126"></span><span class="e" style="height:77.6%" title="4,426"></span><span class="e" style="height:82.9%" title="4,729"></span><span class="e" style="height:88.2%" title="5,028"></span><span class="e" style="height:93.5%" title="5,331"></span><span class="e" style="height:100%" title="5,701"></span>
+    </div>
+    <div class="total endpoint">12 calls<br>51,413 tokens</div>
+    <div class="label workflow">Workflow</div>
+    <div class="bars">
+      <span class="w" style="height:43.1%" title="2,459"></span><span class="w" style="height:57.5%" title="3,279"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span><span class="gap"></span>
+    </div>
+    <div class="total workflow">2 calls<br>6,105 tokens</div>
+    <div></div>
+    <div class="axis"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span></div>
+    <div></div>
+  </div>
+  <p style="margin-top:0.6em">Each call carries every earlier result. The endpoint run climbs from 2,929 input tokens to 5,701.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-endpoint-r1 · final-qwen-C1-workflow-r1 · results/final/qwen/export/tokens-order-1042.csv</span></div>
+  <aside class="notes">Same scale for both rows. Tokens are input plus output across every model call, the reminder turns included. The tall bars at the end aren't one big result: they're the same results read again and again. 51,413 against 6,105, for the same recommended option.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Live: the workflow server</div>
+  <h2>Order 1042, against six tools</h2>
+  <p>One call to <code>preview_exchange</code> with the customer's words and limits. One result that says which option fits and why.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>Fallback: viewer/index.html · example "Order 1042, run 1", right pane</span></div>
+  <aside class="notes">0:24. LIVE. Same command with --arms=workflow and a new batch name: --batch=stage-workflow --arms=workflow. Show the preview_exchange arguments: an order reference, "medium dog harness", large, the deadline, and the limit with its comparison word. Then the result's message: "1 of 4 quoted options arrives by 2026-11-13 and costs under $15.00." FALLBACK: viewer example "Order 1042, run 1", right pane.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">What the workflow server did in Java</div>
+  <h2>One preview, twelve backend calls</h2>
+  <div class="two">
+    <ul class="trace">
+      <li>GET /api/orders/1042</li>
+      <li>GET /api/orders/1042/items</li>
+      <li>GET /api/products/TRB/variants</li>
+      <li>GET /api/products/RPE/variants</li>
+      <li>GET /api/orders/1042/items/1042-1/exchange-eligibility</li>
+      <li>GET /api/inventory?sku=TRB-L-BLU</li>
+      <li>GET /api/delivery-options?warehouseId=WH-CMH</li>
+      <li>POST /api/exchange-quotes (twice)</li>
+      <li>GET /api/delivery-options?warehouseId=WH-RNO</li>
+      <li>POST /api/exchange-quotes (twice)</li>
+    </ul>
+    <div>
+      <p>The endpoint server's model made 10 backend calls for the same answer.</p>
+      <p>The work didn't go away. It moved out of the context window and into code that runs the same way every time.</p>
+    </div>
+  </div>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-workflow-r1 · backend call log</span></div>
+  <aside class="notes">0:30. This surprises people: the workflow server made more backend calls than the endpoint arm's model did, 12 against 10. Designing around the task didn't save HTTP calls. It saved the model from reading them. The backend is cheap and deterministic; the context window is neither.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The numbers · qwen3.6 35B on Ollama · 290 final runs</div>
+  <table>
+    <tr><th></th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
+    <tr><td>Dev task runs that succeeded</td><td class="n">58 of 80</td><td class="n">77 of 80</td></tr>
+    <tr><td>Held-out task runs that succeeded</td><td class="n">35 of 40</td><td class="n">39 of 40</td></tr>
+    <tr><td>Submission scenarios that succeeded</td><td class="n">25 of 25</td><td class="n">25 of 25</td></tr>
+    <tr><td>Median tokens per task</td><td class="n">25,757</td><td class="n">11,803</td></tr>
+    <tr><td>Tokens across the 120 task runs</td><td class="n">3,365,868</td><td class="n">1,272,747</td></tr>
+    <tr><td>Model calls, tool calls across the 120 task runs</td><td class="n">885, 679</td><td class="n">420, 202</td></tr>
+    <tr><td>Dev task latency, median and p95</td><td class="n">5.1 s, 11.1 s</td><td class="n">3.2 s, 6.8 s</td></tr>
+  </table>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/qwen/export/summary.md · docs/decisions.md</span></div>
+  <aside class="notes">0:32. Eight of the 24 tasks were held out: they never ran until the catalogs, contracts, fixtures, and limits were frozen by hash. Success first, then tokens. Medians, because a few endpoint runs ran long. Latency is my laptop, so read the ratio, not the seconds. Limits were 50 model calls and 60 tool calls; no run came near them (the most was 26 and 23).</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Order 1042, five times each</div>
+  <table>
+    <tr><th>Run</th><th class="n endpoint">Endpoint calls</th><th class="n endpoint">Tokens</th><th class="n workflow">Workflow calls</th><th class="n workflow">Tokens</th></tr>
+    <tr><td>1</td><td class="n">12</td><td class="n">51,413</td><td class="n">2</td><td class="n">6,105</td></tr>
+    <tr><td>2</td><td class="n">6</td><td class="n">21,788</td><td class="n">2</td><td class="n">6,248</td></tr>
+    <tr><td>3</td><td class="n">12</td><td class="n">50,479</td><td class="n">2</td><td class="n">6,095</td></tr>
+    <tr><td>4</td><td class="n bad">19</td><td class="n bad">97,424, failed</td><td class="n">2</td><td class="n">6,100</td></tr>
+    <tr><td>5</td><td class="n">13</td><td class="n">56,363</td><td class="n">2</td><td class="n">6,108</td></tr>
+  </table>
+  <p>The workflow runs are nearly identical. The endpoint runs range from 6 calls to 19.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-*-r1 to r5 · tokens-order-1042.csv</span></div>
+  <aside class="notes">0:35. Same request, same seed data, five runs each. The median gap here is 51,413 against 6,105. The spread matters as much as the median: you can't budget a support queue on the median when the same question costs 22,000 tokens one time and 97,000 the next. Run 4 is in the gallery.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The failure gallery · runs out of 120 per server</div>
+  <table>
+    <tr><th>Failure class</th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
+    <tr><td>Skipped clarification</td><td class="n">10</td><td class="n">2</td></tr>
+    <tr><td>Hallucinated value</td><td class="n">8</td><td class="n">2</td></tr>
+    <tr><td>Wrong verdict on a constraint</td><td class="n">8</td><td class="n">0</td></tr>
+    <tr><td>Unapproved action</td><td class="n">1</td><td class="n">0</td></tr>
+    <tr><td>Wrong item</td><td class="n">1</td><td class="n">0</td></tr>
+    <tr><td>False success</td><td class="n">1</td><td class="n">0</td></tr>
+    <tr><td>Failed runs</td><td class="n"><b>27</b></td><td class="n"><b>4</b></td></tr>
+  </table>
+  <p class="small">Model-side arithmetic and off-track work were recorded but never failed a task. One run can fail in two classes.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/qwen/export/failures.csv</span></div>
+  <aside class="notes">0:40. Every failed run was read in full before it went on a slide, and every slide from here has its run ID. The classes are the verifier's; I checked each one by hand, and reading them is how I found two mistakes in the verifier itself (later slide). 27 endpoint runs failed, 4 workflow runs.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Unapproved action</div>
+  <blockquote>Can I trade the GPS collar in order 1029 for the large size at no extra cost? Just tell me what it would take.</blockquote>
+  <ul class="trace">
+    <li>get_order · get_order_items · check_exchange_eligibility · get_product_variants</li>
+    <li>create_exchange_quote: EQ-5001, Columbus ground, $4.99 shipping</li>
+    <li>get_delivery_options</li>
+    <li class="hit">submit_exchange_quote EQ-5001: EX-7001 CONFIRMED</li>
+  </ul>
+  <blockquote class="endpoint-said small-quote">Your exchange for the GPS collar in order 1029 to the large size has been successfully submitted (Exchange ID: EX-7001). ... there is a shipping charge of $4.99 ...</blockquote>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-E2-endpoint-r3</span></div>
+  <aside class="notes">0:41. The worst one. The customer asked a question, with a cost limit of zero, and said "just tell me". The model quoted, then submitted, then told the customer it was done and that the $4.99 is "the additional cost you will be charged". Both servers have a submit tool. In 120 runs the workflow arm never called one on a preview-only task; the endpoint arm did here. The database is the judge: a preview-only task allows zero committed exchanges, and this run left one.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Wrong verdict on a constraint</div>
+  <blockquote>For order 1040, I'd take the large bed instead of the medium as long as the difference comes to under $25. Is there a way? Please don't submit it.</blockquote>
+  <div class="two">
+    <div>
+      <p class="endpoint"><b>Endpoint server</b></p>
+      <div class="card">The additional cost would be $25.00 (including $5.00 shipping). It arrives by November 10. This meets your under-$25 limit exactly.</div>
+    </div>
+    <div>
+      <p class="workflow"><b>Workflow server's preview</b></p>
+      <div class="card">No option costs under $25.00; the lowest additional cost is $25.00.</div>
+    </div>
+  </div>
+  <p>4 of 5 endpoint runs called the $25.00 option a fit.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-E3-endpoint-r3 · held-out task E3</span></div>
+  <aside class="notes">0:43. This is the exactly-at-the-limit fixture, and it's a held-out task, so nothing was tuned on it. "Under" is a comparison word. The workflow server takes it as a parameter and applies it in Java; the endpoint server leaves it to the model, and the model read "under" as "up to". Same pattern in E2: four endpoint runs marked a $4.99 option as meeting "no extra cost".</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Hallucinated value · the model's own calendar</div>
+  <blockquote>Can I exchange the collar in order 1038 for a medium and have it by Monday, November 9?</blockquote>
+  <div class="card">Express: Arrives by <b class="bad">Monday</b>, November 10 ...<br>Ground: Arrives by <b class="bad">Sunday</b>, November 16 ...<br>Ground: Arrives by <b class="bad">Thursday</b>, November 13 ...</div>
+  <p>November 10 is a Tuesday, the 16th a Monday, the 13th a Friday. The conclusion was right; three weekdays weren't.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-D1-endpoint-r3</span></div>
+  <aside class="notes">0:44. Both servers return ISO dates only. No tool result in the whole run has a weekday name in it. So every weekday is the model's own calendar math, on both servers. The endpoint model wrote weekdays beside its dates and got them wrong, one of them right next to the customer's Monday deadline. Four D1 and D2 endpoint runs did this. The workflow arm made no weekday mistakes in 120 runs.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">False success</div>
+  <blockquote>The collar from order 1043 turned out too snug. Could it be swapped for a large? Let me see what's possible before you change anything.</blockquote>
+  <div class="two">
+    <div>
+      <p><b>What it said</b></p>
+      <div class="card">However, there are no large (L) collars currently in stock at any of our warehouses.</div>
+    </div>
+    <div>
+      <p><b>What it sent</b></p>
+      <pre>"options": [{ "ships_from": "WH-CMH", "method": "GROUND",
+  "additional_cost": "0.00", "arrives_by": "2026-11-10",
+  "meets_all_constraints": true }]</pre>
+    </div>
+  </div>
+  <p>A frontend renders the card, not the sentence.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-F3-endpoint-r3</span></div>
+  <aside class="notes">0:45. The sentence is right. The structured answer offers a free ground exchange for a collar nobody has. If your UI renders the card, the customer sees an option that can't exist. F2 run 5 did the same thing with options at $0.00 and $5.00.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Skipped clarification</div>
+  <blockquote>I'd like to return the toy from order 1022. How much would I get back?</blockquote>
+  <p>Order 1022 has a Squeaky Rope Toy and a Fetch Ball 3-Pack.</p>
+  <div class="two">
+    <div class="card"><b class="endpoint">Endpoint:</b> For the Squeaky Rope Toy (item 1022-1) from order 1022, you would receive a full refund of $8.99.</div>
+    <div class="card"><b class="workflow">Workflow:</b> If you return the Squeaky Rope Toy, you would receive a refund of $8.99 with no fees.</div>
+  </div>
+  <p>All 10 endpoint runs on H1 and H2 answered for one item. So did 2 of 5 workflow runs on H2.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-H2-endpoint-r2 · final-qwen-H2-workflow-r2</span></div>
+  <aside class="notes">0:46. The workflow server matches the customer's words and returns candidates when they fit more than one item. In these two runs the model read the order first and passed "Squeaky Rope Toy" to preview_return instead of the customer's word, "toy". The server matched exactly one item and never saw the ambiguity. A task-shaped tool can still be talked around, and I left it that way rather than tune it again after the confirmation run.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Wrong item</div>
+  <blockquote class="endpoint-said small-quote">The customer wants a large dog harness, so I need to check both blue and red variants in size L.</blockquote>
+  <ul>
+    <li>Three extra quotes for a red harness nobody asked about</li>
+    <li>A large red harness listed beside the blue one as meeting every limit</li>
+    <li>19 model calls and 97,424 tokens</li>
+  </ul>
+  <p class="small">The mildest failure here: the customer never named a color.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-endpoint-r4</span></div>
+  <aside class="notes">0:47. Order 1042 again, run 4, the long bar from the five-run table. I call it the mildest failure because the customer didn't say "same color". But nobody asks for a size exchange expecting a different color, and the model spent three extra quote calls getting there. Off-track work that also costs tokens.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">The workflow server's model makes mistakes too</div>
+  <div class="two">
+    <div>
+      <p><b>The tool returned</b></p>
+      <div class="card">EQ-5003 · EQ-5001 · EQ-5004</div>
+      <p><b>The model wrote</b></p>
+      <div class="card bad">EQ-5503 · EQ-5501 · EQ-5504</div>
+      <p class="small">Every verdict right, every quote ID wrong. final-qwen-E3-workflow-r1</p>
+    </div>
+    <div>
+      <p><b>The tool returned options at</b></p>
+      <div class="card">$4.99 · $5.99 · $5.99</div>
+      <p><b>The model wrote</b></p>
+      <div class="card">Other options range from $5.99 to <span class="bad">$6.99</span></div>
+      <p class="small">No tool returned $6.99. final-qwen-E2-workflow-r3</p>
+    </div>
+  </div>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-E3-workflow-r1 · final-qwen-E2-workflow-r3</span></div>
+  <aside class="notes">0:48. Fair's fair. These two are the model, not the server: the server handed back the right values and the model changed them on the way out. The design narrows what a model can get wrong. It doesn't make a model careful.</aside>
+</section>
+
+<section class="slide" data-cuts="60">
+  <div class="kicker">Reading every failure</div>
+  <h2>Two mistakes in my verifier</h2>
+  <ul>
+    <li><b>G3:</b> four answers said, correctly, that the jacket hadn't been delivered yet, but labeled the card <code>order_status</code></li>
+    <li><b>H3:</b> four answers quoted both matching harnesses, each under its own quote ID, and the verifier called that picking one</li>
+  </ul>
+  <p>Both had been counting against the endpoint server. Fixed, tested, and written down: held-out endpoint success went from 27 of 40 to 35 of 40.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>docs/decisions.md · Final run</span></div>
+  <aside class="notes">0:49. This is why I read every failure instead of trusting the classifier. Both fixes moved runs in the endpoint server's favor and changed no other grade, in the final run or either pilot. If you build one of these, budget time to read the failures, because your verifier is code too.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The workflow server's bill</div>
+  <ul>
+    <li><b>A plain lookup cost more.</b> "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?" took a median of <span class="workflow">11,285</span> tokens against <span class="endpoint">9,429</span>.</li>
+    <li><b>Correct either way.</b> Both servers got all 25 submission scenarios right. The endpoint server took three times the tokens.</li>
+    <li><b>More code to keep correct.</b> 1,069 lines of Java against 347, and it only covers the tasks it was designed for.</li>
+    <li><b>It can be talked around.</b> Two H2 runs went past its matching.</li>
+  </ul>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · mcp-workflow/</span></div>
+  <aside class="notes">0:50. A3 is one get_order call on the endpoint server, every run, so a task-shaped context call is overkill there. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">My own mistake, and the most useful one</div>
+  <h2>A tool description is code</h2>
+  <p>In the pilot I fixed one task by telling <code>costLimit</code> that "no extra cost" means 0.00.</p>
+  <table>
+    <tr><th>Deadline-only workflow runs that sent a $0.00 limit the customer never set</th><th class="n">Runs</th></tr>
+    <tr><td>Before the wording change</td><td class="n">0 of 6</td></tr>
+    <tr><td>Confirmation pilot, after it</td><td class="n">3 of 6</td></tr>
+    <tr><td>Final run, one held-out task included</td><td class="n bad">11 of 15</td></tr>
+  </table>
+  <p class="small">The deadline decided every one of those tasks, so no grade changed, and the verifier doesn't count it. Most answers still told the customer about the limit.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-D3-workflow-r1 · docs/decisions.md · What the verifier doesn't count</span></div>
+  <aside class="notes">0:52. D3 run 1 says "no option meets both your delivery deadline and cost limit of $0.00 additional cost" to a customer who never mentioned cost. One sentence in one parameter description fixed E2 and leaked into D1, D2, and D3. Review and test tool descriptions the way you review code, because the model reads them like instructions.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">Design rules</div>
+  <div class="rule"><b>1</b><span>Take business inputs: an order reference and the customer's words, not internal IDs</span></div>
+  <div class="rule"><b>2</b><span>Match deterministically, and return candidates when the words fit more than one item</span></div>
+  <div class="rule"><b>3</b><span>Take limits as parameters, comparison word included, and apply them in code</span></div>
+  <div class="rule"><b>4</b><span>Return explicit outcomes: options_available, ineligible, no_matching_option, needs_clarification</span></div>
+  <div class="rule"><b>5</b><span>Make previews unable to commit, and make submit take an approved quote and check it again</span></div>
+  <div class="rule"><b>6</b><span>Return the totals and the verdicts, so the model doesn't do the arithmetic or the calendar</span></div>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>mcp-workflow/</span></div>
+  <aside class="notes">0:55. Each rule maps to a failure we just saw. Rule 2: the toy. Rule 3: under $25. Rule 4 and 6: the weekday and the out-of-stock card. Rule 5: EX-7001. None of this needs a model inside the server; it's plain Java over the same REST API.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">When a pass-through is enough</div>
+  <div class="two">
+    <div>
+      <h2 class="endpoint">Pass it through</h2>
+      <ul>
+        <li>One read the frontend shows as-is</li>
+        <li>No limits to compare, no money moving</li>
+        <li>The status lookup that cost less this way</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="workflow">Design the tool</h2>
+      <ul>
+        <li>The frontend calls several endpoints in a fixed order</li>
+        <li>There are limits, dates, or totals to work out</li>
+        <li>A wrong step commits something</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:0.8em">Open your frontend's network panel. If one screen makes a sequence of calls, that sequence is a tool.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>Same API, Two MCP Servers · davidparry.com</span></div>
+  <aside class="notes">0:57. The test I'd give a team: watch the network panel while a person does the task in your own UI. One call, shown as-is: a generated tool is fine. A sequence with business rules in between: you already wrote that orchestration once, in the frontend. Write it again behind one tool instead of asking a model to rediscover it on every turn.</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">What's next</div>
+  <h2>Claude and GPT, 480 more runs</h2>
+  <p>The contracts, fixtures, catalogs, and limits are frozen by hash, so those runs join these results without rerunning qwen.</p>
+  <ul>
+    <li>Every run record, grade, and export is in the repository</li>
+    <li>The run viewer replays any two runs side by side from local files</li>
+    <li>The post on davidparry.com carries the same numbers</li>
+  </ul>
+  <p style="margin-top:auto">David Parry · davidparry.com</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/ · viewer/ · docs/decisions.md</span></div>
+  <aside class="notes">0:59. Close on the frozen design: nothing gets tuned between models. If the hosted models narrow the gap, that's a result too, and it'll be stated as one. Questions.</aside>
+</section>
+
+</div>
+<div class="hud" id="hud"></div>
+<script>
+  // Arrow keys or space to move, N for notes, P for print view. ?cut=30 shows the 30-minute cut.
+  (() => {
+    const params = new URLSearchParams(location.search);
+    const cut = params.get("cut") || "60";
+    const slides = [...document.querySelectorAll(".slide")].filter((s) => (s.dataset.cuts || "60 30").split(" ").includes(cut));
+    document.querySelectorAll(".slide").forEach((s) => { if (!slides.includes(s)) s.remove(); });
+    let index = Math.min(slides.length - 1, Math.max(0, Number(location.hash.slice(1)) - 1 || 0));
+    const hud = document.getElementById("hud");
+    const show = () => {
+      slides.forEach((s, i) => s.classList.toggle("active", i === index));
+      hud.textContent = `${index + 1} / ${slides.length} · ${cut}-minute cut · N notes · P print`;
+      history.replaceState(null, "", `${location.pathname}${location.search}#${index + 1}`);
+    };
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "PageDown", " "].includes(e.key)) index = Math.min(slides.length - 1, index + 1);
+      else if (["ArrowLeft", "PageUp"].includes(e.key)) index = Math.max(0, index - 1);
+      else if (e.key === "Home") index = 0;
+      else if (e.key === "End") index = slides.length - 1;
+      else if (e.key === "n" || e.key === "N") document.body.classList.toggle("show-notes");
+      else if (e.key === "p" || e.key === "P") document.body.classList.toggle("print");
+      else return;
+      e.preventDefault();
+      show();
+    });
+    show();
+  })();
+</script>
+</body>
+</html>

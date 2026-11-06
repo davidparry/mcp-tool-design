@@ -6,7 +6,7 @@ A conference session built on this repository: one Spring Boot application, two 
 [davidparry.com](https://davidparry.com) ·
 [github.com/davidparry](https://github.com/davidparry)
 
-**Status:** started November 6, 2026. Nothing here is measured yet. The application and the benchmark come first (milestones 1 to 4 in [`docs/project-plan.md`](../docs/project-plan.md)), and I'll check the opening claim and every number against the final run before this goes to a program committee.
+**Status:** measured November 6, 2026, with one model. The local qwen model's 290 final runs are in, graded, and read. The Claude and GPT runs (480 more) are waiting on API keys that work, so every number below is qwen's until they're in. [`docs/decisions.md`](../docs/decisions.md) records how the runs were graded and every change made along the way.
 
 Other titles under consideration:
 
@@ -19,21 +19,23 @@ Other titles under consideration:
 
 For CFP forms with a length cap.
 
-> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one with a tool per endpoint and one with six tools shaped around the support tasks, and gives the same model the same requests against both. The runs play side by side: the turns, the tool calls, the tokens on each turn, and the failures the benchmark recorded.
+> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one with a tool per endpoint and one with six tools shaped around the support tasks, and gives the same model the same requests against both. With a local qwen model, the endpoint server used a median of 25,757 tokens per task against 11,803, and it failed 27 of 120 task runs against 4. One of those failures was an exchange it submitted after the customer said "just tell me what it would take". The runs play side by side: the turns, the tool calls, the tokens on each turn, and every failure, with its run ID.
 
 ## Abstract
 
-**Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code, and you pay for that job on every model turn.** That's the claim this session tests.
+**Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code, and you pay for that job on every model turn.** That's the claim this session tests, and with the first model measured, it holds.
 
 The test bed is a small Spring Boot and React order-support app for a pet-supply store that sells dog harnesses and toys. Two MCP servers sit in front of the same HTTP APIs with the same permissions. The endpoint server is generated from the app's OpenAPI document, the way most teams add MCP to an API they already run: twelve tools, one per REST operation, passing the application's own response DTOs straight through. It's typed and documented, and nothing in it is broken on purpose. The workflow server has six tools shaped around the support job. One call previews an exchange; a separate call submits the quote somebody approved. Its orchestration is plain Java, and it never calls a model.
 
-I give both servers the same system prompt, the same three models (Claude, GPT, and a qwen running locally on Ollama), and this request:
+I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama, with Claude and GPT to follow), and this request:
 
 > Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.
 
-On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. It can misread a delivery date against the deadline, add up a total the quote already computed and get it wrong, pick the wrong harness when the order has two, or submit an exchange nobody approved. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages.
+The workflow server answered it in 2 model calls and about 6,100 tokens, all five times. The endpoint server took 6 to 19 calls and 21,788 to 97,424 tokens. In its longest run it decided to check red harnesses as well as blue, and offered a large red one the customer never asked for.
 
-None of this makes the workflow server free. It's more code to write and keep correct, and it covers only the tasks it was designed for. On a plain order lookup it may come out even with the endpoint server. Those results are in the session too, from 720 runs: 24 tasks, five repetitions each, on both servers with all three models, and eight of the tasks held out until the tool contracts were frozen.
+On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. Across the final run it called a $25.00 option "under $25", put the wrong weekday beside a delivery date, answered for one of two matching items, offered an exchange on a collar that was out of stock everywhere, and once submitted an exchange the customer had only asked about. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages.
+
+None of this makes the workflow server free. It's more code to write and keep correct, and it covers only the tasks it was designed for. On a plain order-status lookup it cost more than the endpoint server, a median of 11,285 tokens against 9,429. It isn't foolproof either: two of its runs talked past the ambiguity it was built to catch, and two told the customer a quote ID or a price that no tool returned. Those results are in the session too, from 290 runs so far: 24 tasks, five repetitions each, on both servers, plus five submission scenarios, with eight of the tasks held out until the tool contracts were frozen.
 
 It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/blog/2026/07/20/skills-vs-mcp-what-the-token-bill-actually-measures/), which moved business rules out of the model and into code. This one asks what shape the tools around that code should take.
 
@@ -45,9 +47,30 @@ It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/bl
 - A failure taxonomy to run against your own agent transcripts.
 - The Spring Boot and Spring AI code for both servers and the benchmark runner, so you can repeat the comparison against your own API.
 
+## What the final run measured
+
+`qwen3.6:35b-a3b-nvfp4` on Ollama, thinking off, 50 model calls and 60 tool calls per run at most. The batches are `results/final/final-qwen` and `results/final/final-qwen-scenarios`, and the export is `results/final/qwen/export/`.
+
+| | Endpoint server | Workflow server |
+| --- | --- | --- |
+| Dev task runs that succeeded | 58 of 80 | 77 of 80 |
+| Held-out task runs that succeeded | 35 of 40 | 39 of 40 |
+| Submission scenarios that succeeded | 25 of 25 | 25 of 25 |
+| Median tokens per task | 25,757 | 11,803 |
+| Tokens across the 120 task runs | 3,365,868 | 1,272,747 |
+| Model calls and tool calls across the 120 task runs | 885 and 679 | 420 and 202 |
+| Median input tokens on the first model call | 2,916 | 2,446 |
+| Median tokens per submission scenario | 70,491 | 23,119 |
+| Dev task latency, median and p95 | 5.1 s and 11.1 s | 3.2 s and 6.8 s |
+
+- **The catalogs cost about the same; the turns don't.** The first call's input differs by about 470 tokens. The gap comes after it, because every turn reads every earlier result again. In order 1042's first run the endpoint server's input climbed from 2,929 tokens on the first call to 5,701 on the twelfth.
+- **Where the claim is weaker.** A3, a status lookup, cost the workflow server more. Both servers got all 25 submission scenarios right, and the endpoint server took three times the tokens to do it. H3 passed on both servers, and the endpoint server got there by quoting both matching harnesses, at a median of 44,434 tokens against 11,865.
+- **Dev and held-out are reported apart.** No held-out task ran before the freeze. The endpoint server did better on them than on the dev tasks, and the workflow server did about the same.
+- **A tool description is code too.** The pilot fixed E2 by telling the workflow server's `costLimit` parameter that "no extra cost" means 0.00. After that, 11 of 15 workflow runs on the deadline tasks sent a $0.00 limit the customer never gave, one held-out task included, and most answers passed it on. The deadline decided every one of those tasks, so no grade changed, and the verifier doesn't count it. Before the wording change, 0 of 6 runs did it.
+
 ## The failure gallery
 
-This is the segment a demo reel can't fake. Every run goes through a verifier that checks it against the fixture facts, the tool trace, and the application's database, and proposes a class for each failure. I'll read the whole transcript before a failure goes on a slide, and each one shown carries its run ID. Until the final run, this table lists what the benchmark looks for; the counts don't exist yet.
+This is the segment a demo reel can't fake. Every run goes through a verifier that checks it against the fixture facts, the tool trace, and the application's database, and proposes a class for each failure. Every failed run in the final run was read in full, and each failure shown carries its run ID.
 
 | Failure class | What the model did | How the verifier catches it |
 | --- | --- | --- |
@@ -55,10 +78,25 @@ This is the segment a demo reel can't fake. Every run goes through a verifier th
 | Wrong verdict on a constraint | Says an option arrives by November 13 or fits under $15 when it doesn't, or rules out one that does | Each option's stated feasibility is compared with the fixture's expected outcome |
 | Model-side arithmetic | Adds up a price difference and shipping itself and gets it wrong | An amount that matches no quote total but can be rebuilt from other values in the trace |
 | Wrong item | Quotes the wrong order line or the wrong replacement variant | The line and variant in the answer and in each quote request are compared with the fixture |
-| Skipped clarification | Picks one of several matching items without asking which one the customer means | In the ambiguous-item tasks the answer has to ask; presenting one item's options as the answer, or submitting anything, fails the run |
+| Skipped clarification | Picks one of several matching items without asking which one the customer means | In the ambiguous-item tasks the answer has to ask, or quote every matching item; answering for one, or submitting anything, fails the run |
 | Unapproved action | Calls a submit tool when the request said to show options first | The database: a preview-only task allows no committed return or exchange |
 | Off-track work | Calls tools no valid path needs, repeats identical calls, or runs out of turns | The trace is compared with the valid task paths, and duplicate calls and exhausted limits are counted |
 | False success | Reports an option or a completed action after a tool returned an error or a blocking reason | Error and blocking fields in the trace are compared with the final answer |
+
+What the final run recorded, in runs out of 120 per server on the dev and held-out tasks:
+
+| Failure class | Endpoint | Workflow | The transcript on the slide |
+| --- | --- | --- | --- |
+| Hallucinated value | 8 | 2 | `final-qwen-D1-endpoint-r3` puts "Monday, November 10" beside a Tuesday. `final-qwen-E3-workflow-r1` gets every verdict right and copies quote EQ-5003 as EQ-5503. |
+| Wrong verdict on a constraint | 8 | 0 | `final-qwen-E3-endpoint-r3` says a $25.00 option "meets your under-$25 limit exactly". |
+| Model-side arithmetic | 0 | 0 | Recorded twice in the endpoint arm; neither amount contradicted a quote, so neither failed a task. |
+| Wrong item | 1 | 0 | `final-qwen-C1-endpoint-r4` offers a large red harness beside the blue one. The customer never named a color, so it's the mildest failure here. |
+| Skipped clarification | 10 | 2 | `final-qwen-H2-endpoint-r2` and `final-qwen-H2-workflow-r2` both answer for the rope toy when the order has two toys. |
+| Unapproved action | 1 | 0 | `final-qwen-E2-endpoint-r3` hears "Just tell me what it would take" and submits exchange EX-7001 with a $4.99 shipping charge. |
+| Off-track work | 0 | 0 | Recorded 12 times in the endpoint arm and 16 in the workflow arm, none failing a task: plain-text answers, cards the schema check sent back, three repeated calls, and one unneeded submit. |
+| False success | 1 | 0 | `final-qwen-F3-endpoint-r3` says no large collar is in stock anywhere and sends a card offering one. |
+
+Reading every failure also found two verifier mistakes, and fixing them helped the endpoint server: four G3 answers said the right thing under the wrong label, and four H3 answers quoted both matching harnesses. Both fixes and their tests are described in [`docs/decisions.md`](../docs/decisions.md).
 
 ## Session arc
 
@@ -74,10 +112,12 @@ My rule for every cut: a live run is one sample, so no number on a slide comes f
 | 24 to 32 | Demo: the workflow server | The same request. One preview call, the same backend calls made inside the server, and one focused result. |
 | 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately. |
 | 40 to 48 | The failure gallery | One transcript for each failure class the benchmark recorded. |
-| 48 to 55 | The workflow server's bill | The simple lookup where it may tie, a task outside its coverage, and the code it took to build. |
+| 48 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or imports. |
 | 55 to 60 | Design rules | When to pass an endpoint through, when to design a tool around the task, and how to tell which one you're looking at. |
 
 **Short session, 30 minutes:** the request (3 minutes), the two catalogs (4), a recorded side-by-side replay in place of the live demos (10), the numbers with two transcripts from the gallery (8), and the bill and the design rules (5).
+
+The slides are in [`slides/index.html`](slides/index.html), with both cuts, presenter notes, and a recorded fallback for each live demo.
 
 ## Who it is for
 
@@ -87,7 +127,7 @@ Java and Spring developers and architects putting an agent in front of an API th
 
 - Projector and my laptop.
 - Network access for the model API during the live demos, unless the chosen model runs locally. Recorded runs replay offline either way.
-- Stack on stage: Java 21, Maven, Spring Boot, Spring AI and its MCP support, and a React frontend. Exact versions get pinned in the experiment manifest.
+- Stack on stage: Java 21, Maven, Spring Boot, Spring AI and its MCP support, and a React frontend. Exact versions are pinned in each batch's manifest.
 
 ## What is on stage, in this repo
 
@@ -105,14 +145,15 @@ Java and Spring developers and architects putting an agent in front of an API th
 
 ## The post from the same runs
 
-A post on davidparry.com comes out of the same records, and it carries the evidence: the per-turn token chart for the order 1042 request on both servers, the task success and token tables, and the failure gallery with run IDs and transcript excerpts. Both quote the same numbers, and neither goes out before the final run is frozen.
+A post on davidparry.com comes out of the same records, and it carries the evidence: the per-turn token chart for the order 1042 request on both servers, the task success and token tables, and the failure gallery with run IDs and transcript excerpts. Both quote the same numbers. The draft is `content/blog/one-tool-per-endpoint.md` in the site's repository, and it stays a draft until the repository it links to is public.
 
 ## Before this talk can be given
 
-- [ ] Milestones 1 to 4 of the project plan complete, with the held-out run frozen.
-- [ ] Opening claim checked against the results and rewritten if they don't support it. A neutral or mixed result gets stated as one.
-- [ ] Failure gallery: one fully read transcript per recorded class, each with its run ID.
+- [x] Milestones 1 to 4 of the project plan complete for the local model, with the held-out run frozen.
+- [ ] The Claude and GPT final runs, 480 of them, and every number here checked again with all three models.
+- [x] Opening claim checked against the results. It holds for qwen; the status lookup and the scenarios are where it's weaker, and they're in the session.
+- [x] Failure gallery: one fully read transcript per recorded class, each with its run ID.
 - [ ] Run viewer tested on the presentation laptop with the network off.
-- [ ] Presenter notes, with a fallback for each live demo.
-- [ ] Slides in `talks/slides/index.html`, with the 60- and 30-minute cuts.
+- [x] Presenter notes, with a fallback for each live demo.
+- [x] Slides in `talks/slides/index.html`, with the 60- and 30-minute cuts.
 - [ ] The post published, quoting the same numbers.

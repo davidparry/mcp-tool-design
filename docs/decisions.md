@@ -449,3 +449,18 @@ In the workflow arm:
 - **`hallucinated_value`, 2 runs.** `final-qwen-E3-workflow-r1` got every verdict right and copied
   all three quote IDs wrong: EQ-5003 became EQ-5503. `final-qwen-E2-workflow-r3` said the other
   options "range from $5.99 to $6.99", and no tool returned $6.99.
+
+### What the verifier doesn't count
+
+The deadline tasks give no cost limit, but in 11 of the 15 workflow runs on D1, D2, and D3 the
+model sent `preview_exchange` a `costLimit` of 0.00 `at_most` anyway. 10 of those 11 answers then
+mention a cost limit or $0.00 to the customer. In `final-qwen-D3-workflow-r1`, for example, "no
+option meets both your delivery deadline and cost limit of $0.00 additional cost". It started with
+the pilot's fix for E2, which says in the `costLimit` description that "no extra cost" is 0.00
+`at_most`. Before that wording, 0 of 6 workflow runs on D1 and D2 sent a limit. In the
+confirmation run, 3 of 6 did. Every D task is blocked by its deadline, so the extra limit never
+changed an outcome. It also never fails a run: the verifier grounds the $0.00 in the tool's
+result, which only echoes what the model sent. I've left the grades alone. A check for it would
+be a new requirement written after the results to catch one pattern, which isn't the same as
+fixing a check that misread an answer. So it's reported here and in the talk instead, along with
+its cause: the wording change that fixed E2.
