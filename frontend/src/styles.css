@@ -1,0 +1,236 @@
+:root {
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #1f2a2e;
+  background: #f5f3ee;
+  --accent: #2f6b4f;
+  --miss: #9b3b2f;
+  --line: #d9d4c8;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 0.5rem;
+}
+
+.brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.subtitle {
+  color: #5d6a6e;
+}
+
+.steps {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.steps button {
+  border: 1px solid var(--line);
+  background: white;
+  color: inherit;
+  border-radius: 999px;
+  padding: 0.3rem 0.9rem;
+}
+
+.steps .current button {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.steps .done button {
+  border-color: var(--accent);
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.9rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.link {
+  background: none;
+  color: var(--accent);
+  padding: 0;
+  text-decoration: underline;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+}
+
+.search {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search input {
+  flex: 1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  background: white;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #5d6a6e;
+}
+
+tr.clickable {
+  cursor: pointer;
+}
+
+tr.fit {
+  background: #eaf4ee;
+}
+
+tr.miss td {
+  color: #6b6b6b;
+}
+
+td.actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.amount {
+  font-weight: 700;
+}
+
+.muted {
+  color: #6b7578;
+  font-size: 0.85rem;
+}
+
+.card {
+  background: white;
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+}
+
+.card.blocked {
+  border-left-color: var(--miss);
+}
+
+.card dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+
+.card dt {
+  color: #5d6a6e;
+}
+
+.card dd {
+  margin: 0;
+}
+
+.items {
+  padding-left: 1.2rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  background: #e5e1d6;
+  vertical-align: middle;
+}
+
+.badge.delivered {
+  background: #d6ebdd;
+  color: var(--accent);
+}
+
+.badge.shipped {
+  background: #dfe8f3;
+}
+
+.badge.cancelled {
+  background: #f3dfdb;
+  color: var(--miss);
+}
+
+.constraints {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.constraints label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #5d6a6e;
+}
+
+.inline {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.problem {
+  background: #f8e9e6;
+  border: 1px solid #e3b8b0;
+  color: var(--miss);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin: 1rem 0;
+}
