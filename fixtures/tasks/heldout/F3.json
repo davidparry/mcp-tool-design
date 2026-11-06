@@ -1,0 +1,19 @@
+{
+  "id": "F3",
+  "split": "heldout",
+  "category": "unavailable",
+  "kind": "exchange",
+  "prompt": "The collar from order 1043 turned out too snug. Could it be swapped for a large? Let me see what's possible before you change anything.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "out_of_stock",
+    "order": "1043",
+    "item": "1043-1",
+    "sku": "COL-M",
+    "replacementSku": "COL-L",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": null,
+    "options": []
+  }
+}

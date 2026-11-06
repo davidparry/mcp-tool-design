@@ -1,0 +1,137 @@
+[
+  {
+    "id": "TRB",
+    "name": "Trailblazer No-Pull Dog Harness",
+    "category": "HARNESS",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "TRB-S-BLU", "size": "S", "color": "Blue", "price": "29.99" },
+      { "sku": "TRB-S-RED", "size": "S", "color": "Red", "price": "29.99" },
+      { "sku": "TRB-M-BLU", "size": "M", "color": "Blue", "price": "34.99" },
+      { "sku": "TRB-M-RED", "size": "M", "color": "Red", "price": "34.99" },
+      { "sku": "TRB-L-BLU", "size": "L", "color": "Blue", "price": "39.99" },
+      { "sku": "TRB-L-RED", "size": "L", "color": "Red", "price": "39.99" },
+      { "sku": "TRB-XL-BLU", "size": "XL", "color": "Blue", "price": "42.99" },
+      { "sku": "TRB-XL-RED", "size": "XL", "color": "Red", "price": "42.99" }
+    ]
+  },
+  {
+    "id": "CTY",
+    "name": "CityStroll Step-In Harness",
+    "category": "HARNESS",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "CTY-S-BLK", "size": "S", "color": "Black", "price": "24.99" },
+      { "sku": "CTY-M-BLK", "size": "M", "color": "Black", "price": "26.99" },
+      { "sku": "CTY-L-BLK", "size": "L", "color": "Black", "price": "28.99" }
+    ]
+  },
+  {
+    "id": "JKT",
+    "name": "Waterproof Dog Jacket",
+    "category": "APPAREL",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "JKT-XS-YEL", "size": "XS", "color": "Yellow", "price": "34.99" },
+      { "sku": "JKT-S-YEL", "size": "S", "color": "Yellow", "price": "34.99" },
+      { "sku": "JKT-M-YEL", "size": "M", "color": "Yellow", "price": "36.99" },
+      { "sku": "JKT-L-YEL", "size": "L", "color": "Yellow", "price": "38.99" },
+      { "sku": "JKT-XL-YEL", "size": "XL", "color": "Yellow", "price": "39.99" },
+      { "sku": "JKT-XS-NVY", "size": "XS", "color": "Navy", "price": "34.99" },
+      { "sku": "JKT-S-NVY", "size": "S", "color": "Navy", "price": "34.99" },
+      { "sku": "JKT-M-NVY", "size": "M", "color": "Navy", "price": "36.99" },
+      { "sku": "JKT-L-NVY", "size": "L", "color": "Navy", "price": "38.99" },
+      { "sku": "JKT-XL-NVY", "size": "XL", "color": "Navy", "price": "39.99" }
+    ]
+  },
+  {
+    "id": "CRT",
+    "name": "Folding Wire Crate",
+    "category": "CRATE",
+    "returnCategory": "BULKY",
+    "variants": [
+      { "sku": "CRT-30", "size": "30 in", "color": null, "price": "49.99" },
+      { "sku": "CRT-36", "size": "36 in", "color": null, "price": "64.99" },
+      { "sku": "CRT-42", "size": "42 in", "color": null, "price": "79.99" }
+    ]
+  },
+  {
+    "id": "BED",
+    "name": "Orthopedic Dog Bed",
+    "category": "BED",
+    "returnCategory": "BULKY",
+    "variants": [
+      { "sku": "BED-M", "size": "M", "color": null, "price": "59.99" },
+      { "sku": "BED-L", "size": "L", "color": null, "price": "79.99" },
+      { "sku": "BED-XL", "size": "XL", "color": null, "price": "99.99" }
+    ]
+  },
+  {
+    "id": "COL",
+    "name": "Reflective Dog Collar",
+    "category": "COLLAR",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "COL-S", "size": "S", "color": null, "price": "12.99" },
+      { "sku": "COL-M", "size": "M", "color": null, "price": "12.99" },
+      { "sku": "COL-L", "size": "L", "color": null, "price": "12.99" }
+    ]
+  },
+  {
+    "id": "CHW",
+    "name": "Durable Chew Bone",
+    "category": "TOY",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "CHW-S", "size": "S", "color": null, "price": "9.99" },
+      { "sku": "CHW-M", "size": "M", "color": null, "price": "11.99" },
+      { "sku": "CHW-L", "size": "L", "color": null, "price": "13.99" }
+    ]
+  },
+  {
+    "id": "GPS",
+    "name": "TrackPaw GPS Collar",
+    "category": "COLLAR",
+    "returnCategory": "ELECTRONICS",
+    "variants": [
+      { "sku": "GPS-SM", "size": "S/M", "color": null, "price": "129.99" },
+      { "sku": "GPS-L", "size": "L", "color": null, "price": "129.99" }
+    ]
+  },
+  {
+    "id": "LSH",
+    "name": "Everyday Nylon Leash, 6 ft",
+    "category": "LEASH",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "LSH-6FT", "size": "6 ft", "color": null, "price": "14.99" }
+    ]
+  },
+  {
+    "id": "RPE",
+    "name": "Squeaky Rope Toy",
+    "category": "TOY",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "RPE-STD", "size": null, "color": null, "price": "8.99" }
+    ]
+  },
+  {
+    "id": "BAL",
+    "name": "Fetch Ball 3-Pack",
+    "category": "TOY",
+    "returnCategory": "STANDARD",
+    "variants": [
+      { "sku": "BAL-3PK", "size": null, "color": null, "price": "11.99" }
+    ]
+  },
+  {
+    "id": "TRT",
+    "name": "Salmon Training Treats, 12 oz",
+    "category": "TREATS",
+    "returnCategory": "CONSUMABLE",
+    "variants": [
+      { "sku": "TRT-12OZ", "size": "12 oz", "color": null, "price": "13.99" }
+    ]
+  }
+]

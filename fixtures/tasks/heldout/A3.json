@@ -1,0 +1,14 @@
+{
+  "id": "A3",
+  "split": "heldout",
+  "category": "lookup",
+  "kind": "lookup",
+  "prompt": "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?",
+  "expected": {
+    "outcome": "order_status",
+    "order": "1027",
+    "status": "PLACED",
+    "dateKind": null,
+    "date": null
+  }
+}

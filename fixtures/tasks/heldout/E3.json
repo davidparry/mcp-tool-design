@@ -1,0 +1,25 @@
+{
+  "id": "E3",
+  "split": "heldout",
+  "category": "price_cap_miss",
+  "kind": "exchange",
+  "prompt": "For order 1040, I'd take the large bed instead of the medium as long as the difference comes to under $25. Is there a way? Please don't submit it.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "cost_limit",
+    "order": "1040",
+    "item": "1040-1",
+    "sku": "BED-M",
+    "replacementSku": "BED-L",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": { "amount": "25.00", "comparison": "under" },
+    "cheapestAdditionalCost": "25.00",
+    "options": [
+      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-10", "additionalCost": "25.00", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-13", "additionalCost": "26.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-09", "additionalCost": "29.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "34.99", "feasible": false, "fails": ["cost_limit"] }
+    ]
+  }
+}

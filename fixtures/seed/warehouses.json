@@ -1,0 +1,5 @@
+[
+  { "id": "WH-DAL", "name": "Dallas", "city": "Dallas", "state": "TX", "region": "SOUTH" },
+  { "id": "WH-RNO", "name": "Reno", "city": "Reno", "state": "NV", "region": "WEST" },
+  { "id": "WH-CMH", "name": "Columbus", "city": "Columbus", "state": "OH", "region": "MIDWEST" }
+]

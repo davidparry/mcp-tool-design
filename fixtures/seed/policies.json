@@ -1,0 +1,42 @@
+[
+  {
+    "returnCategory": "STANDARD",
+    "description": "Most items: 30 days from delivery to return or exchange, no fees.",
+    "returnable": true,
+    "exchangeable": true,
+    "returnWindowDays": 30,
+    "exchangeWindowDays": 30,
+    "returnShippingFee": "0.00",
+    "restockingFeePercent": 0
+  },
+  {
+    "returnCategory": "BULKY",
+    "description": "Beds and crates: 30 days from delivery; a return pays a flat return shipping fee. Exchanges have no fee.",
+    "returnable": true,
+    "exchangeable": true,
+    "returnWindowDays": 30,
+    "exchangeWindowDays": 30,
+    "returnShippingFee": "19.99",
+    "restockingFeePercent": 0
+  },
+  {
+    "returnCategory": "ELECTRONICS",
+    "description": "GPS collars: 15 days from delivery; a return pays a 15% restocking fee. Exchanges have no fee.",
+    "returnable": true,
+    "exchangeable": true,
+    "returnWindowDays": 15,
+    "exchangeWindowDays": 15,
+    "returnShippingFee": "0.00",
+    "restockingFeePercent": 15
+  },
+  {
+    "returnCategory": "CONSUMABLE",
+    "description": "Treats and food can't be returned or exchanged once delivered.",
+    "returnable": false,
+    "exchangeable": false,
+    "returnWindowDays": 0,
+    "exchangeWindowDays": 0,
+    "returnShippingFee": "0.00",
+    "restockingFeePercent": 0
+  }
+]

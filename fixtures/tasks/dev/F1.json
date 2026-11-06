@@ -1,0 +1,19 @@
+{
+  "id": "F1",
+  "split": "dev",
+  "category": "unavailable",
+  "kind": "exchange",
+  "prompt": "Can I exchange the harness in order 1017 for an XL in red? Show me the options first.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "out_of_stock",
+    "order": "1017",
+    "item": "1017-1",
+    "sku": "TRB-L-RED",
+    "replacementSku": "TRB-XL-RED",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": null,
+    "options": []
+  }
+}

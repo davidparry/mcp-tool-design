@@ -1,0 +1,13 @@
+{
+  "id": "H2",
+  "split": "dev",
+  "category": "ambiguous",
+  "kind": "return",
+  "prompt": "I'd like to return the toy from order 1022. How much would I get back?",
+  "expected": {
+    "outcome": "needs_clarification",
+    "action": "return",
+    "order": "1022",
+    "candidates": ["1022-1", "1022-2"]
+  }
+}

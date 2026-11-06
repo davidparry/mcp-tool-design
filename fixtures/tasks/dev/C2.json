@@ -1,0 +1,23 @@
+{
+  "id": "C2",
+  "split": "dev",
+  "category": "exchange_options",
+  "kind": "exchange",
+  "prompt": "I'd like to swap the jacket from order 1033 for a large. It needs to get here by November 20, and I don't want to pay more than $20 extra. What are my choices? Don't place anything yet.",
+  "expected": {
+    "outcome": "options_available",
+    "order": "1033",
+    "item": "1033-1",
+    "sku": "JKT-M-NVY",
+    "replacementSku": "JKT-L-NVY",
+    "quantity": 1,
+    "deliverBy": "2026-11-20",
+    "costLimit": { "amount": "20.00", "comparison": "at_most" },
+    "options": [
+      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-10", "additionalCost": "6.99", "feasible": true, "fails": [] },
+      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-11", "additionalCost": "7.99", "feasible": true, "fails": [] },
+      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-09", "additionalCost": "11.99", "feasible": true, "fails": [] },
+      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "14.99", "feasible": true, "fails": [] }
+    ]
+  }
+}

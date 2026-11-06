@@ -1,0 +1,16 @@
+{
+  "id": "G2",
+  "split": "dev",
+  "category": "ineligible",
+  "kind": "return",
+  "prompt": "My dog won't touch the training treats from order 1026. Can I send them back for a refund?",
+  "expected": {
+    "outcome": "ineligible",
+    "action": "return",
+    "order": "1026",
+    "item": "1026-1",
+    "sku": "TRT-12OZ",
+    "reasonCode": "not_returnable",
+    "windowEndsOn": null
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "id": "C1",
+  "split": "dev",
+  "category": "exchange_options",
+  "kind": "exchange",
+  "prompt": "Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.",
+  "expected": {
+    "outcome": "options_available",
+    "order": "1042",
+    "item": "1042-1",
+    "sku": "TRB-M-BLU",
+    "replacementSku": "TRB-L-BLU",
+    "quantity": 1,
+    "deliverBy": "2026-11-13",
+    "costLimit": { "amount": "15.00", "comparison": "under" },
+    "options": [
+      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-12", "additionalCost": "11.99", "feasible": true, "fails": [] },
+      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "9.99", "feasible": false, "fails": ["deliver_by"] },
+      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "17.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "19.99", "feasible": false, "fails": ["cost_limit"] }
+    ]
+  }
+}

@@ -1,0 +1,201 @@
+[
+  { "reference": "1010", "customer": { "name": "Ethan Wright", "email": "ethan.wright@example.com" },
+    "shipTo": { "line1": "1820 Grand Blvd", "city": "Kansas City", "state": "MO", "postalCode": "64108" },
+    "status": "DELIVERED", "placedAt": "2026-09-08T10:15:00-05:00", "shippedOn": "2026-09-09", "deliveredOn": "2026-09-12",
+    "lines": [ { "sku": "LSH-6FT", "quantity": 1, "unitPrice": "14.99" }, { "sku": "COL-M", "quantity": 1, "unitPrice": "12.99" } ] },
+
+  { "reference": "1011", "customer": { "name": "Sofia Rossi", "email": "sofia.rossi@example.com" },
+    "shipTo": { "line1": "214 Atlantic Ave", "city": "Brooklyn", "state": "NY", "postalCode": "11201" },
+    "status": "DELIVERED", "placedAt": "2026-09-14T19:40:00-05:00", "shippedOn": "2026-09-15", "deliveredOn": "2026-09-18",
+    "lines": [ { "sku": "RPE-STD", "quantity": 2, "unitPrice": "8.99" } ] },
+
+  { "reference": "1012", "customer": { "name": "Sam Ortiz", "email": "sam.ortiz@example.com" },
+    "shipTo": { "line1": "455 N 3rd St", "city": "Phoenix", "state": "AZ", "postalCode": "85004" },
+    "status": "DELIVERED", "placedAt": "2026-09-15T08:05:00-05:00", "shippedOn": "2026-09-16", "deliveredOn": "2026-09-20",
+    "lines": [ { "sku": "LSH-6FT", "quantity": 1, "unitPrice": "14.99" } ] },
+
+  { "reference": "1013", "customer": { "name": "Liam O'Brien", "email": "liam.obrien@example.com" },
+    "shipTo": { "line1": "3320 E Camelback Rd", "city": "Phoenix", "state": "AZ", "postalCode": "85016" },
+    "status": "DELIVERED", "placedAt": "2026-09-21T12:30:00-05:00", "shippedOn": "2026-09-22", "deliveredOn": "2026-09-25",
+    "lines": [ { "sku": "JKT-L-YEL", "quantity": 1, "unitPrice": "38.99" } ] },
+
+  { "reference": "1014", "customer": { "name": "Priya Nair", "email": "priya.nair@example.com" },
+    "shipTo": { "line1": "118 Glenwood Ave", "city": "Raleigh", "state": "NC", "postalCode": "27603" },
+    "status": "DELIVERED", "placedAt": "2026-09-28T16:45:00-05:00", "shippedOn": "2026-09-29", "deliveredOn": "2026-10-02",
+    "lines": [ { "sku": "LSH-6FT", "quantity": 1, "unitPrice": "14.99" } ] },
+
+  { "reference": "1015", "customer": { "name": "Isabella Garcia", "email": "isabella.garcia@example.com" },
+    "shipTo": { "line1": "901 Brickell Key Blvd", "city": "Miami", "state": "FL", "postalCode": "33131" },
+    "status": "DELIVERED", "placedAt": "2026-10-01T09:20:00-05:00", "shippedOn": "2026-10-02", "deliveredOn": "2026-10-05",
+    "lines": [ { "sku": "CHW-S", "quantity": 2, "unitPrice": "9.99" }, { "sku": "BAL-3PK", "quantity": 1, "unitPrice": "11.99" } ] },
+
+  { "reference": "1016", "customer": { "name": "Mason Lee", "email": "mason.lee@example.com" },
+    "shipTo": { "line1": "2950 Walnut St", "city": "Denver", "state": "CO", "postalCode": "80205" },
+    "status": "DELIVERED", "placedAt": "2026-10-04T21:10:00-05:00", "shippedOn": "2026-10-05", "deliveredOn": "2026-10-08",
+    "lines": [ { "sku": "TRB-XL-BLU", "quantity": 1, "unitPrice": "42.99" } ] },
+
+  { "reference": "1017", "customer": { "name": "Lena Fischer", "email": "lena.fischer@example.com" },
+    "shipTo": { "line1": "2240 N Clark St", "city": "Chicago", "state": "IL", "postalCode": "60614" },
+    "status": "DELIVERED", "placedAt": "2026-10-20T11:00:00-05:00", "shippedOn": "2026-10-21", "deliveredOn": "2026-10-25",
+    "lines": [ { "sku": "TRB-L-RED", "quantity": 1, "unitPrice": "39.99" } ] },
+
+  { "reference": "1018", "customer": { "name": "Zoe Thompson", "email": "zoe.thompson@example.com" },
+    "shipTo": { "line1": "77 E Lane Ave", "city": "Columbus", "state": "OH", "postalCode": "43201" },
+    "status": "DELIVERED", "placedAt": "2026-10-09T14:00:00-05:00", "shippedOn": "2026-10-10", "deliveredOn": "2026-10-14",
+    "lines": [ { "sku": "TRT-12OZ", "quantity": 3, "unitPrice": "13.99" } ] },
+
+  { "reference": "1019", "customer": { "name": "Marcus Reed", "email": "marcus.reed@example.com" },
+    "shipTo": { "line1": "610 Broadway", "city": "Nashville", "state": "TN", "postalCode": "37203" },
+    "status": "DELIVERED", "placedAt": "2026-10-22T18:30:00-05:00", "shippedOn": "2026-10-23", "deliveredOn": "2026-10-27",
+    "lines": [ { "sku": "BED-L", "quantity": 1, "unitPrice": "79.99" } ] },
+
+  { "reference": "1020", "customer": { "name": "Lucas Silva", "email": "lucas.silva@example.com" },
+    "shipTo": { "line1": "1450 Kettner Blvd", "city": "San Diego", "state": "CA", "postalCode": "92101" },
+    "status": "DELIVERED", "placedAt": "2026-10-11T10:10:00-05:00", "shippedOn": "2026-10-12", "deliveredOn": "2026-10-16",
+    "lines": [ { "sku": "CRT-30", "quantity": 1, "unitPrice": "49.99" } ] },
+
+  { "reference": "1021", "customer": { "name": "Hannah Brooks", "email": "hannah.brooks@example.com" },
+    "shipTo": { "line1": "38 Union Park St", "city": "Boston", "state": "MA", "postalCode": "02118" },
+    "status": "DELIVERED", "placedAt": "2026-10-25T13:15:00-05:00", "shippedOn": "2026-10-26", "deliveredOn": "2026-10-29",
+    "lines": [ { "sku": "CHW-M", "quantity": 1, "unitPrice": "11.99" } ] },
+
+  { "reference": "1022", "customer": { "name": "Omar Haddad", "email": "omar.haddad@example.com" },
+    "shipTo": { "line1": "1600 Wynkoop St", "city": "Denver", "state": "CO", "postalCode": "80202" },
+    "status": "DELIVERED", "placedAt": "2026-10-26T17:50:00-05:00", "shippedOn": "2026-10-27", "deliveredOn": "2026-10-30",
+    "lines": [ { "sku": "RPE-STD", "quantity": 1, "unitPrice": "8.99" }, { "sku": "BAL-3PK", "quantity": 1, "unitPrice": "11.99" } ] },
+
+  { "reference": "1023", "customer": { "name": "Grace Kim", "email": "grace.kim@example.com" },
+    "shipTo": { "line1": "1180 Euclid Ave NE", "city": "Atlanta", "state": "GA", "postalCode": "30307" },
+    "status": "DELIVERED", "placedAt": "2026-10-27T08:40:00-05:00", "shippedOn": "2026-10-28", "deliveredOn": "2026-10-31",
+    "lines": [ { "sku": "CHW-M", "quantity": 3, "unitPrice": "11.99" } ] },
+
+  { "reference": "1024", "customer": { "name": "Emma Davis", "email": "emma.davis@example.com" },
+    "shipTo": { "line1": "500 S Tryon St", "city": "Charlotte", "state": "NC", "postalCode": "28202" },
+    "status": "DELIVERED", "placedAt": "2026-10-15T15:25:00-05:00", "shippedOn": "2026-10-16", "deliveredOn": "2026-10-20",
+    "lines": [ { "sku": "JKT-S-NVY", "quantity": 1, "unitPrice": "34.99" } ] },
+
+  { "reference": "1025", "customer": { "name": "Theo Walsh", "email": "theo.walsh@example.com" },
+    "shipTo": { "line1": "1221 SW Alder St", "city": "Portland", "state": "OR", "postalCode": "97205" },
+    "status": "DELIVERED", "placedAt": "2026-10-19T09:55:00-05:00", "shippedOn": "2026-10-20", "deliveredOn": "2026-10-24",
+    "lines": [ { "sku": "BED-M", "quantity": 1, "unitPrice": "59.99" } ] },
+
+  { "reference": "1026", "customer": { "name": "Ava Martinez", "email": "ava.martinez@example.com" },
+    "shipTo": { "line1": "300 Alamo Plaza", "city": "San Antonio", "state": "TX", "postalCode": "78205" },
+    "status": "DELIVERED", "placedAt": "2026-10-29T20:05:00-05:00", "shippedOn": "2026-10-30", "deliveredOn": "2026-11-02",
+    "lines": [ { "sku": "TRT-12OZ", "quantity": 2, "unitPrice": "13.99" } ] },
+
+  { "reference": "1027", "customer": { "name": "Noah Patel", "email": "noah.patel@example.com" },
+    "shipTo": { "line1": "250 S High St", "city": "Columbus", "state": "OH", "postalCode": "43215" },
+    "status": "PLACED", "placedAt": "2026-11-05T16:20:00-06:00",
+    "lines": [ { "sku": "BAL-3PK", "quantity": 1, "unitPrice": "11.99" } ] },
+
+  { "reference": "1028", "customer": { "name": "Owen Clark", "email": "owen.clark@example.com" },
+    "shipTo": { "line1": "1001 Woodward Ave", "city": "Detroit", "state": "MI", "postalCode": "48226" },
+    "status": "CANCELLED", "placedAt": "2026-10-22T12:00:00-05:00",
+    "lines": [ { "sku": "BED-L", "quantity": 1, "unitPrice": "79.99" } ] },
+
+  { "reference": "1029", "customer": { "name": "Lena Fischer", "email": "lena.fischer@example.com" },
+    "shipTo": { "line1": "2240 N Clark St", "city": "Chicago", "state": "IL", "postalCode": "60614" },
+    "status": "DELIVERED", "placedAt": "2026-10-21T10:30:00-05:00", "shippedOn": "2026-10-22", "deliveredOn": "2026-10-26",
+    "lines": [ { "sku": "GPS-SM", "quantity": 1, "unitPrice": "129.99" } ] },
+
+  { "reference": "1030", "customer": { "name": "Mia Nguyen", "email": "mia.nguyen@example.com" },
+    "shipTo": { "line1": "1200 McKinney St", "city": "Houston", "state": "TX", "postalCode": "77010" },
+    "status": "DELIVERED", "placedAt": "2026-10-29T11:45:00-05:00", "shippedOn": "2026-10-30", "deliveredOn": "2026-11-02",
+    "lines": [ { "sku": "GPS-SM", "quantity": 1, "unitPrice": "129.99" } ] },
+
+  { "reference": "1031", "customer": { "name": "Priya Nair", "email": "priya.nair@example.com" },
+    "shipTo": { "line1": "118 Glenwood Ave", "city": "Raleigh", "state": "NC", "postalCode": "27603" },
+    "status": "SHIPPED", "placedAt": "2026-11-02T09:10:00-06:00", "shippedOn": "2026-11-03", "estimatedDelivery": "2026-11-09",
+    "lines": [ { "sku": "CRT-36", "quantity": 1, "unitPrice": "64.99" } ] },
+
+  { "reference": "1032", "customer": { "name": "Henry Adams", "email": "henry.adams@example.com" },
+    "shipTo": { "line1": "50 W Broadway", "city": "Salt Lake City", "state": "UT", "postalCode": "84101" },
+    "status": "SHIPPED", "placedAt": "2026-11-03T14:35:00-06:00", "shippedOn": "2026-11-04", "estimatedDelivery": "2026-11-09",
+    "lines": [ { "sku": "RPE-STD", "quantity": 1, "unitPrice": "8.99" }, { "sku": "TRT-12OZ", "quantity": 1, "unitPrice": "13.99" } ] },
+
+  { "reference": "1033", "customer": { "name": "Diego Alvarez", "email": "diego.alvarez@example.com" },
+    "shipTo": { "line1": "1515 W Division St", "city": "Chicago", "state": "IL", "postalCode": "60642" },
+    "status": "DELIVERED", "placedAt": "2026-10-25T19:20:00-05:00", "shippedOn": "2026-10-26", "deliveredOn": "2026-10-29",
+    "lines": [ { "sku": "JKT-M-NVY", "quantity": 1, "unitPrice": "36.99" } ] },
+
+  { "reference": "1034", "customer": { "name": "Hannah Brooks", "email": "hannah.brooks@example.com" },
+    "shipTo": { "line1": "38 Union Park St", "city": "Boston", "state": "MA", "postalCode": "02118" },
+    "status": "DELIVERED", "placedAt": "2026-10-24T10:05:00-05:00", "shippedOn": "2026-10-25", "deliveredOn": "2026-10-28",
+    "lines": [ { "sku": "CTY-M-BLK", "quantity": 1, "unitPrice": "26.99" } ] },
+
+  { "reference": "1035", "customer": { "name": "Ella Wilson", "email": "ella.wilson@example.com" },
+    "shipTo": { "line1": "1701 Walnut St", "city": "Philadelphia", "state": "PA", "postalCode": "19103" },
+    "status": "DELIVERED", "placedAt": "2026-10-30T13:30:00-05:00", "shippedOn": "2026-10-31", "deliveredOn": "2026-11-03",
+    "lines": [ { "sku": "COL-S", "quantity": 1, "unitPrice": "12.99" }, { "sku": "LSH-6FT", "quantity": 1, "unitPrice": "14.99" } ] },
+
+  { "reference": "1036", "customer": { "name": "Ben Carter", "email": "ben.carter@example.com" },
+    "shipTo": { "line1": "2200 Ross Ave", "city": "Dallas", "state": "TX", "postalCode": "75201" },
+    "status": "DELIVERED", "placedAt": "2026-10-26T15:00:00-05:00", "shippedOn": "2026-10-27", "deliveredOn": "2026-10-30",
+    "lines": [ { "sku": "GPS-SM", "quantity": 1, "unitPrice": "129.99" } ] },
+
+  { "reference": "1037", "customer": { "name": "Chloe Dubois", "email": "chloe.dubois@example.com" },
+    "shipTo": { "line1": "720 Hennepin Ave", "city": "Minneapolis", "state": "MN", "postalCode": "55403" },
+    "status": "DELIVERED", "placedAt": "2026-10-28T09:45:00-05:00", "shippedOn": "2026-10-29", "deliveredOn": "2026-11-01",
+    "lines": [ { "sku": "TRB-M-BLU", "quantity": 1, "unitPrice": "34.99" }, { "sku": "CTY-M-BLK", "quantity": 1, "unitPrice": "26.99" } ] },
+
+  { "reference": "1038", "customer": { "name": "Theo Walsh", "email": "theo.walsh@example.com" },
+    "shipTo": { "line1": "1221 SW Alder St", "city": "Portland", "state": "OR", "postalCode": "97205" },
+    "status": "DELIVERED", "placedAt": "2026-10-27T12:20:00-05:00", "shippedOn": "2026-10-28", "deliveredOn": "2026-10-31",
+    "lines": [ { "sku": "COL-S", "quantity": 1, "unitPrice": "12.99" } ] },
+
+  { "reference": "1039", "customer": { "name": "Ava Martinez", "email": "ava.martinez@example.com" },
+    "shipTo": { "line1": "300 Alamo Plaza", "city": "San Antonio", "state": "TX", "postalCode": "78205" },
+    "status": "SHIPPED", "placedAt": "2026-11-03T18:10:00-06:00", "shippedOn": "2026-11-04", "estimatedDelivery": "2026-11-10",
+    "lines": [ { "sku": "JKT-S-YEL", "quantity": 1, "unitPrice": "34.99" } ] },
+
+  { "reference": "1040", "customer": { "name": "Riley Johnson", "email": "riley.johnson@example.com" },
+    "shipTo": { "line1": "1301 2nd Ave", "city": "Seattle", "state": "WA", "postalCode": "98101" },
+    "status": "DELIVERED", "placedAt": "2026-10-26T08:30:00-05:00", "shippedOn": "2026-10-27", "deliveredOn": "2026-10-30",
+    "lines": [ { "sku": "BED-M", "quantity": 1, "unitPrice": "59.99" } ] },
+
+  { "reference": "1041", "customer": { "name": "Jack Turner", "email": "jack.turner@example.com" },
+    "shipTo": { "line1": "401 Congress Ave", "city": "Austin", "state": "TX", "postalCode": "78701" },
+    "status": "DELIVERED", "placedAt": "2026-11-01T10:00:00-05:00", "shippedOn": "2026-11-02", "deliveredOn": "2026-11-04",
+    "lines": [ { "sku": "CHW-L", "quantity": 1, "unitPrice": "13.99" } ] },
+
+  { "reference": "1042", "customer": { "name": "Maya Chen", "email": "maya.chen@example.com" },
+    "shipTo": { "line1": "2104 S Lamar Blvd", "city": "Austin", "state": "TX", "postalCode": "78704" },
+    "status": "DELIVERED", "placedAt": "2026-10-24T14:12:00-05:00", "shippedOn": "2026-10-25", "deliveredOn": "2026-10-28",
+    "lines": [ { "sku": "TRB-M-BLU", "quantity": 1, "unitPrice": "34.99" }, { "sku": "RPE-STD", "quantity": 1, "unitPrice": "8.99" } ] },
+
+  { "reference": "1043", "customer": { "name": "Sam Ortiz", "email": "sam.ortiz@example.com" },
+    "shipTo": { "line1": "455 N 3rd St", "city": "Phoenix", "state": "AZ", "postalCode": "85004" },
+    "status": "DELIVERED", "placedAt": "2026-10-23T11:35:00-05:00", "shippedOn": "2026-10-24", "deliveredOn": "2026-10-27",
+    "lines": [ { "sku": "COL-M", "quantity": 1, "unitPrice": "12.99" } ] },
+
+  { "reference": "1044", "customer": { "name": "Grace Kim", "email": "grace.kim@example.com" },
+    "shipTo": { "line1": "1180 Euclid Ave NE", "city": "Atlanta", "state": "GA", "postalCode": "30307" },
+    "status": "DELIVERED", "placedAt": "2026-10-22T09:05:00-05:00", "shippedOn": "2026-10-23", "deliveredOn": "2026-10-26",
+    "lines": [ { "sku": "CRT-36", "quantity": 1, "unitPrice": "64.99" } ] },
+
+  { "reference": "1045", "customer": { "name": "Jordan Ellis", "email": "jordan.ellis@example.com" },
+    "shipTo": { "line1": "1600 E 6th St", "city": "Austin", "state": "TX", "postalCode": "78702" },
+    "status": "DELIVERED", "placedAt": "2026-10-29T16:40:00-05:00", "shippedOn": "2026-10-30", "deliveredOn": "2026-11-02",
+    "lines": [ { "sku": "TRB-M-BLU", "quantity": 1, "unitPrice": "34.99" }, { "sku": "TRB-M-RED", "quantity": 1, "unitPrice": "34.99" } ] },
+
+  { "reference": "1046", "customer": { "name": "Lily Scott", "email": "lily.scott@example.com" },
+    "shipTo": { "line1": "233 S Wacker Dr", "city": "Chicago", "state": "IL", "postalCode": "60606" },
+    "status": "PLACED", "placedAt": "2026-11-05T20:30:00-06:00",
+    "lines": [ { "sku": "JKT-XS-YEL", "quantity": 1, "unitPrice": "34.99" } ] },
+
+  { "reference": "1047", "customer": { "name": "Maya Chen", "email": "maya.chen@example.com" },
+    "shipTo": { "line1": "2104 S Lamar Blvd", "city": "Austin", "state": "TX", "postalCode": "78704" },
+    "status": "DELIVERED", "placedAt": "2026-10-27T10:50:00-05:00", "shippedOn": "2026-10-28", "deliveredOn": "2026-10-31",
+    "lines": [ { "sku": "TRB-S-RED", "quantity": 1, "unitPrice": "29.99" } ] },
+
+  { "reference": "1048", "customer": { "name": "Noah Patel", "email": "noah.patel@example.com" },
+    "shipTo": { "line1": "250 S High St", "city": "Columbus", "state": "OH", "postalCode": "43215" },
+    "status": "DELIVERED", "placedAt": "2026-11-02T13:05:00-06:00", "shippedOn": "2026-11-03", "deliveredOn": "2026-11-05",
+    "lines": [ { "sku": "LSH-6FT", "quantity": 1, "unitPrice": "14.99" } ] },
+
+  { "reference": "1049", "customer": { "name": "Ava Martinez", "email": "ava.martinez@example.com" },
+    "shipTo": { "line1": "300 Alamo Plaza", "city": "San Antonio", "state": "TX", "postalCode": "78205" },
+    "status": "PLACED", "placedAt": "2026-11-06T08:15:00-06:00",
+    "lines": [ { "sku": "BAL-3PK", "quantity": 1, "unitPrice": "11.99" } ] }
+]

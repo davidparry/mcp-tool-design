@@ -1,0 +1,13 @@
+{
+  "id": "H1",
+  "split": "dev",
+  "category": "ambiguous",
+  "kind": "exchange",
+  "prompt": "I want to exchange the medium harness in order 1037 for a large. What would that look like?",
+  "expected": {
+    "outcome": "needs_clarification",
+    "action": "exchange",
+    "order": "1037",
+    "candidates": ["1037-1", "1037-2"]
+  }
+}

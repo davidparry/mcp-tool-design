@@ -1,0 +1,14 @@
+{
+  "id": "A1",
+  "split": "dev",
+  "category": "lookup",
+  "kind": "lookup",
+  "prompt": "Hi, where is order 1042? Has it been delivered yet?",
+  "expected": {
+    "outcome": "order_status",
+    "order": "1042",
+    "status": "DELIVERED",
+    "dateKind": "delivered",
+    "date": "2026-10-28"
+  }
+}

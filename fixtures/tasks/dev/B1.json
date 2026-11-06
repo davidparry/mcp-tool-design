@@ -1,0 +1,18 @@
+{
+  "id": "B1",
+  "split": "dev",
+  "category": "return_preview",
+  "kind": "return",
+  "prompt": "I'd like to return the dog bed from order 1019. How much would I get back? Don't process anything yet.",
+  "expected": {
+    "outcome": "refund_preview",
+    "order": "1019",
+    "item": "1019-1",
+    "sku": "BED-L",
+    "quantity": 1,
+    "itemRefund": "79.99",
+    "returnShippingFee": "19.99",
+    "restockingFee": "0.00",
+    "refund": "60.00"
+  }
+}

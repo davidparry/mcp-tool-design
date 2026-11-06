@@ -1,0 +1,13 @@
+{
+  "id": "H3",
+  "split": "heldout",
+  "category": "ambiguous",
+  "kind": "exchange",
+  "prompt": "Please swap the medium Trailblazer in order 1045 for a large. What are my options?",
+  "expected": {
+    "outcome": "needs_clarification",
+    "action": "exchange",
+    "order": "1045",
+    "candidates": ["1045-1", "1045-2"]
+  }
+}

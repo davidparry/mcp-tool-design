@@ -1,0 +1,16 @@
+{
+  "id": "G1",
+  "split": "dev",
+  "category": "ineligible",
+  "kind": "return",
+  "prompt": "Can I return the leash from order 1012? I never ended up using it.",
+  "expected": {
+    "outcome": "ineligible",
+    "action": "return",
+    "order": "1012",
+    "item": "1012-1",
+    "sku": "LSH-6FT",
+    "reasonCode": "window_closed",
+    "windowEndsOn": "2026-10-20"
+  }
+}

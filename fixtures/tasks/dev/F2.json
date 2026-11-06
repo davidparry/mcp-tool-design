@@ -1,0 +1,19 @@
+{
+  "id": "F2",
+  "split": "dev",
+  "category": "unavailable",
+  "kind": "exchange",
+  "prompt": "I'd like a large instead of the medium CityStroll harness from order 1034. What are my options? Don't submit anything yet.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "out_of_stock",
+    "order": "1034",
+    "item": "1034-1",
+    "sku": "CTY-M-BLK",
+    "replacementSku": "CTY-L-BLK",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": null,
+    "options": []
+  }
+}

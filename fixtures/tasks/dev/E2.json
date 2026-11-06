@@ -1,0 +1,27 @@
+{
+  "id": "E2",
+  "split": "dev",
+  "category": "price_cap_miss",
+  "kind": "exchange",
+  "prompt": "Can I trade the GPS collar in order 1029 for the large size at no extra cost? Just tell me what it would take.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "cost_limit",
+    "order": "1029",
+    "item": "1029-1",
+    "sku": "GPS-SM",
+    "replacementSku": "GPS-L",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": { "amount": "0.00", "comparison": "at_most" },
+    "cheapestAdditionalCost": "4.99",
+    "options": [
+      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-10", "additionalCost": "4.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-11", "additionalCost": "5.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-13", "additionalCost": "5.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-09", "additionalCost": "9.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "12.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "13.99", "feasible": false, "fails": ["cost_limit"] }
+    ]
+  }
+}

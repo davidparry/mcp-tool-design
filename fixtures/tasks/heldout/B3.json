@@ -1,0 +1,18 @@
+{
+  "id": "B3",
+  "split": "heldout",
+  "category": "return_preview",
+  "kind": "return",
+  "prompt": "I bought three chew bones in order 1023 but my dog only needs one. If I send the other two back, what's my refund? I'm not ready to start the return yet.",
+  "expected": {
+    "outcome": "refund_preview",
+    "order": "1023",
+    "item": "1023-1",
+    "sku": "CHW-M",
+    "quantity": 2,
+    "itemRefund": "23.98",
+    "returnShippingFee": "0.00",
+    "restockingFee": "0.00",
+    "refund": "23.98"
+  }
+}

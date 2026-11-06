@@ -1,0 +1,23 @@
+{
+  "id": "D3",
+  "split": "heldout",
+  "category": "deadline_miss",
+  "kind": "exchange",
+  "prompt": "Order 1047 has the small red Trailblazer harness. Could I get a medium in the same color instead, arriving no later than November 9? Only a preview, please.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "deadline",
+    "order": "1047",
+    "item": "1047-1",
+    "sku": "TRB-S-RED",
+    "replacementSku": "TRB-M-RED",
+    "quantity": 1,
+    "deliverBy": "2026-11-09",
+    "costLimit": null,
+    "earliestArrival": "2026-11-10",
+    "options": [
+      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "17.99", "feasible": false, "fails": ["deliver_by"] },
+      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "9.99", "feasible": false, "fails": ["deliver_by"] }
+    ]
+  }
+}

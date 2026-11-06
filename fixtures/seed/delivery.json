@@ -1,0 +1,48 @@
+{
+  "zones": {
+    "0": "NORTHEAST",
+    "1": "NORTHEAST",
+    "2": "SOUTHEAST",
+    "3": "SOUTHEAST",
+    "4": "MIDWEST",
+    "5": "MIDWEST",
+    "6": "MIDWEST",
+    "7": "SOUTH",
+    "8": "WEST",
+    "9": "WEST"
+  },
+  "rates": [
+    { "warehouseId": "WH-DAL", "region": "SOUTH", "method": "GROUND", "businessDays": 2, "charge": "4.99" },
+    { "warehouseId": "WH-DAL", "region": "SOUTH", "method": "EXPRESS", "businessDays": 1, "charge": "9.99" },
+    { "warehouseId": "WH-DAL", "region": "WEST", "method": "GROUND", "businessDays": 5, "charge": "6.99" },
+    { "warehouseId": "WH-DAL", "region": "WEST", "method": "EXPRESS", "businessDays": 2, "charge": "14.99" },
+    { "warehouseId": "WH-DAL", "region": "MIDWEST", "method": "GROUND", "businessDays": 3, "charge": "5.99" },
+    { "warehouseId": "WH-DAL", "region": "MIDWEST", "method": "EXPRESS", "businessDays": 2, "charge": "12.99" },
+    { "warehouseId": "WH-DAL", "region": "NORTHEAST", "method": "GROUND", "businessDays": 5, "charge": "6.99" },
+    { "warehouseId": "WH-DAL", "region": "NORTHEAST", "method": "EXPRESS", "businessDays": 2, "charge": "15.99" },
+    { "warehouseId": "WH-DAL", "region": "SOUTHEAST", "method": "GROUND", "businessDays": 3, "charge": "5.99" },
+    { "warehouseId": "WH-DAL", "region": "SOUTHEAST", "method": "EXPRESS", "businessDays": 2, "charge": "12.99" },
+
+    { "warehouseId": "WH-RNO", "region": "SOUTH", "method": "GROUND", "businessDays": 6, "charge": "4.99" },
+    { "warehouseId": "WH-RNO", "region": "SOUTH", "method": "EXPRESS", "businessDays": 2, "charge": "12.99" },
+    { "warehouseId": "WH-RNO", "region": "WEST", "method": "GROUND", "businessDays": 2, "charge": "5.00" },
+    { "warehouseId": "WH-RNO", "region": "WEST", "method": "EXPRESS", "businessDays": 1, "charge": "9.99" },
+    { "warehouseId": "WH-RNO", "region": "MIDWEST", "method": "GROUND", "businessDays": 5, "charge": "5.99" },
+    { "warehouseId": "WH-RNO", "region": "MIDWEST", "method": "EXPRESS", "businessDays": 2, "charge": "13.99" },
+    { "warehouseId": "WH-RNO", "region": "NORTHEAST", "method": "GROUND", "businessDays": 7, "charge": "6.99" },
+    { "warehouseId": "WH-RNO", "region": "NORTHEAST", "method": "EXPRESS", "businessDays": 2, "charge": "16.99" },
+    { "warehouseId": "WH-RNO", "region": "SOUTHEAST", "method": "GROUND", "businessDays": 7, "charge": "6.99" },
+    { "warehouseId": "WH-RNO", "region": "SOUTHEAST", "method": "EXPRESS", "businessDays": 2, "charge": "16.99" },
+
+    { "warehouseId": "WH-CMH", "region": "SOUTH", "method": "GROUND", "businessDays": 4, "charge": "6.99" },
+    { "warehouseId": "WH-CMH", "region": "SOUTH", "method": "EXPRESS", "businessDays": 2, "charge": "14.99" },
+    { "warehouseId": "WH-CMH", "region": "WEST", "method": "GROUND", "businessDays": 6, "charge": "7.99" },
+    { "warehouseId": "WH-CMH", "region": "WEST", "method": "EXPRESS", "businessDays": 2, "charge": "16.99" },
+    { "warehouseId": "WH-CMH", "region": "MIDWEST", "method": "GROUND", "businessDays": 2, "charge": "4.99" },
+    { "warehouseId": "WH-CMH", "region": "MIDWEST", "method": "EXPRESS", "businessDays": 1, "charge": "9.99" },
+    { "warehouseId": "WH-CMH", "region": "NORTHEAST", "method": "GROUND", "businessDays": 3, "charge": "5.99" },
+    { "warehouseId": "WH-CMH", "region": "NORTHEAST", "method": "EXPRESS", "businessDays": 1, "charge": "11.99" },
+    { "warehouseId": "WH-CMH", "region": "SOUTHEAST", "method": "GROUND", "businessDays": 3, "charge": "5.99" },
+    { "warehouseId": "WH-CMH", "region": "SOUTHEAST", "method": "EXPRESS", "businessDays": 2, "charge": "12.99" }
+  ]
+}

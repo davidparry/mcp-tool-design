@@ -1,0 +1,37 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: order-support
+  datasource:
+    url: jdbc:h2:mem:orders;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  mvc:
+    problemdetails:
+      enabled: true
+
+app:
+  clock:
+    # Friday, November 6, 2026, 9:00 a.m. Central. The benchmark profile can move it forward.
+    start: "2026-11-06T09:00:00-06:00"
+    zone: America/Chicago
+  quotes:
+    lifetime: 30m
+  security:
+    # Both MCP servers send the support-agent key, so they reach the API with the same permissions.
+    # The frontend has its own key. Override these outside a demo machine.
+    api-keys:
+      support-agent: ${SUPPORT_AGENT_API_KEY:support-agent-dev-key}
+      frontend: ${FRONTEND_API_KEY:frontend-dev-key}
+    admin-key: ${ADMIN_API_KEY:admin-dev-key}
+
+springdoc:
+  # Only /api becomes part of the contract, so the generated MCP server can never see /admin.
+  paths-to-match: /api/**
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  default-produces-media-type: application/json

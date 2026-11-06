@@ -1,0 +1,14 @@
+{
+  "id": "A2",
+  "split": "dev",
+  "category": "lookup",
+  "kind": "lookup",
+  "prompt": "This is Priya Nair. I ordered a dog crate earlier this week. When is it supposed to arrive?",
+  "expected": {
+    "outcome": "order_status",
+    "order": "1031",
+    "status": "SHIPPED",
+    "dateKind": "estimated",
+    "date": "2026-11-09"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "G3",
+  "split": "heldout",
+  "category": "ineligible",
+  "kind": "exchange",
+  "prompt": "I already know the jacket in order 1039 will be too small. Can I set up an exchange for a medium now? Show me first.",
+  "expected": {
+    "outcome": "ineligible",
+    "action": "exchange",
+    "order": "1039",
+    "item": "1039-1",
+    "sku": "JKT-S-YEL",
+    "reasonCode": "not_delivered",
+    "windowEndsOn": null,
+    "estimatedDelivery": "2026-11-10"
+  }
+}

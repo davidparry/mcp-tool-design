@@ -1,0 +1,18 @@
+{
+  "id": "B2",
+  "split": "dev",
+  "category": "return_preview",
+  "kind": "return",
+  "prompt": "Can I still return the GPS collar from order 1036? What would the refund be after any fees? Just tell me for now.",
+  "expected": {
+    "outcome": "refund_preview",
+    "order": "1036",
+    "item": "1036-1",
+    "sku": "GPS-SM",
+    "quantity": 1,
+    "itemRefund": "129.99",
+    "returnShippingFee": "0.00",
+    "restockingFee": "19.50",
+    "refund": "110.49"
+  }
+}

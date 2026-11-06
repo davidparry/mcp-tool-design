@@ -1,0 +1,25 @@
+{
+  "id": "D1",
+  "split": "dev",
+  "category": "deadline_miss",
+  "kind": "exchange",
+  "prompt": "Can I exchange the collar in order 1038 for a medium and have it by Monday, November 9? Just show me what's possible.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "deadline",
+    "order": "1038",
+    "item": "1038-1",
+    "sku": "COL-S",
+    "replacementSku": "COL-M",
+    "quantity": 1,
+    "deliverBy": "2026-11-09",
+    "costLimit": null,
+    "earliestArrival": "2026-11-10",
+    "options": [
+      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-13", "additionalCost": "6.99", "feasible": false, "fails": ["deliver_by"] },
+      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "14.99", "feasible": false, "fails": ["deliver_by"] },
+      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "7.99", "feasible": false, "fails": ["deliver_by"] },
+      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "16.99", "feasible": false, "fails": ["deliver_by"] }
+    ]
+  }
+}

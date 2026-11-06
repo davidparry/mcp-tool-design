@@ -1,0 +1,25 @@
+{
+  "id": "E1",
+  "split": "dev",
+  "category": "price_cap_miss",
+  "kind": "exchange",
+  "prompt": "Could I exchange the dog bed from order 1025 for an extra large? I can only spend under $30 more. Show me before doing anything.",
+  "expected": {
+    "outcome": "no_matching_option",
+    "blockingReason": "cost_limit",
+    "order": "1025",
+    "item": "1025-1",
+    "sku": "BED-M",
+    "replacementSku": "BED-XL",
+    "quantity": 1,
+    "deliverBy": null,
+    "costLimit": { "amount": "30.00", "comparison": "under" },
+    "cheapestAdditionalCost": "45.00",
+    "options": [
+      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-10", "additionalCost": "45.00", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "47.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-09", "additionalCost": "49.99", "feasible": false, "fails": ["cost_limit"] },
+      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "56.99", "feasible": false, "fails": ["cost_limit"] }
+    ]
+  }
+}
