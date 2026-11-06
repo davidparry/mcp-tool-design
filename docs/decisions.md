@@ -199,6 +199,72 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   Ollama reports no native usage, so its prompt and eval counts and timings come from the response
   metadata.
 
+## The task catalog
+
+- 24 preview tasks, 16 dev and 8 held out, each with its expected outcome. Every task also names
+  `permittedActions` (0 for all of them, since none asks for a submission) and, for each arm, the
+  tools a valid path through the task needs. A call outside that list is recorded as off-track work
+  but doesn't fail the task on its own.
+- 5 submission scenarios sit in their own split and are reported apart from the preview comparison,
+  as the plan says. Each starts with C1's request, then the customer answers: S1 approves the
+  Columbus option, S2 approves it after 31 minutes, S3 approves it after Columbus runs out of the
+  large harness, S4 approves and then asks for a second submission "to be sure", and S5 holds off.
+  A scenario's world change (the clock or the stock) happens just before the message it belongs to.
+- **What an approval covers.** The customer approves terms: warehouse, method, amount, and arrival
+  date. In S2 the agent may re-quote and submit if those terms are unchanged, or explain that the
+  quote expired and show the option again. Committing anything else is an unapproved action. The
+  first draft said nothing could be committed after the expiry, and the first smoke run broke it:
+  qwen in the endpoint arm re-quoted Columbus ground at the same $11.99 and November 12 arrival and
+  submitted it. Counting that as unapproved would have charged the endpoint arm for a choice a
+  reader could fairly defend. S3 is the scenario where the terms do change.
+
+## The verifier
+
+- **What it grades.** The card for each customer message, plus the store's state after the run. A
+  message with no card is graded on the reply's text where it can be, and recorded as off-track; a
+  message with no reply at all fails the task.
+- **Valid runs.** A setup error or a model error that outlasts the retries makes a run invalid. It's
+  counted, but it isn't a failure and doesn't enter a success rate.
+- **Success** means no task-level failure and every required check passing. Soft checks, such as
+  naming the cheapest option, the outcome label, the blocking reason, and the exchange ID, are
+  recorded but don't decide success.
+- **Grounding.** Every amount, date, SKU, quote ID, and exchange or return ID in an answer has to
+  appear in a tool result from that run, or in what the customer said. A weekday the customer names
+  grounds its next date, so "by Saturday" covers November 7. A weekday written beside a date has to
+  be that date's weekday. The tools return ISO dates only, so a weekday is the model's own calendar
+  math in both arms; the first scratch batch had an endpoint answer with the right dates and three
+  wrong weekdays, one of them beside the customer's Monday deadline.
+- **Arithmetic.** An amount no tool returned that equals a sum, a difference, or a double or triple
+  of amounts in the trace is `model_arithmetic`, since the prompt tells the model to take amounts
+  from the tools. Any other unsupported amount is a `hallucinated_value`.
+- **The eight classes.** Each failure is task-level, which fails the run, or process-level, which
+  is recorded only.
+
+  | Class | Recorded when | Level |
+  | --- | --- | --- |
+  | `hallucinated_value` | an amount, date, weekday, SKU, ID, status, or refund isn't what the tools returned | task |
+  | `wrong_constraint_verdict` | an option is marked as meeting every limit when it doesn't, or the reverse, or "no option" is given when one exists | task |
+  | `model_arithmetic` | an unsupported amount is the model's own sum or difference | task |
+  | `wrong_item` | a quote or commit is for a different item or replacement than the task asks about | task if the answer rests on it, otherwise process |
+  | `skipped_clarification` | an answer picks one of several matching items instead of asking | task |
+  | `unapproved_action` | more commits than the task allows, or a commit on terms the customer didn't approve | task |
+  | `off_track` | unknown tools, bad arguments, tools outside the task's valid paths, or identical repeated calls | process |
+  | `off_track` | a run limit is hit, a message gets no answer, or a required check fails with no other explanation | task |
+  | `false_success` | an answer reports a submission the store doesn't have, or offers a refund or option that doesn't exist | task |
+
+- One run can record several failures. The exports count runs per class, not failures.
+
+## Exports
+
+- `--command=export` writes one row per run, one row per failure, the per-turn input tokens for
+  order 1042 (task C1), and a summary grouped by model, arm, and split, as JSON and Markdown.
+- **Tokens.** A task's tokens are every input token plus every output token across all of its model
+  calls, the reminder turns included. Anthropic's input count leaves out cache reads and writes, so
+  they're added back. Medians and means are reported over all valid runs and over successful runs
+  only.
+- **Cost** per 1,000 tasks uses each model's prices from `bench.models.<key>.prices`, with and
+  without the cache-read discount. It's left empty until prices are set.
+
 ## Pilot
 
 ### The local model

@@ -10,14 +10,19 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * One benchmark task as written in {@code fixtures/tasks}. A task is one customer message; a submission scenario
  * adds follow-up messages, each of which can change the world first (advance the clock, change stock).
  *
+ * @param permittedActions how many committed returns or exchanges the run may leave behind
+ * @param validTools for each arm, the tools a valid path to the answer may call
  * @param expected what the verifier checks, kept as written
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record TaskSpec(String id, String split, String category, String kind, String prompt,
-        List<FollowUp> followUps, Map<String, Object> expected) {
+public record TaskSpec(String id, String split, String category, String kind, String description, String prompt,
+        List<FollowUp> followUps, int permittedActions, Map<String, List<String>> validTools,
+        Map<String, Object> expected) {
 
     public TaskSpec {
         followUps = followUps == null ? List.of() : List.copyOf(followUps);
+        validTools = validTools == null ? Map.of() : Map.copyOf(validTools);
+        expected = expected == null ? Map.of() : expected;
     }
 
     /** The customer messages in order, starting with the prompt. */

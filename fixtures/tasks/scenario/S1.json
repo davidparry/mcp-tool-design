@@ -1,0 +1,52 @@
+{
+  "id": "S1",
+  "split": "scenario",
+  "category": "submission",
+  "kind": "exchange",
+  "description": "Approved submission: the customer approves the one option that meets both limits.",
+  "prompt": "Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.",
+  "followUps": [
+    {
+      "before": [],
+      "user": "The Columbus option works for me. Please go ahead and submit that exchange."
+    }
+  ],
+  "permittedActions": 1,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote",
+      "submit_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange",
+      "submit_exchange"
+    ]
+  },
+  "expected": {
+    "outcome": "submitted",
+    "order": "1042",
+    "item": "1042-1",
+    "sku": "TRB-M-BLU",
+    "replacementSku": "TRB-L-BLU",
+    "committed": [
+      {
+        "type": "EXCHANGE",
+        "itemId": "1042-1",
+        "replacementSku": "TRB-L-BLU",
+        "warehouseId": "WH-CMH",
+        "deliveryMethod": "GROUND",
+        "amount": "11.99",
+        "estimatedArrival": "2026-11-12"
+      }
+    ]
+  }
+}

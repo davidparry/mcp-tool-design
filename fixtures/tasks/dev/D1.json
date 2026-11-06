@@ -4,6 +4,24 @@
   "category": "deadline_miss",
   "kind": "exchange",
   "prompt": "Can I exchange the collar in order 1038 for a medium and have it by Monday, November 9? Just show me what's possible.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "no_matching_option",
     "blockingReason": "deadline",
@@ -16,10 +34,46 @@
     "costLimit": null,
     "earliestArrival": "2026-11-10",
     "options": [
-      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-13", "additionalCost": "6.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "14.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "7.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "16.99", "feasible": false, "fails": ["deliver_by"] }
+      {
+        "warehouseId": "WH-DAL",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-13",
+        "additionalCost": "6.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-DAL",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "14.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-CMH",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-16",
+        "additionalCost": "7.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-CMH",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "16.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      }
     ]
   }
 }

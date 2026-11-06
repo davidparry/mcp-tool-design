@@ -4,6 +4,24 @@
   "category": "deadline_miss",
   "kind": "exchange",
   "prompt": "Order 1047 has the small red Trailblazer harness. Could I get a medium in the same color instead, arriving no later than November 9? Only a preview, please.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "no_matching_option",
     "blockingReason": "deadline",
@@ -16,8 +34,26 @@
     "costLimit": null,
     "earliestArrival": "2026-11-10",
     "options": [
-      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "17.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-16", "additionalCost": "9.99", "feasible": false, "fails": ["deliver_by"] }
+      {
+        "warehouseId": "WH-RNO",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "17.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-RNO",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-16",
+        "additionalCost": "9.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      }
     ]
   }
 }

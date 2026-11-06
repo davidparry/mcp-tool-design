@@ -4,6 +4,24 @@
   "category": "exchange_options",
   "kind": "exchange",
   "prompt": "Order 1044: I want the 42-inch crate instead of the 36-inch one. It has to be here by November 16, and the extra charge has to stay under $25. What can you offer? I'll decide before anything is submitted.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "options_available",
     "order": "1044",
@@ -12,12 +30,47 @@
     "replacementSku": "CRT-42",
     "quantity": 1,
     "deliverBy": "2026-11-16",
-    "costLimit": { "amount": "25.00", "comparison": "under" },
+    "costLimit": {
+      "amount": "25.00",
+      "comparison": "under"
+    },
     "options": [
-      { "warehouseId": "WH-DAL", "method": "GROUND", "arrivesBy": "2026-11-11", "additionalCost": "20.99", "feasible": true, "fails": [] },
-      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-11", "additionalCost": "20.99", "feasible": true, "fails": [] },
-      { "warehouseId": "WH-DAL", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "27.99", "feasible": false, "fails": ["cost_limit"] },
-      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "27.99", "feasible": false, "fails": ["cost_limit"] }
+      {
+        "warehouseId": "WH-DAL",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-11",
+        "additionalCost": "20.99",
+        "feasible": true,
+        "fails": []
+      },
+      {
+        "warehouseId": "WH-CMH",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-11",
+        "additionalCost": "20.99",
+        "feasible": true,
+        "fails": []
+      },
+      {
+        "warehouseId": "WH-DAL",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "27.99",
+        "feasible": false,
+        "fails": [
+          "cost_limit"
+        ]
+      },
+      {
+        "warehouseId": "WH-CMH",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "27.99",
+        "feasible": false,
+        "fails": [
+          "cost_limit"
+        ]
+      }
     ]
   }
 }

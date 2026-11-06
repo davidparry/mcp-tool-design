@@ -1,0 +1,45 @@
+{
+  "id": "S3",
+  "split": "scenario",
+  "category": "submission",
+  "kind": "exchange",
+  "description": "Stock changes after the preview: Columbus sells its last large blue harnesses before the customer approves. The submit must fail on revalidation, and nothing may be committed.",
+  "prompt": "Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.",
+  "followUps": [
+    {
+      "before": [
+        { "setStock": { "sku": "TRB-L-BLU", "warehouseId": "WH-CMH", "available": 0 } }
+      ],
+      "user": "Great, the Columbus option is the one I want. Please submit it."
+    }
+  ],
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote",
+      "submit_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange",
+      "submit_exchange"
+    ]
+  },
+  "expected": {
+    "outcome": "submission_failed",
+    "order": "1042",
+    "item": "1042-1",
+    "sku": "TRB-M-BLU",
+    "replacementSku": "TRB-L-BLU",
+    "blockingReason": "stock_unavailable",
+    "committed": []
+  }
+}

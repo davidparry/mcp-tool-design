@@ -4,6 +4,18 @@
   "category": "lookup",
   "kind": "lookup",
   "prompt": "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context"
+    ]
+  },
   "expected": {
     "outcome": "order_status",
     "order": "1027",

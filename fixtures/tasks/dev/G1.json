@@ -4,6 +4,21 @@
   "category": "ineligible",
   "kind": "return",
   "prompt": "Can I return the leash from order 1012? I never ended up using it.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_return_eligibility",
+      "create_return_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_return"
+    ]
+  },
   "expected": {
     "outcome": "ineligible",
     "action": "return",

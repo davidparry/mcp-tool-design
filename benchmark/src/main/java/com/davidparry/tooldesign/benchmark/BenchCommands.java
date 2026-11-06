@@ -5,6 +5,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,9 @@ import com.davidparry.tooldesign.benchmark.mcp.McpSession;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
 import com.davidparry.tooldesign.benchmark.model.ModelGateway;
 import com.davidparry.tooldesign.benchmark.run.BatchRunner;
+import com.davidparry.tooldesign.benchmark.verify.Exporter;
+import com.davidparry.tooldesign.benchmark.verify.Results;
+import com.davidparry.tooldesign.benchmark.verify.Verification;
 
 /**
  * The runner's commands, chosen with {@code --command}:
@@ -31,6 +36,9 @@ import com.davidparry.tooldesign.benchmark.run.BatchRunner;
  * replaces an existing one</li>
  * <li>{@code run --phase=pilot --models=qwen --arms=endpoint,workflow --splits=dev --reps=3 --seed=20261106}:
  * runs a batch, optionally limited with {@code --tasks=C1,H1} and named with {@code --batch}</li>
+ * <li>{@code verify --phase=pilot --batch=pilot-qwen}: grades a batch and writes {@code verification.jsonl}</li>
+ * <li>{@code export --phase=final --batches=final-claude,final-gpt,final-qwen --name=final}: grades and writes
+ * the summary, CSVs, and the order 1042 token series to {@code results/<phase>/<name>/export}</li>
  * </ul>
  */
 @Component
@@ -40,6 +48,8 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
 
     private final BatchRunner batches;
 
+    private final Results results;
+
     private final Gateways gateways;
 
     private final BenchProperties properties;
@@ -48,8 +58,10 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
 
     private int exitCode;
 
-    public BenchCommands(BatchRunner batches, Gateways gateways, BenchProperties properties, JsonMapper json) {
+    public BenchCommands(BatchRunner batches, Results results, Gateways gateways, BenchProperties properties,
+            JsonMapper json) {
         this.batches = batches;
+        this.results = results;
         this.gateways = gateways;
         this.properties = properties;
         this.json = json;
@@ -63,8 +75,10 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
                 case "check" -> check(args);
                 case "catalog" -> catalog(args);
                 case "run" -> runBatch(args);
+                case "verify" -> verify(args);
+                case "export" -> export(args);
                 default -> throw new IllegalArgumentException("Unknown command " + command
-                        + "; use check, catalog, or run");
+                        + "; use check, catalog, run, verify, or export");
             }
         }
         catch (RuntimeException e) {
@@ -125,6 +139,36 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
                 list(args, "arms", "endpoint,workflow"), list(args, "splits", "dev"), list(args, "tasks", ""),
                 Integer.parseInt(one(args, "reps", "3")), Long.parseLong(one(args, "seed", "20261106")));
         this.batches.run(request);
+    }
+
+    private void verify(ApplicationArguments args) {
+        List<Exporter.Row> rows = this.results.verify(one(args, "phase", "pilot"), batches(args));
+        Map<String, List<Exporter.Row>> groups = new TreeMap<>(rows.stream()
+                .collect(Collectors.groupingBy(r -> r.run().model() + " " + r.run().arm() + " " + r.run().split())));
+        groups.forEach((group, members) -> {
+            long valid = members.stream().filter(r -> r.verification().valid()).count();
+            long succeeded = members.stream().filter(r -> r.verification().success()).count();
+            log.info("{}: {} of {} valid runs succeeded", group, succeeded, valid);
+        });
+        rows.stream().filter(r -> r.verification().valid() && !r.verification().success()).forEach(r -> log.info(
+                "  {} failed: {}", r.run().runId(), r.verification().failures().stream()
+                        .filter(Verification.Failure::failsTask)
+                        .map(f -> f.failureClass() + " (" + f.detail() + ")").collect(Collectors.joining("; "))));
+    }
+
+    private void export(ApplicationArguments args) {
+        String phase = one(args, "phase", "pilot");
+        List<String> batches = batches(args);
+        log.info("Wrote {}", this.results.export(phase, batches, one(args, "name", String.join("+", batches))));
+    }
+
+    /** {@code --batches=a,b}, or the single {@code --batch}. */
+    private static List<String> batches(ApplicationArguments args) {
+        List<String> batches = list(args, "batches", one(args, "batch", ""));
+        if (batches.isEmpty()) {
+            throw new IllegalArgumentException("Name the batch with --batch or --batches");
+        }
+        return batches;
     }
 
     private static String one(ApplicationArguments args, String name, String fallback) {

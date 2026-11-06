@@ -133,10 +133,10 @@ class RunnerLoopTest {
 
     @Test
     void aScenarioChangesTheWorldBeforeItsFollowUpAndTheRecordShowsWhatTheSubmitFound() {
-        TaskSpec scenario = new TaskSpec("S-test", "scenario", "submission", "exchange", c1.prompt(),
+        TaskSpec scenario = new TaskSpec("S-test", "scenario", "submission", "exchange", null, c1.prompt(),
                 List.of(new TaskSpec.FollowUp(List.of(new TaskSpec.WorldChange(31, null)),
                         "Yes, go ahead with the Columbus option.")),
-                Map.of());
+                0, null, Map.of());
         ScriptedChatModel model = new ScriptedChatModel().toolCall("preview_exchange", C1_PREVIEW)
                 .toolCall("final_answer", C1_CARD)
                 .toolCall("submit_exchange", "{\"quoteId\":\"EQ-5001\"}")

@@ -72,10 +72,20 @@ B="java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar"
 $B --command=check                                     # app, both catalogs, one request per model
 $B --command=run --phase=pilot --models=qwen --splits=dev --reps=3 --seed=20261106
 $B --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
+$B --command=run --phase=pilot --batch=scenarios --models=qwen --splits=scenario --reps=3
+$B --command=verify --phase=pilot --batch=pilot-qwen      # grade a batch
+$B --command=export --phase=pilot --batches=pilot-qwen,scenarios --name=pilot
 ```
 
-A batch writes `results/<phase>/<batch>/manifest.json`, which records the commit, versions,
+A batch is named `<phase>-<models>` unless `--batch` names it, and writes
+`results/<phase>/<batch>/manifest.json`, which records the commit, versions,
 hashes, model settings, exact tool definitions, and seeded run order, plus `runs.jsonl` with
 one record per run. Starting the same batch again skips finished runs and refuses to continue
 if anything in the manifest changed. `--command=catalog --arms=workflow --force` rewrites a
 catalog snapshot, which is only allowed before the catalogs are frozen.
+
+`verify` grades each run against its task and writes `verification.jsonl` beside `runs.jsonl`,
+then logs the success count for each model, arm, and split and every failed run. `export` grades
+the batches it's given and writes `results/<phase>/<name>/export/`: `runs.csv`, `failures.csv`,
+`tokens-order-1042.csv`, `summary.json`, and `summary.md`. `docs/decisions.md` says how runs are
+graded and what the token counts include.

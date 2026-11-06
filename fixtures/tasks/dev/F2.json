@@ -4,6 +4,24 @@
   "category": "unavailable",
   "kind": "exchange",
   "prompt": "I'd like a large instead of the medium CityStroll harness from order 1034. What are my options? Don't submit anything yet.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "no_matching_option",
     "blockingReason": "out_of_stock",

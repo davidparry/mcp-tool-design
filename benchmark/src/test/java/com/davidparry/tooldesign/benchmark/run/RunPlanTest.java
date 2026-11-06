@@ -53,6 +53,6 @@ class RunPlanTest {
     }
 
     private static TaskSpec task(String id) {
-        return new TaskSpec(id, "dev", "category", "kind", "prompt", null, Map.of());
+        return new TaskSpec(id, "dev", "category", "kind", null, "prompt", null, 0, null, Map.of());
     }
 }

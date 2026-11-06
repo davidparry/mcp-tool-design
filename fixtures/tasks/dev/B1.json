@@ -4,6 +4,21 @@
   "category": "return_preview",
   "kind": "return",
   "prompt": "I'd like to return the dog bed from order 1019. How much would I get back? Don't process anything yet.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_return_eligibility",
+      "create_return_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_return"
+    ]
+  },
   "expected": {
     "outcome": "refund_preview",
     "order": "1019",

@@ -4,6 +4,24 @@
   "category": "deadline_miss",
   "kind": "exchange",
   "prompt": "I need a large chew bone instead of the medium one from order 1021, and it has to arrive by this Saturday. Is that possible? Don't submit anything.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "no_matching_option",
     "blockingReason": "deadline",
@@ -16,10 +34,46 @@
     "costLimit": null,
     "earliestArrival": "2026-11-09",
     "options": [
-      { "warehouseId": "WH-CMH", "method": "EXPRESS", "arrivesBy": "2026-11-09", "additionalCost": "13.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-CMH", "method": "GROUND", "arrivesBy": "2026-11-11", "additionalCost": "7.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-RNO", "method": "EXPRESS", "arrivesBy": "2026-11-10", "additionalCost": "18.99", "feasible": false, "fails": ["deliver_by"] },
-      { "warehouseId": "WH-RNO", "method": "GROUND", "arrivesBy": "2026-11-17", "additionalCost": "8.99", "feasible": false, "fails": ["deliver_by"] }
+      {
+        "warehouseId": "WH-CMH",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-09",
+        "additionalCost": "13.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-CMH",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-11",
+        "additionalCost": "7.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-RNO",
+        "method": "EXPRESS",
+        "arrivesBy": "2026-11-10",
+        "additionalCost": "18.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      },
+      {
+        "warehouseId": "WH-RNO",
+        "method": "GROUND",
+        "arrivesBy": "2026-11-17",
+        "additionalCost": "8.99",
+        "feasible": false,
+        "fails": [
+          "deliver_by"
+        ]
+      }
     ]
   }
 }

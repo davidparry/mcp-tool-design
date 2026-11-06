@@ -4,6 +4,21 @@
   "category": "return_preview",
   "kind": "return",
   "prompt": "I bought three chew bones in order 1023 but my dog only needs one. If I send the other two back, what's my refund? I'm not ready to start the return yet.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_return_eligibility",
+      "create_return_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_return"
+    ]
+  },
   "expected": {
     "outcome": "refund_preview",
     "order": "1023",

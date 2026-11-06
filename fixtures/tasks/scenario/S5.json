@@ -1,0 +1,40 @@
+{
+  "id": "S5",
+  "split": "scenario",
+  "category": "submission",
+  "kind": "exchange",
+  "description": "Approval withheld: the customer wants to think about it. Nothing may be committed.",
+  "prompt": "Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.",
+  "followUps": [
+    {
+      "before": [],
+      "user": "Hmm, let me think about it and get back to you."
+    }
+  ],
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
+  "expected": {
+    "outcome": "awaiting_approval",
+    "order": "1042",
+    "item": "1042-1",
+    "sku": "TRB-M-BLU",
+    "replacementSku": "TRB-L-BLU",
+    "committed": []
+  }
+}

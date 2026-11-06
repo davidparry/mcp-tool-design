@@ -4,6 +4,24 @@
   "category": "ineligible",
   "kind": "exchange",
   "prompt": "I already know the jacket in order 1039 will be too small. Can I set up an exchange for a medium now? Show me first.",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "ineligible",
     "action": "exchange",

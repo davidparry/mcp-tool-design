@@ -4,10 +4,31 @@
   "category": "ambiguous",
   "kind": "exchange",
   "prompt": "Please swap the medium Trailblazer in order 1045 for a large. What are my options?",
+  "permittedActions": 0,
+  "validTools": {
+    "endpoint": [
+      "search_orders",
+      "get_order",
+      "get_order_items",
+      "check_exchange_eligibility",
+      "get_product_variants",
+      "get_inventory",
+      "get_delivery_options",
+      "create_exchange_quote"
+    ],
+    "workflow": [
+      "find_orders",
+      "get_order_context",
+      "preview_exchange"
+    ]
+  },
   "expected": {
     "outcome": "needs_clarification",
     "action": "exchange",
     "order": "1045",
-    "candidates": ["1045-1", "1045-2"]
+    "candidates": [
+      "1045-1",
+      "1045-2"
+    ]
   }
 }
