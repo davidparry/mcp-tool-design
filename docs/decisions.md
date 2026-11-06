@@ -101,6 +101,33 @@ The plan asks for an option at exactly $15.00 to test "under $15". Held-out task
 with an option at exactly $25.00 against "under $25". A cost limit carries its comparison
 (`under` or `at_most`), so the workflow server and the verifier both treat "under" as strict.
 
+## The workflow server's choices
+
+- Six tools, each one a support task: `find_orders`, `get_order_context`, `preview_exchange`,
+  `preview_return`, `submit_exchange`, and `submit_return`. They call the same REST API the frontend
+  calls, through the server's own client records. Nothing is shared with the app's code.
+- Item matching is deterministic. Each line scores 3 for a category word ("harness", "jacket"), 2 per
+  product-name word ("trailblazer", "chew"), and 2 for a mentioned size or color it has. A mentioned
+  size or color it doesn't have costs 10. A tie at the top returns `needs_clarification` with the
+  candidates, and a best score of 0 or less returns `item_not_found` with the order's items. "Toy" is
+  only a category word, so "the toy from order 1022" is ambiguous between the rope toy and the balls.
+- A cost limit is `{amount, comparison}` with `under` (strict) or `at_most`. The tool compares, so the
+  model never does arithmetic on money.
+- A preview quotes every in-stock warehouse and method and returns up to 3 options that meet every
+  limit, cheapest first, and up to 3 that don't. Each rejected option says which limit it misses, by
+  how much, and they're ordered by fewest misses, then earliest arrival when there's a deadline,
+  otherwise lowest cost. `earliestArrival` and `lowestAdditionalCost` cover every quote, including
+  those not listed, and `moreAvailable` says when more options met the limits than are listed.
+- Quantity defaults to 1 for both previews. An omitted replacement size or color keeps the current
+  one.
+- Expected refusals are results with an outcome, not MCP errors: `quote_expired`,
+  `stock_unavailable`, `ineligible`, and so on, each with a `nextStep`. Only unexpected failures come
+  back with `isError`.
+- Annotations state the real side effects. Lookups are read-only and idempotent. Previews aren't
+  read-only, since they create draft quotes, and they aren't destructive. Submits are destructive and
+  idempotent. Every tool is `openWorldHint=false`. The runner doesn't pass annotations to the models,
+  so they describe the design and don't change the measurement.
+
 ## Workflow tool parameters are camelCase
 
 Spring AI names `@McpTool` parameters after the Java parameters, and `@McpToolParam` has no name
@@ -109,10 +136,21 @@ camelCase JSON the endpoint tools pass through, so neither arm gets a naming adv
 
 ## Structured results reach the model as JSON text
 
-`@McpTool(generateOutputSchema = true)` makes Spring AI return `structuredContent` with no text
-block. The runner turns a tool result into the model's tool message the same way for both arms: the
-text blocks if there are any, otherwise the `structuredContent` serialized as compact JSON. Both arms'
-results reach the model as JSON, and the record keeps the exact string the model saw.
+With `@McpTool(generateOutputSchema = true)`, Spring AI 2.0.2 returns `structuredContent` and a text
+block holding the same object as compact JSON. The runner turns a tool result into the model's tool
+message the same way for both arms: the text blocks if there are any, otherwise the
+`structuredContent` serialized as compact JSON. Both arms' results reach the model as JSON, and the
+record keeps the exact string the model saw.
+
+The SDK also validates every structured result against the tool's output schema. Spring AI marks a
+record component required unless it's `@Nullable`, so the workflow results mark every field that an
+outcome can leave out, and leave it out rather than send `null`.
+
+## Workflow results keep the store's time zone
+
+Jackson shifts parsed `OffsetDateTime` values to UTC by default, which turned the API's
+`2026-11-06T09:30:00-06:00` into `15:30Z`. The workflow server turns that off, so both arms see the
+same `-06:00` times and neither has to convert time zones.
 
 ## The answer card
 

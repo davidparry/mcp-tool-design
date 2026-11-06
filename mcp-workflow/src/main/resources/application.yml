@@ -1,0 +1,29 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: mcp-workflow
+  # Keep the API's -06:00 offsets on quote and order times instead of shifting them to UTC.
+  jackson:
+    datatype:
+      datetime:
+        adjust-dates-to-context-time-zone: false
+  ai:
+    mcp:
+      server:
+        name: order-support-workflow
+        version: 1.0.0
+        protocol: STREAMABLE
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+workflow:
+  api:
+    base-url: ${APP_BASE_URL:http://localhost:8080}
+    key: ${SUPPORT_AGENT_API_KEY:support-agent-dev-key}
+  option-limit: 3
+  order-limit: 5
