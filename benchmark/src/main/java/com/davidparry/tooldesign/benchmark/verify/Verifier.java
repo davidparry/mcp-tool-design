@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -49,6 +50,10 @@ public class Verifier {
 
     private static final Map<String, String> POLICY_REASONS = Map.of("window_closed", "policy_window",
             "not_returnable", "policy_category", "not_delivered", "not_delivered");
+
+    private static final Set<String> ANSWERING_OUTCOMES = Set.of("options_available", "refund_preview", "submitted");
+
+    private static final Pattern NOT_DELIVERED = Pattern.compile("(?:not|n't)(?: yet)?(?: been)? (?:delivered|arrived)");
 
     public Verification verify(RunRecord run, TaskSpec task) {
         Grading g = new Grading(run, task);
@@ -454,7 +459,8 @@ public class Verifier {
             String blocking = POLICY_REASONS.getOrDefault(reasonCode, "other");
             boolean says = "ineligible".equals(card.get("outcome"))
                     || String.valueOf(card.get("blocking_reasons")).contains(blocking)
-                    || (card.get("outcome") == null && ineligibleWords(text(card)));
+                    || (!ANSWERING_OUTCOMES.contains(String.valueOf(card.get("outcome")))
+                            && ineligibleWords(reasonCode, text(card)));
             check("says it can't be done", says, true, reasonCode);
             check("gives the policy reason", String.valueOf(card.get("blocking_reasons")).contains(blocking), false,
                     blocking);
@@ -466,19 +472,27 @@ public class Verifier {
             }
         }
 
+        /**
+         * An answer that asks which item, or that cites one of the store's quotes for every matching item, hasn't
+         * picked one; naming both items and quoting only one has.
+         */
         private void clarification(Map<String, Object> card) {
             Object question = card.get("clarification_question");
             String outcome = String.valueOf(card.get("outcome"));
             boolean asks = "needs_clarification".equals(outcome)
                     || (question != null && !question.toString().isBlank())
                     || (card.get("outcome") == null && text(card).contains("?"));
-            boolean answersForOne = "options_available".equals(outcome) || "refund_preview".equals(outcome)
-                    || "submitted".equals(outcome);
-            check("asks which item the customer means", asks && !answersForOne, true, "outcome " + outcome);
-            if (!asks || answersForOne) {
-                Object candidates = this.expected.get("candidates");
-                fail(SKIPPED_CLARIFICATION, "answered for one of " + (candidates instanceof List<?> l ? l.size() : 0)
-                        + " matching items (" + candidates + ") without asking which one the customer means");
+            List<String> candidates = this.expected.get("candidates") instanceof List<?> l
+                    ? l.stream().map(String::valueOf).toList() : List.of();
+            Set<String> cited = citedQuotes(card);
+            boolean quotesEach = !candidates.isEmpty() && candidates.stream().allMatch(item -> this.quotes.stream()
+                    .anyMatch(q -> item.equals(q.get("itemId")) && cited.contains(String.valueOf(q.get("quoteId")))));
+            boolean picksNone = (asks && !ANSWERING_OUTCOMES.contains(outcome)) || quotesEach;
+            check("doesn't pick one of the matching items", picksNone, true,
+                    quotesEach ? "quotes each of " + candidates : "outcome " + outcome);
+            if (!picksNone) {
+                fail(SKIPPED_CLARIFICATION, "answered for one of " + candidates.size() + " matching items ("
+                        + candidates + ") without asking which one the customer means");
             }
         }
 
@@ -539,9 +553,8 @@ public class Verifier {
             if (wrong.isEmpty()) {
                 return;
             }
-            Set<String> cited = new LinkedHashSet<>(Extract.quotes(text(card)));
+            Set<String> cited = citedQuotes(card);
             for (Map<String, Object> offered : options(card)) {
-                cited.addAll(Extract.quotes(String.valueOf(offered.get("quote_reference"))));
                 List<Map<String, Object>> behind = quotesFor(offered).stream().filter(ofType::contains).toList();
                 if (Boolean.TRUE.equals(offered.get("meets_all_constraints")) && !behind.isEmpty()
                         && wrong.containsAll(behind)) {
@@ -698,11 +711,18 @@ public class Verifier {
             };
         }
 
-        private static boolean ineligibleWords(String text) {
-            String t = text.toLowerCase(Locale.ROOT);
+        private static boolean ineligibleWords(String reasonCode, String text) {
+            String t = text.toLowerCase(Locale.ROOT).replace('\u2019', '\'');
             return t.contains("not eligible") || t.contains("isn't eligible") || t.contains("ineligible")
                     || t.contains("can't be returned") || t.contains("cannot be returned") || t.contains("no longer")
-                    || t.contains("not returnable") || t.contains("can't be exchanged") || t.contains("cannot be exchanged");
+                    || t.contains("not returnable") || t.contains("can't be exchanged") || t.contains("cannot be exchanged")
+                    || ("not_delivered".equals(reasonCode) && NOT_DELIVERED.matcher(t).find());
+        }
+
+        private static Set<String> citedQuotes(Map<String, Object> card) {
+            Set<String> cited = new LinkedHashSet<>(Extract.quotes(text(card)));
+            options(card).forEach(o -> cited.addAll(Extract.quotes(String.valueOf(o.get("quote_reference")))));
+            return cited;
         }
 
         private static List<Map<String, Object>> options(Map<String, Object> card) {

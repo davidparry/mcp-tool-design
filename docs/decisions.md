@@ -249,7 +249,7 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   | `wrong_constraint_verdict` | an option is marked as meeting every limit when it doesn't, or the reverse, or "no option" is given when one exists | task |
   | `model_arithmetic` | an unsupported amount is the model's own sum or difference | task if it contradicts a refund or an option's cost, otherwise process |
   | `wrong_item` | a quote or commit is for a different item or replacement than the task asks about | task if the answer rests on it, otherwise process |
-  | `skipped_clarification` | an answer picks one of several matching items instead of asking | task |
+  | `skipped_clarification` | an answer picks one of several matching items: it doesn't ask which, and it doesn't cite a quote for each of them | task |
   | `unapproved_action` | more commits than the task allows, or a commit on terms the customer didn't approve | task |
   | `off_track` | unknown tools, bad arguments, tools outside the task's valid paths, or identical repeated calls | process |
   | `off_track` | a run limit is hit, a message gets no answer, or a required check fails with no other explanation | task |
@@ -365,3 +365,87 @@ mixture-of-experts family with 3B active parameters. Two builds were installed, 
 the same 8 smoke runs (A1, C1, D1, and H1 in both arms) with a card every time. The `nvfp4` build was
 1.5 to 2 times faster, so it runs the benchmark. Thinking is off, with Qwen's suggested non-thinking
 sampling: temperature 0.7, top-p 0.8, top-k 20, and a 32K context.
+
+## Final run
+
+### What ran
+
+The plan's final run is 720 runs: the 24 tasks in both arms, five repetitions each, with three
+models. The hosted keys were still rejected, so qwen ran its 240 as `final-qwen`, and the five
+scenarios ran in both arms five times as `final-qwen-scenarios`, 50 more. The 480 Claude and GPT
+runs wait on keys that work. The hashes and limits are frozen, so those runs can join these
+results without rerunning qwen.
+
+The first start of `final-qwen` recorded a dirty tree, because the scenario results weren't
+committed yet. I stopped it after 7 runs, deleted it, and started it again on `0dd4143`, the commit
+that adds the scenario runs. Its manifest records that commit, a clean tree, and the frozen limits
+of 50 model calls and 60 tool calls.
+
+All 290 runs were valid. 282 ended with a card. 8 stopped as `missing_card` (6 endpoint, 2
+workflow) and were graded on their text. 209 needed the reminder, and the schema check sent 16
+cards back. No run came near a limit: the most was 26 model calls and 23 tool calls.
+
+### Results
+
+| Arm | Dev tasks | Held-out tasks | Scenarios | Median tokens per task | Median model calls | Tokens, all 120 task runs |
+| --- | --- | --- | --- | --- | --- | --- |
+| endpoint | 58 of 80 | 35 of 40 | 25 of 25 | 25,757 | 7 | 3,365,868 |
+| workflow | 77 of 80 | 39 of 40 | 25 of 25 | 11,803 | 4 | 1,272,747 |
+
+The token and call columns cover the dev and held-out runs. In the scenarios the medians are
+70,491 tokens for the endpoint arm and 23,119 for the workflow arm.
+
+- **The gap comes from the turns, not the catalog.** The first call's input is 2,916 tokens in the
+  endpoint arm and 2,446 in the workflow arm. After that the endpoint arm made 885 model calls and
+  679 tool calls, where the workflow arm made 420 and 202.
+- **Order 1042 (C1)** took the workflow arm 2 model calls and about 6,100 tokens in all five runs.
+  The endpoint arm took 6 to 19 calls and 21,788 to 97,424 tokens, with a median of 51,413.
+- **One task went the other way.** A3, a held-out status lookup, cost the workflow arm a median of
+  11,285 tokens and the endpoint arm 9,429.
+
+### Every failure was read
+
+Every failed run was read in full before any result was used.
+
+**Two verifier changes, both after the run.** Both fix false failures in the endpoint arm's
+held-out runs, and both have tests. Together they move 8 runs from failed to passed and change no
+other grade in the final run or in either pilot.
+
+- **G3** asks for an exchange on a jacket that hasn't been delivered. Four endpoint answers said,
+  correctly, that the exchange can't be set up until it arrives, but labeled the card
+  `order_status`. The check read the text only when a card had no outcome, so the label, which is
+  meant to be a soft check, failed them. The text now counts under any outcome that doesn't offer an
+  answer, and for an item that hasn't been delivered, saying so counts.
+- **H3** has two medium harnesses in one order, a blue one and a red one. Four endpoint answers
+  quoted both, each under its own quote ID, and the verifier read that as picking one. An answer
+  that cites one of the store's quotes for every matching item hasn't picked one. An answer that
+  names both and quotes one still has, and that's what every H1 and H2 failure did.
+
+**What stands.** 27 endpoint runs and 4 workflow runs failed. In the endpoint arm:
+
+- **`skipped_clarification`, 10 runs.** Every H1 and H2 run answered for one of the two matching
+  items.
+- **`wrong_constraint_verdict`, 8 runs.** In E2, four runs marked a $4.99 option as meeting "no
+  extra cost". In E3, four marked the $25.00 option as meeting "under $25", and one of them said it
+  "meets your under-$25 limit exactly".
+- **`hallucinated_value`, 8 runs.** Four D1 and D2 runs put the wrong weekday beside a date, such as
+  "Monday, November 10". F1 r3 gave ground and express arrival dates without ever asking for
+  delivery options. F2 r5 and F3 r3 told the customer the large was out of stock everywhere and then
+  built cards with options anyway. F3's was a $0.00 Columbus ground option marked as meeting every
+  limit, which is also a `false_success`. E2 r4 gave the wrong arrival date as well as the wrong
+  verdicts.
+- **`unapproved_action`, 1 run.** `final-qwen-E2-endpoint-r3` was asked "Just tell me what it would
+  take" for an exchange "at no extra cost". It submitted the exchange, EX-7001, with a $4.99
+  shipping charge.
+- **`wrong_item`, 1 run.** `final-qwen-C1-endpoint-r4` was asked for "a large" of a blue harness and
+  decided to "check both blue and red variants". It made three red quotes and listed a large red
+  harness beside the blue one as meeting every limit. The customer never named a color, so it's the
+  mildest failure here.
+
+In the workflow arm:
+
+- **`skipped_clarification`, 2 runs.** H2 r2 and r4 passed "Squeaky Rope Toy" to `preview_return`,
+  the pattern the pilot found.
+- **`hallucinated_value`, 2 runs.** `final-qwen-E3-workflow-r1` got every verdict right and copied
+  all three quote IDs wrong: EQ-5003 became EQ-5503. `final-qwen-E2-workflow-r3` said the other
+  options "range from $5.99 to $6.99", and no tool returned $6.99.

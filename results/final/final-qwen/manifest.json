@@ -1,0 +1,2526 @@
+{
+  "batch" : "final-qwen",
+  "phase" : "final",
+  "seed" : 20261106,
+  "repetitions" : 5,
+  "source" : {
+    "commit" : "0dd414343dd15008d9be8d255ad2d809baff479d",
+    "dirty" : false
+  },
+  "versions" : {
+    "java" : "21.0.2+13-58",
+    "springBoot" : "4.1.2",
+    "springAi" : "2.0.2",
+    "mcpSdk" : "2.1.0",
+    "anthropicSdk" : "unknown",
+    "openaiSdk" : "unknown"
+  },
+  "hashes" : {
+    "fixtures" : "1e2018fd604914d6d27899552250b16516da8b59767aed9db2b147372fa6ccf4",
+    "tasks" : "a6444061576b309cc778bad87221d1e79f5fcf2e56298a857dced95429f8392e",
+    "conversation" : "a283177ab390b4a5033dce641d0312aec3b6f6a73ec7ed3aeab8d6ae423c29e2",
+    "openapi" : "10c6fd48d71eb1206ee86e6728081d4fcab2b50393d20518548606608c63166a",
+    "catalogs" : {
+      "endpoint" : "e0df774977411952cb7e3c0562f50f7b4ae2ac042d855633fa7148a106d2b99e",
+      "workflow" : "585bb142a3710f2be098f14b047f16a5fb65164250df348008b35ba28dd35cae"
+    }
+  },
+  "models" : {
+    "qwen" : {
+      "provider" : "ollama",
+      "model" : "qwen3.6:35b-a3b-nvfp4",
+      "maxTokens" : 8192,
+      "temperature" : 0.7,
+      "topP" : 0.8,
+      "topK" : 20,
+      "numCtx" : 32768,
+      "think" : false
+    }
+  },
+  "limits" : {
+    "maxModelCalls" : 50,
+    "maxToolCalls" : 60,
+    "modelRetries" : 3,
+    "retryBackoff" : "PT10S"
+  },
+  "arms" : {
+    "endpoint" : {
+      "server" : "http://localhost:8081",
+      "protocolVersion" : "2025-11-25",
+      "catalogSha256" : "e0df774977411952cb7e3c0562f50f7b4ae2ac042d855633fa7148a106d2b99e",
+      "snapshotSha256" : "e0df774977411952cb7e3c0562f50f7b4ae2ac042d855633fa7148a106d2b99e",
+      "toolDefinitionsSha256" : "8978bd112041a88037ed39a5c0d1c40f76958094d2daed2b24c7077bbb758a9a",
+      "toolDefinitions" : [ {
+        "name" : "check_exchange_eligibility",
+        "description" : "Check exchange eligibility\n\nSays whether an order item can be exchanged today. The order has to be delivered, the item's category has to allow exchanges, the exchange window has to be open, and units have to remain. Returns the reason code when it can't be exchanged, the last day of the window, and how many units can be exchanged. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "reference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042."
+            },
+            "itemId" : {
+              "type" : "string",
+              "description" : "The item ID from the order's items, such as 1042-1."
+            }
+          },
+          "required" : [ "reference", "itemId" ]
+        }
+      }, {
+        "name" : "check_return_eligibility",
+        "description" : "Check return eligibility\n\nSays whether an order item can be returned today. The order has to be delivered, the item's category has to allow returns, the return window has to be open, and units have to remain. Returns the reason code when it can't be returned, the last day of the window, and how many units can be returned. Refund amounts and fees come from a return quote. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "reference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042."
+            },
+            "itemId" : {
+              "type" : "string",
+              "description" : "The item ID from the order's items, such as 1042-1."
+            }
+          },
+          "required" : [ "reference", "itemId" ]
+        }
+      }, {
+        "name" : "create_exchange_quote",
+        "description" : "Create an exchange quote\n\nValidates and prices exchanging an order item for another variant of the same product, shipped from one warehouse by one delivery method. Returns the price difference, the shipping charge, the additional cost to the customer, the estimated arrival, and when the quote expires (30 minutes after it's created). Creates a draft quote only. It doesn't commit an exchange, reserve stock, or charge the customer.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "orderReference" : {
+              "type" : "string",
+              "example" : "1042",
+              "minLength" : 1
+            },
+            "itemId" : {
+              "type" : "string",
+              "example" : "1042-1",
+              "minLength" : 1
+            },
+            "replacementSku" : {
+              "type" : "string",
+              "description" : "The variant to send instead.",
+              "example" : "TRB-L-BLU",
+              "minLength" : 1
+            },
+            "quantity" : {
+              "type" : "integer",
+              "format" : "int32",
+              "example" : 1,
+              "minimum" : 1
+            },
+            "warehouseId" : {
+              "type" : "string",
+              "description" : "The warehouse to ship the replacement from.",
+              "example" : "WH-CMH",
+              "minLength" : 1
+            },
+            "deliveryMethod" : {
+              "type" : "string",
+              "enum" : [ "GROUND", "EXPRESS" ]
+            }
+          },
+          "required" : [ "deliveryMethod", "itemId", "orderReference", "quantity", "replacementSku", "warehouseId" ]
+        }
+      }, {
+        "name" : "create_return_quote",
+        "description" : "Create a return quote\n\nValidates and prices returning some or all units of an order item. Returns the item refund, any return shipping or restocking fee, the refund amount, and when the quote expires (30 minutes after it's created). Creates a draft quote only. It doesn't commit a return or issue a refund.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "orderReference" : {
+              "type" : "string",
+              "example" : "1019",
+              "minLength" : 1
+            },
+            "itemId" : {
+              "type" : "string",
+              "example" : "1019-1",
+              "minLength" : 1
+            },
+            "quantity" : {
+              "type" : "integer",
+              "format" : "int32",
+              "example" : 1,
+              "minimum" : 1
+            }
+          },
+          "required" : [ "itemId", "orderReference", "quantity" ]
+        }
+      }, {
+        "name" : "get_delivery_options",
+        "description" : "Get delivery options\n\nReturns the ground and express options for a shipment from a warehouse to a postal code: the shipping charge, the business days in transit, and the estimated arrival for a shipment leaving on the ship date. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "warehouseId" : {
+              "type" : "string",
+              "description" : "The warehouse to ship from, such as WH-CMH."
+            },
+            "postalCode" : {
+              "type" : "string",
+              "description" : "The destination postal code, such as 78704."
+            }
+          },
+          "required" : [ "warehouseId", "postalCode" ]
+        }
+      }, {
+        "name" : "get_inventory",
+        "description" : "Get stock for a variant\n\nReturns how many units of a variant are available at each warehouse. Reading stock doesn't reserve it. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "sku" : {
+              "type" : "string",
+              "description" : "The variant SKU, such as TRB-L-BLU."
+            }
+          },
+          "required" : [ "sku" ]
+        }
+      }, {
+        "name" : "get_order",
+        "description" : "Get an order\n\nReturns an order's status, dates, customer, shipping address, and totals. The purchased items are at /api/orders/{reference}/items. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "reference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042."
+            }
+          },
+          "required" : [ "reference" ]
+        }
+      }, {
+        "name" : "get_order_items",
+        "description" : "List an order's items\n\nReturns each purchased line with its item ID, product, variant SKU, size, color, quantity, and the unit price paid, plus how many units were already returned or exchanged. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "reference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042."
+            }
+          },
+          "required" : [ "reference" ]
+        }
+      }, {
+        "name" : "get_product_variants",
+        "description" : "List a product's variants\n\nReturns every size and color a product is sold in, with each variant's SKU and today's price. Stock per warehouse is at /api/inventory. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "productId" : {
+              "type" : "string",
+              "description" : "The product ID from an order item, such as TRB."
+            }
+          },
+          "required" : [ "productId" ]
+        }
+      }, {
+        "name" : "search_orders",
+        "description" : "Search orders\n\nFinds orders by order reference, or by part of the customer's name or email address, newest first. Results are paged. Read-only.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "query" : {
+              "type" : "string",
+              "description" : "An order reference such as 1042, or part of a customer's name or email address. Leave it out to list every order."
+            },
+            "status" : {
+              "type" : "string",
+              "enum" : [ "PLACED", "SHIPPED", "DELIVERED", "CANCELLED" ],
+              "description" : "Only return orders in this status."
+            },
+            "page" : {
+              "type" : "integer",
+              "format" : "int32",
+              "default" : 0,
+              "description" : "Zero-based page number."
+            },
+            "size" : {
+              "type" : "integer",
+              "format" : "int32",
+              "default" : 10,
+              "description" : "Orders per page, from 1 to 50."
+            }
+          }
+        }
+      }, {
+        "name" : "submit_exchange_quote",
+        "description" : "Submit an exchange quote\n\nCommits the exchange an open exchange quote describes: takes the replacement from the quote's warehouse stock, ships it by the quote's method, and charges the additional cost. Checks again that the quote hasn't expired, that the item is still eligible, and that the stock is still there, and changes nothing if any check fails. Submitting a quote that was already submitted returns the original exchange and commits nothing new.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "quoteId" : {
+              "type" : "string",
+              "example" : "EQ-5001",
+              "minLength" : 1
+            }
+          },
+          "required" : [ "quoteId" ]
+        }
+      }, {
+        "name" : "submit_return_quote",
+        "description" : "Submit a return quote\n\nCommits the return an open return quote describes and schedules the refund for when the item arrives. Checks again that the quote hasn't expired and that the item is still eligible, and changes nothing if a check fails. Submitting a quote that was already submitted returns the original return and commits nothing new.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "quoteId" : {
+              "type" : "string",
+              "example" : "EQ-5001",
+              "minLength" : 1
+            }
+          },
+          "required" : [ "quoteId" ]
+        }
+      }, {
+        "name" : "final_answer",
+        "description" : "Send your reply to the customer. Call it once per customer message, after you have every fact you need. Put the facts your message states in the matching fields and leave out fields that don't apply.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "message" : {
+              "type" : "string",
+              "description" : "Your reply to the customer, exactly as they'll read it"
+            },
+            "outcome" : {
+              "type" : "string",
+              "description" : "What the reply does",
+              "enum" : [ "order_status", "refund_preview", "options_available", "no_matching_option", "ineligible", "needs_clarification", "submitted", "submission_failed", "awaiting_approval", "other" ]
+            },
+            "order_reference" : {
+              "type" : "string",
+              "description" : "The order the reply is about, such as 1042"
+            },
+            "order_status" : {
+              "type" : "string",
+              "description" : "The order's status, when the reply states it",
+              "enum" : [ "PLACED", "SHIPPED", "DELIVERED", "CANCELLED" ]
+            },
+            "status_date" : {
+              "type" : "string",
+              "description" : "The delivery date, or the expected delivery date when it hasn't arrived, as YYYY-MM-DD"
+            },
+            "refund_amount" : {
+              "type" : "string",
+              "description" : "The refund the customer would get, in USD, such as 60.00"
+            },
+            "options" : {
+              "type" : "array",
+              "description" : "The exchange options the reply presents",
+              "items" : {
+                "type" : "object",
+                "properties" : {
+                  "ships_from" : {
+                    "type" : "string",
+                    "description" : "Where the replacement ships from"
+                  },
+                  "method" : {
+                    "type" : "string",
+                    "enum" : [ "GROUND", "EXPRESS" ]
+                  },
+                  "arrives_by" : {
+                    "type" : "string",
+                    "description" : "YYYY-MM-DD"
+                  },
+                  "additional_cost" : {
+                    "type" : "string",
+                    "description" : "What the customer pays, in USD, such as 11.99"
+                  },
+                  "meets_all_constraints" : {
+                    "type" : "boolean",
+                    "description" : "Whether it meets every limit the customer gave"
+                  },
+                  "quote_reference" : {
+                    "type" : "string",
+                    "description" : "The quote ID, when there is one"
+                  }
+                },
+                "required" : [ "ships_from", "method", "arrives_by", "additional_cost", "meets_all_constraints" ]
+              }
+            },
+            "blocking_reasons" : {
+              "type" : "array",
+              "description" : "Why the customer can't have what they asked for, when they can't",
+              "items" : {
+                "type" : "string",
+                "enum" : [ "deadline", "cost_limit", "out_of_stock", "policy_window", "policy_category", "not_delivered", "ambiguous_item", "other" ]
+              }
+            },
+            "clarification_question" : {
+              "type" : "string",
+              "description" : "The question you're asking the customer, when you need an answer to go on"
+            },
+            "submitted_reference" : {
+              "type" : "string",
+              "description" : "The exchange or return ID, when one was submitted"
+            }
+          },
+          "required" : [ "message", "outcome" ]
+        }
+      } ]
+    },
+    "workflow" : {
+      "server" : "http://localhost:8082",
+      "protocolVersion" : "2025-11-25",
+      "catalogSha256" : "585bb142a3710f2be098f14b047f16a5fb65164250df348008b35ba28dd35cae",
+      "snapshotSha256" : "585bb142a3710f2be098f14b047f16a5fb65164250df348008b35ba28dd35cae",
+      "toolDefinitionsSha256" : "08f958ac06abbfad17ddb896a4814ab58c2fb487cddf546ed900043866246360",
+      "toolDefinitions" : [ {
+        "name" : "preview_exchange",
+        "description" : "Find and price replacements for an item in an order. Matches the item from the customer's description, checks that it can be exchanged, finds the replacement in the size and color asked for, and quotes every in-stock warehouse and delivery method against the delivery deadline and cost limit. Returns an explicit outcome, up to 3 options that meet every limit (cheapest first) with quote IDs, and the closest options that don't, with the limit each one misses. Creates draft quotes that expire in 30 minutes. It never submits an exchange, reserves stock, or charges the customer.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "orderReference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042"
+            },
+            "itemDescription" : {
+              "type" : "string",
+              "description" : "The item the customer has now, in their words, such as \"medium dog harness\""
+            },
+            "replacementSize" : {
+              "type" : "string",
+              "description" : "The size they want instead, such as \"large\", \"XL\", or \"42 in\". Leave out to keep the current size."
+            },
+            "replacementColor" : {
+              "type" : "string",
+              "description" : "The color they want instead, such as \"red\". Leave out to keep the current color."
+            },
+            "quantity" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "How many units to exchange. Defaults to 1."
+            },
+            "deliverBy" : {
+              "type" : "string",
+              "description" : "The latest acceptable arrival date, YYYY-MM-DD. Arriving on that date counts as on time."
+            },
+            "costLimit" : {
+              "type" : "object",
+              "properties" : {
+                "amount" : {
+                  "type" : "string",
+                  "description" : "The amount in USD, such as \"15.00\""
+                },
+                "comparison" : {
+                  "type" : "string",
+                  "enum" : [ "under", "at_most" ],
+                  "description" : "under: the cost must be less than the amount. at_most: it may equal it."
+                }
+              },
+              "required" : [ "amount", "comparison" ],
+              "description" : "The most the customer will pay on top of what they paid: the price difference plus shipping. \"No extra cost\" is 0.00 at_most."
+            }
+          },
+          "required" : [ "orderReference", "itemDescription" ]
+        }
+      }, {
+        "name" : "submit_exchange",
+        "description" : "Submit one exchange quote from preview_exchange after the customer explicitly approves that option. Commits the exchange, takes the replacement from stock, and charges the additional cost. The quote is checked again first: an expired quote, missing stock, or an item that can no longer be exchanged is refused with the reason, and nothing is committed. Submitting the same quote again returns the original exchange and changes nothing.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "quoteId" : {
+              "type" : "string",
+              "description" : "The quoteId of the option the customer approved, such as EQ-5001"
+            }
+          },
+          "required" : [ "quoteId" ]
+        }
+      }, {
+        "name" : "find_orders",
+        "description" : "Find a customer's orders by order reference, customer name, or email. Returns up to `limit` orders, newest first, each with its status, key dates, items, and total, and says whether more matched. Read-only.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "query" : {
+              "type" : "string",
+              "description" : "An order reference such as 1042, or part of a customer's name or email"
+            },
+            "status" : {
+              "type" : "string",
+              "description" : "Only orders with this status: PLACED, SHIPPED, DELIVERED, or CANCELLED"
+            },
+            "limit" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "How many orders to return, 1 to 10. Defaults to 5."
+            }
+          },
+          "required" : [ "query" ]
+        }
+      }, {
+        "name" : "get_order_context",
+        "description" : "Get what's needed to answer a customer about one order: its status and dates (placed, shipped, delivered or expected), where it ships, and each item with its size, color, quantity, and price paid, plus whether the item can still be returned or exchanged, with the last day to do it or the reason it can't. Read-only.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "orderReference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1042"
+            }
+          },
+          "required" : [ "orderReference" ]
+        }
+      }, {
+        "name" : "preview_return",
+        "description" : "Check whether an item in an order can be returned and preview the refund. Matches the item from the customer's description, checks the return policy, and quotes the refund after any return shipping or restocking fee. Creates a draft return quote that expires in 30 minutes. It never submits the return or issues a refund.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "orderReference" : {
+              "type" : "string",
+              "description" : "The order reference, such as 1019"
+            },
+            "itemDescription" : {
+              "type" : "string",
+              "description" : "The item to return, in the customer's words, such as \"dog bed\""
+            },
+            "quantity" : {
+              "type" : "integer",
+              "format" : "int32",
+              "description" : "How many units to return. Defaults to 1."
+            }
+          },
+          "required" : [ "orderReference", "itemDescription" ]
+        }
+      }, {
+        "name" : "submit_return",
+        "description" : "Submit one return quote from preview_return after the customer explicitly approves it. Commits the return; the refund is issued when the item arrives back. The quote is checked again first: an expired quote or an item that can no longer be returned is refused with the reason, and nothing is committed. Submitting the same quote again returns the original return and changes nothing.",
+        "inputSchema" : {
+          "$schema" : "https://json-schema.org/draft/2020-12/schema",
+          "type" : "object",
+          "properties" : {
+            "quoteId" : {
+              "type" : "string",
+              "description" : "The quoteId of the return the customer approved, such as RQ-6001"
+            }
+          },
+          "required" : [ "quoteId" ]
+        }
+      }, {
+        "name" : "final_answer",
+        "description" : "Send your reply to the customer. Call it once per customer message, after you have every fact you need. Put the facts your message states in the matching fields and leave out fields that don't apply.",
+        "inputSchema" : {
+          "type" : "object",
+          "properties" : {
+            "message" : {
+              "type" : "string",
+              "description" : "Your reply to the customer, exactly as they'll read it"
+            },
+            "outcome" : {
+              "type" : "string",
+              "description" : "What the reply does",
+              "enum" : [ "order_status", "refund_preview", "options_available", "no_matching_option", "ineligible", "needs_clarification", "submitted", "submission_failed", "awaiting_approval", "other" ]
+            },
+            "order_reference" : {
+              "type" : "string",
+              "description" : "The order the reply is about, such as 1042"
+            },
+            "order_status" : {
+              "type" : "string",
+              "description" : "The order's status, when the reply states it",
+              "enum" : [ "PLACED", "SHIPPED", "DELIVERED", "CANCELLED" ]
+            },
+            "status_date" : {
+              "type" : "string",
+              "description" : "The delivery date, or the expected delivery date when it hasn't arrived, as YYYY-MM-DD"
+            },
+            "refund_amount" : {
+              "type" : "string",
+              "description" : "The refund the customer would get, in USD, such as 60.00"
+            },
+            "options" : {
+              "type" : "array",
+              "description" : "The exchange options the reply presents",
+              "items" : {
+                "type" : "object",
+                "properties" : {
+                  "ships_from" : {
+                    "type" : "string",
+                    "description" : "Where the replacement ships from"
+                  },
+                  "method" : {
+                    "type" : "string",
+                    "enum" : [ "GROUND", "EXPRESS" ]
+                  },
+                  "arrives_by" : {
+                    "type" : "string",
+                    "description" : "YYYY-MM-DD"
+                  },
+                  "additional_cost" : {
+                    "type" : "string",
+                    "description" : "What the customer pays, in USD, such as 11.99"
+                  },
+                  "meets_all_constraints" : {
+                    "type" : "boolean",
+                    "description" : "Whether it meets every limit the customer gave"
+                  },
+                  "quote_reference" : {
+                    "type" : "string",
+                    "description" : "The quote ID, when there is one"
+                  }
+                },
+                "required" : [ "ships_from", "method", "arrives_by", "additional_cost", "meets_all_constraints" ]
+              }
+            },
+            "blocking_reasons" : {
+              "type" : "array",
+              "description" : "Why the customer can't have what they asked for, when they can't",
+              "items" : {
+                "type" : "string",
+                "enum" : [ "deadline", "cost_limit", "out_of_stock", "policy_window", "policy_category", "not_delivered", "ambiguous_item", "other" ]
+              }
+            },
+            "clarification_question" : {
+              "type" : "string",
+              "description" : "The question you're asking the customer, when you need an answer to go on"
+            },
+            "submitted_reference" : {
+              "type" : "string",
+              "description" : "The exchange or return ID, when one was submitted"
+            }
+          },
+          "required" : [ "message", "outcome" ]
+        }
+      } ]
+    }
+  },
+  "conversation" : {
+    "systemPrompt" : "You are a customer support agent for Trailhead Pet Supply, an online pet supply store.\n\nToday is Friday, November 6, 2026. The store's time zone is America/Chicago (UTC-06:00). The customer has already been verified, so you can look up and act on any order they mention.\n\nUse the tools for every fact you give the customer: order status and dates, items, eligibility, prices, delivery dates, fees, and refunds. Don't guess, and don't work out an amount yourself when a tool can give it to you.\n\nNever submit an exchange or a return unless the customer has explicitly approved one specific option you showed them. When the customer only asks what's possible, show the options and wait for their answer.\n\nIf the customer's description could mean more than one item in the order, ask which one they mean instead of picking one.\n\nThe customer never sees text you write outside a tool call. Your reply reaches them only through final_answer, so when you're ready to answer, call final_answer once with your message and the facts it states instead of writing the reply as text.",
+    "reminder" : "[Support system] Your reply above wasn't delivered: the customer only sees replies sent with the final_answer tool. Call final_answer now, with that reply in the message field and the facts it states in the other fields."
+  },
+  "tasks" : [ "A1", "A2", "A3", "B1", "B2", "B3", "C1", "C2", "C3", "D1", "D2", "D3", "E1", "E2", "E3", "F1", "F2", "F3", "G1", "G2", "G3", "H1", "H2", "H3" ],
+  "runs" : [ {
+    "position" : 1,
+    "runId" : "final-qwen-H2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H2",
+    "repetition" : 3,
+    "seed" : 1319771855
+  }, {
+    "position" : 2,
+    "runId" : "final-qwen-A3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A3",
+    "repetition" : 3,
+    "seed" : 1005125129
+  }, {
+    "position" : 3,
+    "runId" : "final-qwen-B1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B1",
+    "repetition" : 2,
+    "seed" : 1048623973
+  }, {
+    "position" : 4,
+    "runId" : "final-qwen-B2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B2",
+    "repetition" : 3,
+    "seed" : 89740401
+  }, {
+    "position" : 5,
+    "runId" : "final-qwen-B1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B1",
+    "repetition" : 2,
+    "seed" : 349986547
+  }, {
+    "position" : 6,
+    "runId" : "final-qwen-B1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B1",
+    "repetition" : 5,
+    "seed" : 1048623976
+  }, {
+    "position" : 7,
+    "runId" : "final-qwen-G1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G1",
+    "repetition" : 1,
+    "seed" : 675261251
+  }, {
+    "position" : 8,
+    "runId" : "final-qwen-H3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H3",
+    "repetition" : 5,
+    "seed" : 1725657764
+  }, {
+    "position" : 9,
+    "runId" : "final-qwen-F2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F2",
+    "repetition" : 2,
+    "seed" : 181832204
+  }, {
+    "position" : 10,
+    "runId" : "final-qwen-G2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G2",
+    "repetition" : 2,
+    "seed" : 1827947631
+  }, {
+    "position" : 11,
+    "runId" : "final-qwen-H3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H3",
+    "repetition" : 3,
+    "seed" : 1058477132
+  }, {
+    "position" : 12,
+    "runId" : "final-qwen-D3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D3",
+    "repetition" : 3,
+    "seed" : 933117616
+  }, {
+    "position" : 13,
+    "runId" : "final-qwen-E1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E1",
+    "repetition" : 5,
+    "seed" : 985135635
+  }, {
+    "position" : 14,
+    "runId" : "final-qwen-D3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D3",
+    "repetition" : 5,
+    "seed" : 933117622
+  }, {
+    "position" : 15,
+    "runId" : "final-qwen-C3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C3",
+    "repetition" : 5,
+    "seed" : 2141995721
+  }, {
+    "position" : 16,
+    "runId" : "final-qwen-B1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B1",
+    "repetition" : 3,
+    "seed" : 349986544
+  }, {
+    "position" : 17,
+    "runId" : "final-qwen-E2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E2",
+    "repetition" : 1,
+    "seed" : 1390730758
+  }, {
+    "position" : 18,
+    "runId" : "final-qwen-G2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G2",
+    "repetition" : 3,
+    "seed" : 381199046
+  }, {
+    "position" : 19,
+    "runId" : "final-qwen-F1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F1",
+    "repetition" : 3,
+    "seed" : 475378828
+  }, {
+    "position" : 20,
+    "runId" : "final-qwen-F3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F3",
+    "repetition" : 1,
+    "seed" : 621277158
+  }, {
+    "position" : 21,
+    "runId" : "final-qwen-H3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H3",
+    "repetition" : 4,
+    "seed" : 1725657767
+  }, {
+    "position" : 22,
+    "runId" : "final-qwen-F3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F3",
+    "repetition" : 5,
+    "seed" : 2069070192
+  }, {
+    "position" : 23,
+    "runId" : "final-qwen-A2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A2",
+    "repetition" : 3,
+    "seed" : 599497238
+  }, {
+    "position" : 24,
+    "runId" : "final-qwen-H2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H2",
+    "repetition" : 1,
+    "seed" : 2019457827
+  }, {
+    "position" : 25,
+    "runId" : "final-qwen-A1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A1",
+    "repetition" : 5,
+    "seed" : 893289623
+  }, {
+    "position" : 26,
+    "runId" : "final-qwen-G1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G1",
+    "repetition" : 4,
+    "seed" : 2114670316
+  }, {
+    "position" : 27,
+    "runId" : "final-qwen-C3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C3",
+    "repetition" : 2,
+    "seed" : 2141995722
+  }, {
+    "position" : 28,
+    "runId" : "final-qwen-D2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D2",
+    "repetition" : 3,
+    "seed" : 1891698085
+  }, {
+    "position" : 29,
+    "runId" : "final-qwen-E1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E1",
+    "repetition" : 2,
+    "seed" : 1685837958
+  }, {
+    "position" : 30,
+    "runId" : "final-qwen-E1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E1",
+    "repetition" : 4,
+    "seed" : 985135634
+  }, {
+    "position" : 31,
+    "runId" : "final-qwen-A3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A3",
+    "repetition" : 1,
+    "seed" : 270832017
+  }, {
+    "position" : 32,
+    "runId" : "final-qwen-G2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G2",
+    "repetition" : 4,
+    "seed" : 381199047
+  }, {
+    "position" : 33,
+    "runId" : "final-qwen-H2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H2",
+    "repetition" : 2,
+    "seed" : 1319771854
+  }, {
+    "position" : 34,
+    "runId" : "final-qwen-F1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F1",
+    "repetition" : 1,
+    "seed" : 1176081120
+  }, {
+    "position" : 35,
+    "runId" : "final-qwen-H3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H3",
+    "repetition" : 2,
+    "seed" : 1058477135
+  }, {
+    "position" : 36,
+    "runId" : "final-qwen-C1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C1",
+    "repetition" : 2,
+    "seed" : 1995577170
+  }, {
+    "position" : 37,
+    "runId" : "final-qwen-D2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D2",
+    "repetition" : 5,
+    "seed" : 1226647345
+  }, {
+    "position" : 38,
+    "runId" : "final-qwen-G2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G2",
+    "repetition" : 3,
+    "seed" : 1827947628
+  }, {
+    "position" : 39,
+    "runId" : "final-qwen-F1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F1",
+    "repetition" : 3,
+    "seed" : 1176081126
+  }, {
+    "position" : 40,
+    "runId" : "final-qwen-E2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E2",
+    "repetition" : 3,
+    "seed" : 1390730756
+  }, {
+    "position" : 41,
+    "runId" : "final-qwen-C1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C1",
+    "repetition" : 1,
+    "seed" : 547780039
+  }, {
+    "position" : 42,
+    "runId" : "final-qwen-A3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A3",
+    "repetition" : 4,
+    "seed" : 270832020
+  }, {
+    "position" : 43,
+    "runId" : "final-qwen-G1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G1",
+    "repetition" : 2,
+    "seed" : 2114670318
+  }, {
+    "position" : 44,
+    "runId" : "final-qwen-B3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B3",
+    "repetition" : 4,
+    "seed" : 1943710711
+  }, {
+    "position" : 45,
+    "runId" : "final-qwen-G1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G1",
+    "repetition" : 3,
+    "seed" : 675261249
+  }, {
+    "position" : 46,
+    "runId" : "final-qwen-B3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B3",
+    "repetition" : 3,
+    "seed" : 495880296
+  }, {
+    "position" : 47,
+    "runId" : "final-qwen-C2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C2",
+    "repetition" : 4,
+    "seed" : 1736404689
+  }, {
+    "position" : 48,
+    "runId" : "final-qwen-G2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G2",
+    "repetition" : 5,
+    "seed" : 381199044
+  }, {
+    "position" : 49,
+    "runId" : "final-qwen-C2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C2",
+    "repetition" : 4,
+    "seed" : 287525707
+  }, {
+    "position" : 50,
+    "runId" : "final-qwen-C1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C1",
+    "repetition" : 4,
+    "seed" : 547780042
+  }, {
+    "position" : 51,
+    "runId" : "final-qwen-B2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B2",
+    "repetition" : 4,
+    "seed" : 89740406
+  }, {
+    "position" : 52,
+    "runId" : "final-qwen-C2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C2",
+    "repetition" : 2,
+    "seed" : 1736404691
+  }, {
+    "position" : 53,
+    "runId" : "final-qwen-H1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H1",
+    "repetition" : 4,
+    "seed" : 199058849
+  }, {
+    "position" : 54,
+    "runId" : "final-qwen-E1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E1",
+    "repetition" : 3,
+    "seed" : 1685837959
+  }, {
+    "position" : 55,
+    "runId" : "final-qwen-D1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D1",
+    "repetition" : 4,
+    "seed" : 1485840819
+  }, {
+    "position" : 56,
+    "runId" : "final-qwen-B3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B3",
+    "repetition" : 1,
+    "seed" : 495880298
+  }, {
+    "position" : 57,
+    "runId" : "final-qwen-F3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F3",
+    "repetition" : 2,
+    "seed" : 2069070221
+  }, {
+    "position" : 58,
+    "runId" : "final-qwen-D2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D2",
+    "repetition" : 4,
+    "seed" : 1226647344
+  }, {
+    "position" : 59,
+    "runId" : "final-qwen-H1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H1",
+    "repetition" : 4,
+    "seed" : 1613301583
+  }, {
+    "position" : 60,
+    "runId" : "final-qwen-D2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D2",
+    "repetition" : 4,
+    "seed" : 1891698090
+  }, {
+    "position" : 61,
+    "runId" : "final-qwen-F1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F1",
+    "repetition" : 4,
+    "seed" : 475378829
+  }, {
+    "position" : 62,
+    "runId" : "final-qwen-F2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F2",
+    "repetition" : 4,
+    "seed" : 882567268
+  }, {
+    "position" : 63,
+    "runId" : "final-qwen-B3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B3",
+    "repetition" : 5,
+    "seed" : 495880302
+  }, {
+    "position" : 64,
+    "runId" : "final-qwen-C1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C1",
+    "repetition" : 3,
+    "seed" : 1995577171
+  }, {
+    "position" : 65,
+    "runId" : "final-qwen-H2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H2",
+    "repetition" : 4,
+    "seed" : 1319771852
+  }, {
+    "position" : 66,
+    "runId" : "final-qwen-C2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C2",
+    "repetition" : 1,
+    "seed" : 1736404690
+  }, {
+    "position" : 67,
+    "runId" : "final-qwen-D3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D3",
+    "repetition" : 2,
+    "seed" : 933117619
+  }, {
+    "position" : 68,
+    "runId" : "final-qwen-B2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B2",
+    "repetition" : 2,
+    "seed" : 89740400
+  }, {
+    "position" : 69,
+    "runId" : "final-qwen-C1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C1",
+    "repetition" : 2,
+    "seed" : 547780036
+  }, {
+    "position" : 70,
+    "runId" : "final-qwen-E1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E1",
+    "repetition" : 2,
+    "seed" : 985135660
+  }, {
+    "position" : 71,
+    "runId" : "final-qwen-F2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F2",
+    "repetition" : 3,
+    "seed" : 882567271
+  }, {
+    "position" : 72,
+    "runId" : "final-qwen-D1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D1",
+    "repetition" : 5,
+    "seed" : 38014506
+  }, {
+    "position" : 73,
+    "runId" : "final-qwen-C1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C1",
+    "repetition" : 3,
+    "seed" : 547780037
+  }, {
+    "position" : 74,
+    "runId" : "final-qwen-C3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C3",
+    "repetition" : 1,
+    "seed" : 2141995717
+  }, {
+    "position" : 75,
+    "runId" : "final-qwen-G1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G1",
+    "repetition" : 5,
+    "seed" : 2114670317
+  }, {
+    "position" : 76,
+    "runId" : "final-qwen-F3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F3",
+    "repetition" : 5,
+    "seed" : 621277162
+  }, {
+    "position" : 77,
+    "runId" : "final-qwen-H2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H2",
+    "repetition" : 5,
+    "seed" : 2019457831
+  }, {
+    "position" : 78,
+    "runId" : "final-qwen-B2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B2",
+    "repetition" : 3,
+    "seed" : 789426923
+  }, {
+    "position" : 79,
+    "runId" : "final-qwen-F2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F2",
+    "repetition" : 1,
+    "seed" : 882567265
+  }, {
+    "position" : 80,
+    "runId" : "final-qwen-F2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F2",
+    "repetition" : 5,
+    "seed" : 882567269
+  }, {
+    "position" : 81,
+    "runId" : "final-qwen-G3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G3",
+    "repetition" : 4,
+    "seed" : 119912516
+  }, {
+    "position" : 82,
+    "runId" : "final-qwen-A3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A3",
+    "repetition" : 5,
+    "seed" : 270832021
+  }, {
+    "position" : 83,
+    "runId" : "final-qwen-E2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E2",
+    "repetition" : 3,
+    "seed" : 724627858
+  }, {
+    "position" : 84,
+    "runId" : "final-qwen-G3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G3",
+    "repetition" : 4,
+    "seed" : 1567710162
+  }, {
+    "position" : 85,
+    "runId" : "final-qwen-H2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H2",
+    "repetition" : 3,
+    "seed" : 2019457825
+  }, {
+    "position" : 86,
+    "runId" : "final-qwen-E3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E3",
+    "repetition" : 1,
+    "seed" : 431879981
+  }, {
+    "position" : 87,
+    "runId" : "final-qwen-D1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D1",
+    "repetition" : 2,
+    "seed" : 38014503
+  }, {
+    "position" : 88,
+    "runId" : "final-qwen-A2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A2",
+    "repetition" : 4,
+    "seed" : 1299183753
+  }, {
+    "position" : 89,
+    "runId" : "final-qwen-B1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B1",
+    "repetition" : 4,
+    "seed" : 349986545
+  }, {
+    "position" : 90,
+    "runId" : "final-qwen-E2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E2",
+    "repetition" : 2,
+    "seed" : 1390730759
+  }, {
+    "position" : 91,
+    "runId" : "final-qwen-F1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F1",
+    "repetition" : 2,
+    "seed" : 475378831
+  }, {
+    "position" : 92,
+    "runId" : "final-qwen-E3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E3",
+    "repetition" : 5,
+    "seed" : 1130485131
+  }, {
+    "position" : 93,
+    "runId" : "final-qwen-A3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A3",
+    "repetition" : 2,
+    "seed" : 1005125128
+  }, {
+    "position" : 94,
+    "runId" : "final-qwen-F2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F2",
+    "repetition" : 4,
+    "seed" : 181832690
+  }, {
+    "position" : 95,
+    "runId" : "final-qwen-H1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H1",
+    "repetition" : 5,
+    "seed" : 199058854
+  }, {
+    "position" : 96,
+    "runId" : "final-qwen-C1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C1",
+    "repetition" : 1,
+    "seed" : 1995577197
+  }, {
+    "position" : 97,
+    "runId" : "final-qwen-D1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D1",
+    "repetition" : 1,
+    "seed" : 38014502
+  }, {
+    "position" : 98,
+    "runId" : "final-qwen-C3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C3",
+    "repetition" : 3,
+    "seed" : 1442341969
+  }, {
+    "position" : 99,
+    "runId" : "final-qwen-D3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D3",
+    "repetition" : 4,
+    "seed" : 933117617
+  }, {
+    "position" : 100,
+    "runId" : "final-qwen-H2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H2",
+    "repetition" : 2,
+    "seed" : 2019457824
+  }, {
+    "position" : 101,
+    "runId" : "final-qwen-H1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H1",
+    "repetition" : 3,
+    "seed" : 199058848
+  }, {
+    "position" : 102,
+    "runId" : "final-qwen-H3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H3",
+    "repetition" : 1,
+    "seed" : 1725657760
+  }, {
+    "position" : 103,
+    "runId" : "final-qwen-B3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B3",
+    "repetition" : 2,
+    "seed" : 1943710705
+  }, {
+    "position" : 104,
+    "runId" : "final-qwen-A2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A2",
+    "repetition" : 4,
+    "seed" : 599497239
+  }, {
+    "position" : 105,
+    "runId" : "final-qwen-C2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C2",
+    "repetition" : 3,
+    "seed" : 1736404688
+  }, {
+    "position" : 106,
+    "runId" : "final-qwen-C2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C2",
+    "repetition" : 5,
+    "seed" : 287525704
+  }, {
+    "position" : 107,
+    "runId" : "final-qwen-B2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B2",
+    "repetition" : 1,
+    "seed" : 89740403
+  }, {
+    "position" : 108,
+    "runId" : "final-qwen-A1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A1",
+    "repetition" : 4,
+    "seed" : 893289622
+  }, {
+    "position" : 109,
+    "runId" : "final-qwen-B1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B1",
+    "repetition" : 1,
+    "seed" : 349986546
+  }, {
+    "position" : 110,
+    "runId" : "final-qwen-H1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H1",
+    "repetition" : 2,
+    "seed" : 199058851
+  }, {
+    "position" : 111,
+    "runId" : "final-qwen-H3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H3",
+    "repetition" : 1,
+    "seed" : 1058477134
+  }, {
+    "position" : 112,
+    "runId" : "final-qwen-D1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D1",
+    "repetition" : 5,
+    "seed" : 1485840816
+  }, {
+    "position" : 113,
+    "runId" : "final-qwen-A1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A1",
+    "repetition" : 3,
+    "seed" : 1558372619
+  }, {
+    "position" : 114,
+    "runId" : "final-qwen-B2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B2",
+    "repetition" : 5,
+    "seed" : 789426921
+  }, {
+    "position" : 115,
+    "runId" : "final-qwen-H3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H3",
+    "repetition" : 2,
+    "seed" : 1725657761
+  }, {
+    "position" : 116,
+    "runId" : "final-qwen-G1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G1",
+    "repetition" : 5,
+    "seed" : 675261255
+  }, {
+    "position" : 117,
+    "runId" : "final-qwen-B3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B3",
+    "repetition" : 3,
+    "seed" : 1943710710
+  }, {
+    "position" : 118,
+    "runId" : "final-qwen-G2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G2",
+    "repetition" : 1,
+    "seed" : 381199040
+  }, {
+    "position" : 119,
+    "runId" : "final-qwen-E3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E3",
+    "repetition" : 5,
+    "seed" : 431879953
+  }, {
+    "position" : 120,
+    "runId" : "final-qwen-F3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F3",
+    "repetition" : 4,
+    "seed" : 2069070195
+  }, {
+    "position" : 121,
+    "runId" : "final-qwen-F3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F3",
+    "repetition" : 3,
+    "seed" : 621277156
+  }, {
+    "position" : 122,
+    "runId" : "final-qwen-C2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C2",
+    "repetition" : 1,
+    "seed" : 287525700
+  }, {
+    "position" : 123,
+    "runId" : "final-qwen-D1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D1",
+    "repetition" : 1,
+    "seed" : 1485840844
+  }, {
+    "position" : 124,
+    "runId" : "final-qwen-D3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D3",
+    "repetition" : 3,
+    "seed" : 1631722282
+  }, {
+    "position" : 125,
+    "runId" : "final-qwen-F2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F2",
+    "repetition" : 5,
+    "seed" : 181832691
+  }, {
+    "position" : 126,
+    "runId" : "final-qwen-B2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B2",
+    "repetition" : 1,
+    "seed" : 789426917
+  }, {
+    "position" : 127,
+    "runId" : "final-qwen-C2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C2",
+    "repetition" : 2,
+    "seed" : 287525701
+  }, {
+    "position" : 128,
+    "runId" : "final-qwen-A2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A2",
+    "repetition" : 3,
+    "seed" : 1299183752
+  }, {
+    "position" : 129,
+    "runId" : "final-qwen-G3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G3",
+    "repetition" : 1,
+    "seed" : 119912513
+  }, {
+    "position" : 130,
+    "runId" : "final-qwen-G3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G3",
+    "repetition" : 1,
+    "seed" : 1567710191
+  }, {
+    "position" : 131,
+    "runId" : "final-qwen-A2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A2",
+    "repetition" : 1,
+    "seed" : 1299183754
+  }, {
+    "position" : 132,
+    "runId" : "final-qwen-D1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D1",
+    "repetition" : 3,
+    "seed" : 1485840818
+  }, {
+    "position" : 133,
+    "runId" : "final-qwen-H3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H3",
+    "repetition" : 4,
+    "seed" : 1058477133
+  }, {
+    "position" : 134,
+    "runId" : "final-qwen-F1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F1",
+    "repetition" : 4,
+    "seed" : 1176081127
+  }, {
+    "position" : 135,
+    "runId" : "final-qwen-A3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A3",
+    "repetition" : 3,
+    "seed" : 270832023
+  }, {
+    "position" : 136,
+    "runId" : "final-qwen-G1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G1",
+    "repetition" : 4,
+    "seed" : 675261254
+  }, {
+    "position" : 137,
+    "runId" : "final-qwen-H2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H2",
+    "repetition" : 1,
+    "seed" : 1319771849
+  }, {
+    "position" : 138,
+    "runId" : "final-qwen-C3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C3",
+    "repetition" : 4,
+    "seed" : 1442341974
+  }, {
+    "position" : 139,
+    "runId" : "final-qwen-B3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B3",
+    "repetition" : 1,
+    "seed" : 1943710704
+  }, {
+    "position" : 140,
+    "runId" : "final-qwen-H1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H1",
+    "repetition" : 5,
+    "seed" : 1613301580
+  }, {
+    "position" : 141,
+    "runId" : "final-qwen-D1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D1",
+    "repetition" : 2,
+    "seed" : 1485840845
+  }, {
+    "position" : 142,
+    "runId" : "final-qwen-A2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A2",
+    "repetition" : 1,
+    "seed" : 599497232
+  }, {
+    "position" : 143,
+    "runId" : "final-qwen-B2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B2",
+    "repetition" : 4,
+    "seed" : 789426920
+  }, {
+    "position" : 144,
+    "runId" : "final-qwen-E1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E1",
+    "repetition" : 1,
+    "seed" : 985135663
+  }, {
+    "position" : 145,
+    "runId" : "final-qwen-A1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A1",
+    "repetition" : 1,
+    "seed" : 1558372613
+  }, {
+    "position" : 146,
+    "runId" : "final-qwen-F1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F1",
+    "repetition" : 5,
+    "seed" : 1176081124
+  }, {
+    "position" : 147,
+    "runId" : "final-qwen-A3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A3",
+    "repetition" : 1,
+    "seed" : 1005125131
+  }, {
+    "position" : 148,
+    "runId" : "final-qwen-E3-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E3",
+    "repetition" : 4,
+    "seed" : 431879952
+  }, {
+    "position" : 149,
+    "runId" : "final-qwen-D3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D3",
+    "repetition" : 1,
+    "seed" : 933117618
+  }, {
+    "position" : 150,
+    "runId" : "final-qwen-D3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D3",
+    "repetition" : 1,
+    "seed" : 1631722276
+  }, {
+    "position" : 151,
+    "runId" : "final-qwen-G2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G2",
+    "repetition" : 4,
+    "seed" : 1827947629
+  }, {
+    "position" : 152,
+    "runId" : "final-qwen-B1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B1",
+    "repetition" : 4,
+    "seed" : 1048623979
+  }, {
+    "position" : 153,
+    "runId" : "final-qwen-A1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A1",
+    "repetition" : 2,
+    "seed" : 893289616
+  }, {
+    "position" : 154,
+    "runId" : "final-qwen-D2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D2",
+    "repetition" : 5,
+    "seed" : 1891698091
+  }, {
+    "position" : 155,
+    "runId" : "final-qwen-G3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G3",
+    "repetition" : 5,
+    "seed" : 1567710163
+  }, {
+    "position" : 156,
+    "runId" : "final-qwen-F2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F2",
+    "repetition" : 2,
+    "seed" : 882567270
+  }, {
+    "position" : 157,
+    "runId" : "final-qwen-E1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E1",
+    "repetition" : 1,
+    "seed" : 1685837953
+  }, {
+    "position" : 158,
+    "runId" : "final-qwen-G2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G2",
+    "repetition" : 2,
+    "seed" : 381199041
+  }, {
+    "position" : 159,
+    "runId" : "final-qwen-C3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C3",
+    "repetition" : 2,
+    "seed" : 1442341968
+  }, {
+    "position" : 160,
+    "runId" : "final-qwen-D2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D2",
+    "repetition" : 2,
+    "seed" : 1891698084
+  }, {
+    "position" : 161,
+    "runId" : "final-qwen-G3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G3",
+    "repetition" : 2,
+    "seed" : 119912518
+  }, {
+    "position" : 162,
+    "runId" : "final-qwen-A2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A2",
+    "repetition" : 5,
+    "seed" : 1299183758
+  }, {
+    "position" : 163,
+    "runId" : "final-qwen-F2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F2",
+    "repetition" : 1,
+    "seed" : 181832207
+  }, {
+    "position" : 164,
+    "runId" : "final-qwen-A2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A2",
+    "repetition" : 5,
+    "seed" : 599497236
+  }, {
+    "position" : 165,
+    "runId" : "final-qwen-C3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C3",
+    "repetition" : 5,
+    "seed" : 1442341975
+  }, {
+    "position" : 166,
+    "runId" : "final-qwen-E1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E1",
+    "repetition" : 5,
+    "seed" : 1685837957
+  }, {
+    "position" : 167,
+    "runId" : "final-qwen-H3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H3",
+    "repetition" : 5,
+    "seed" : 1058477106
+  }, {
+    "position" : 168,
+    "runId" : "final-qwen-E3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E3",
+    "repetition" : 3,
+    "seed" : 1130485125
+  }, {
+    "position" : 169,
+    "runId" : "final-qwen-D3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D3",
+    "repetition" : 5,
+    "seed" : 1631722280
+  }, {
+    "position" : 170,
+    "runId" : "final-qwen-F3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F3",
+    "repetition" : 2,
+    "seed" : 621277159
+  }, {
+    "position" : 171,
+    "runId" : "final-qwen-C1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C1",
+    "repetition" : 5,
+    "seed" : 1995577169
+  }, {
+    "position" : 172,
+    "runId" : "final-qwen-H1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H1",
+    "repetition" : 1,
+    "seed" : 199058850
+  }, {
+    "position" : 173,
+    "runId" : "final-qwen-D3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D3",
+    "repetition" : 4,
+    "seed" : 1631722283
+  }, {
+    "position" : 174,
+    "runId" : "final-qwen-E2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E2",
+    "repetition" : 1,
+    "seed" : 724627884
+  }, {
+    "position" : 175,
+    "runId" : "final-qwen-E2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E2",
+    "repetition" : 2,
+    "seed" : 724627885
+  }, {
+    "position" : 176,
+    "runId" : "final-qwen-G2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G2",
+    "repetition" : 1,
+    "seed" : 1827947630
+  }, {
+    "position" : 177,
+    "runId" : "final-qwen-F3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F3",
+    "repetition" : 3,
+    "seed" : 2069070194
+  }, {
+    "position" : 178,
+    "runId" : "final-qwen-D2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D2",
+    "repetition" : 3,
+    "seed" : 1226647347
+  }, {
+    "position" : 179,
+    "runId" : "final-qwen-G3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G3",
+    "repetition" : 5,
+    "seed" : 119912517
+  }, {
+    "position" : 180,
+    "runId" : "final-qwen-H1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H1",
+    "repetition" : 1,
+    "seed" : 1613301576
+  }, {
+    "position" : 181,
+    "runId" : "final-qwen-C1-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C1",
+    "repetition" : 4,
+    "seed" : 1995577168
+  }, {
+    "position" : 182,
+    "runId" : "final-qwen-H1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H1",
+    "repetition" : 3,
+    "seed" : 1613301582
+  }, {
+    "position" : 183,
+    "runId" : "final-qwen-B3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B3",
+    "repetition" : 2,
+    "seed" : 495880299
+  }, {
+    "position" : 184,
+    "runId" : "final-qwen-E2-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E2",
+    "repetition" : 5,
+    "seed" : 1390730762
+  }, {
+    "position" : 185,
+    "runId" : "final-qwen-D1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D1",
+    "repetition" : 4,
+    "seed" : 38014501
+  }, {
+    "position" : 186,
+    "runId" : "final-qwen-H3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H3",
+    "repetition" : 3,
+    "seed" : 1725657766
+  }, {
+    "position" : 187,
+    "runId" : "final-qwen-F1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F1",
+    "repetition" : 5,
+    "seed" : 475378802
+  }, {
+    "position" : 188,
+    "runId" : "final-qwen-E3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E3",
+    "repetition" : 2,
+    "seed" : 431879954
+  }, {
+    "position" : 189,
+    "runId" : "final-qwen-E2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E2",
+    "repetition" : 5,
+    "seed" : 724627856
+  }, {
+    "position" : 190,
+    "runId" : "final-qwen-D2-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D2",
+    "repetition" : 1,
+    "seed" : 1891698087
+  }, {
+    "position" : 191,
+    "runId" : "final-qwen-E2-endpoint-r4",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E2",
+    "repetition" : 4,
+    "seed" : 724627859
+  }, {
+    "position" : 192,
+    "runId" : "final-qwen-B2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B2",
+    "repetition" : 2,
+    "seed" : 789426922
+  }, {
+    "position" : 193,
+    "runId" : "final-qwen-E3-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E3",
+    "repetition" : 1,
+    "seed" : 1130485127
+  }, {
+    "position" : 194,
+    "runId" : "final-qwen-A1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A1",
+    "repetition" : 5,
+    "seed" : 1558372617
+  }, {
+    "position" : 195,
+    "runId" : "final-qwen-D3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D3",
+    "repetition" : 2,
+    "seed" : 1631722277
+  }, {
+    "position" : 196,
+    "runId" : "final-qwen-B1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B1",
+    "repetition" : 3,
+    "seed" : 1048623978
+  }, {
+    "position" : 197,
+    "runId" : "final-qwen-D2-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D2",
+    "repetition" : 1,
+    "seed" : 1226647373
+  }, {
+    "position" : 198,
+    "runId" : "final-qwen-G2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G2",
+    "repetition" : 5,
+    "seed" : 1827947602
+  }, {
+    "position" : 199,
+    "runId" : "final-qwen-A3-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A3",
+    "repetition" : 5,
+    "seed" : 1005125135
+  }, {
+    "position" : 200,
+    "runId" : "final-qwen-C2-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C2",
+    "repetition" : 3,
+    "seed" : 287525706
+  }, {
+    "position" : 201,
+    "runId" : "final-qwen-B1-workflow-r1",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B1",
+    "repetition" : 1,
+    "seed" : 1048623972
+  }, {
+    "position" : 202,
+    "runId" : "final-qwen-G1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G1",
+    "repetition" : 2,
+    "seed" : 675261248
+  }, {
+    "position" : 203,
+    "runId" : "final-qwen-C3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C3",
+    "repetition" : 3,
+    "seed" : 2141995723
+  }, {
+    "position" : 204,
+    "runId" : "final-qwen-F2-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F2",
+    "repetition" : 3,
+    "seed" : 181832205
+  }, {
+    "position" : 205,
+    "runId" : "final-qwen-A3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A3",
+    "repetition" : 4,
+    "seed" : 1005125134
+  }, {
+    "position" : 206,
+    "runId" : "final-qwen-B3-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B3",
+    "repetition" : 5,
+    "seed" : 1943710708
+  }, {
+    "position" : 207,
+    "runId" : "final-qwen-A1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A1",
+    "repetition" : 2,
+    "seed" : 1558372618
+  }, {
+    "position" : 208,
+    "runId" : "final-qwen-D1-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "D1",
+    "repetition" : 3,
+    "seed" : 38014500
+  }, {
+    "position" : 209,
+    "runId" : "final-qwen-H2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "H2",
+    "repetition" : 4,
+    "seed" : 2019457830
+  }, {
+    "position" : 210,
+    "runId" : "final-qwen-G3-workflow-r3",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "G3",
+    "repetition" : 3,
+    "seed" : 119912519
+  }, {
+    "position" : 211,
+    "runId" : "final-qwen-G3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G3",
+    "repetition" : 2,
+    "seed" : 1567710188
+  }, {
+    "position" : 212,
+    "runId" : "final-qwen-C3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C3",
+    "repetition" : 4,
+    "seed" : 2141995720
+  }, {
+    "position" : 213,
+    "runId" : "final-qwen-A1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A1",
+    "repetition" : 1,
+    "seed" : 893289619
+  }, {
+    "position" : 214,
+    "runId" : "final-qwen-A3-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A3",
+    "repetition" : 2,
+    "seed" : 270832022
+  }, {
+    "position" : 215,
+    "runId" : "final-qwen-F3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F3",
+    "repetition" : 1,
+    "seed" : 2069070220
+  }, {
+    "position" : 216,
+    "runId" : "final-qwen-E1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E1",
+    "repetition" : 4,
+    "seed" : 1685837956
+  }, {
+    "position" : 217,
+    "runId" : "final-qwen-H1-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H1",
+    "repetition" : 2,
+    "seed" : 1613301577
+  }, {
+    "position" : 218,
+    "runId" : "final-qwen-A1-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A1",
+    "repetition" : 4,
+    "seed" : 1558372616
+  }, {
+    "position" : 219,
+    "runId" : "final-qwen-A2-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "A2",
+    "repetition" : 2,
+    "seed" : 1299183755
+  }, {
+    "position" : 220,
+    "runId" : "final-qwen-E3-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E3",
+    "repetition" : 2,
+    "seed" : 1130485124
+  }, {
+    "position" : 221,
+    "runId" : "final-qwen-F1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "F1",
+    "repetition" : 1,
+    "seed" : 475378830
+  }, {
+    "position" : 222,
+    "runId" : "final-qwen-E1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E1",
+    "repetition" : 3,
+    "seed" : 985135661
+  }, {
+    "position" : 223,
+    "runId" : "final-qwen-E3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "E3",
+    "repetition" : 3,
+    "seed" : 431879955
+  }, {
+    "position" : 224,
+    "runId" : "final-qwen-G1-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G1",
+    "repetition" : 1,
+    "seed" : 2114670313
+  }, {
+    "position" : 225,
+    "runId" : "final-qwen-F1-workflow-r2",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F1",
+    "repetition" : 2,
+    "seed" : 1176081121
+  }, {
+    "position" : 226,
+    "runId" : "final-qwen-C2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C2",
+    "repetition" : 5,
+    "seed" : 1736404694
+  }, {
+    "position" : 227,
+    "runId" : "final-qwen-A1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A1",
+    "repetition" : 3,
+    "seed" : 893289617
+  }, {
+    "position" : 228,
+    "runId" : "final-qwen-C3-endpoint-r1",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "C3",
+    "repetition" : 1,
+    "seed" : 1442341971
+  }, {
+    "position" : 229,
+    "runId" : "final-qwen-D2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "D2",
+    "repetition" : 2,
+    "seed" : 1226647346
+  }, {
+    "position" : 230,
+    "runId" : "final-qwen-F3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "F3",
+    "repetition" : 4,
+    "seed" : 621277157
+  }, {
+    "position" : 231,
+    "runId" : "final-qwen-G3-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G3",
+    "repetition" : 3,
+    "seed" : 1567710189
+  }, {
+    "position" : 232,
+    "runId" : "final-qwen-E2-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E2",
+    "repetition" : 4,
+    "seed" : 1390730757
+  }, {
+    "position" : 233,
+    "runId" : "final-qwen-C1-workflow-r5",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "C1",
+    "repetition" : 5,
+    "seed" : 547780043
+  }, {
+    "position" : 234,
+    "runId" : "final-qwen-G1-endpoint-r3",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "G1",
+    "repetition" : 3,
+    "seed" : 2114670319
+  }, {
+    "position" : 235,
+    "runId" : "final-qwen-E3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "E3",
+    "repetition" : 4,
+    "seed" : 1130485130
+  }, {
+    "position" : 236,
+    "runId" : "final-qwen-H2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "H2",
+    "repetition" : 5,
+    "seed" : 1319771853
+  }, {
+    "position" : 237,
+    "runId" : "final-qwen-B2-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B2",
+    "repetition" : 5,
+    "seed" : 89740407
+  }, {
+    "position" : 238,
+    "runId" : "final-qwen-B1-endpoint-r5",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "B1",
+    "repetition" : 5,
+    "seed" : 349986550
+  }, {
+    "position" : 239,
+    "runId" : "final-qwen-A2-endpoint-r2",
+    "model" : "qwen",
+    "arm" : "endpoint",
+    "task" : "A2",
+    "repetition" : 2,
+    "seed" : 599497233
+  }, {
+    "position" : 240,
+    "runId" : "final-qwen-B3-workflow-r4",
+    "model" : "qwen",
+    "arm" : "workflow",
+    "task" : "B3",
+    "repetition" : 4,
+    "seed" : 495880297
+  } ],
+  "createdAt" : "2026-11-06T20:47:29.806645Z"
+}

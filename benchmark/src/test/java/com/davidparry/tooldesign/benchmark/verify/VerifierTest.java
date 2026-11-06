@@ -132,6 +132,45 @@ class VerifierTest {
     }
 
     @Test
+    void quotingEachMatchingItemIsntPickingOne() {
+        Verification v = verify("H3", "endpoint", trailblazerQuotes().card("""
+                {"message":"The blue medium (1045-1) can go to a large under EQ-5001, and the red one (1045-2) under \
+                EQ-5002.","outcome":"options_available"}"""));
+
+        assertThat(v.success()).isTrue();
+    }
+
+    @Test
+    void namingBothItemsButQuotingOneStillPicksOne() {
+        Verification v = verify("H3", "endpoint", trailblazerQuotes().card("""
+                {"message":"You have two medium Trailblazers, 1045-1 and 1045-2. The blue one can go to a large under \
+                EQ-5001.","outcome":"options_available"}"""));
+
+        assertThat(classes(v)).containsExactly(Verification.SKIPPED_CLARIFICATION);
+    }
+
+    @Test
+    void sayingTheItemHasntArrivedUnderAnotherOutcomeStillSaysItCantBeDone() {
+        Verification v = verify("G3", "endpoint", run().call("get_order", "{\"reference\":\"1039\"}", """
+                {"reference":"1039","status":"SHIPPED","deliveredOn":null}""").card("""
+                {"message":"Order 1039 hasn\u2019t been delivered yet, so an exchange can't be set up until it does.",
+                 "outcome":"order_status","order_status":"SHIPPED"}"""));
+
+        assertThat(v.success()).isTrue();
+    }
+
+    @Test
+    void offeringToGoAheadWithAnUndeliveredItemDoesntSayItCantBeDone() {
+        Verification v = verify("G3", "endpoint", run().call("get_order", "{\"reference\":\"1039\"}", """
+                {"reference":"1039","status":"SHIPPED","deliveredOn":null}""").card("""
+                {"message":"It hasn't been delivered yet, but I can line up the medium for you now.",
+                 "outcome":"options_available"}"""));
+
+        assertThat(v.success()).isFalse();
+        assertThat(classes(v)).containsExactly(Verification.OFF_TRACK);
+    }
+
+    @Test
     void aCommittedExchangeInAPreviewOnlyTaskIsAnUnapprovedAction() {
         Verification v = verify("C1", "endpoint", run().call("submit_exchange_quote", "{}", "{\"exchangeId\":\"EX-7001\"}")
                 .card("{\"message\":\"Done, EX-7001.\",\"outcome\":\"submitted\",\"submitted_reference\":\"EX-7001\"}")
@@ -316,6 +355,18 @@ class VerifierTest {
     private static Map<String, Object> blueXl(String quoteId, String warehouseId, String method) {
         return Map.of("quoteId", quoteId, "type", "EXCHANGE", "itemId", "1017-1", "replacementSku", "TRB-XL-BLU",
                 "warehouseId", warehouseId, "deliveryMethod", method);
+    }
+
+    private static Builder trailblazerQuotes() {
+        return run().quoted(largeTrailblazer("EQ-5001", "1045-1", "TRB-L-BLU"))
+                .quoted(largeTrailblazer("EQ-5002", "1045-2", "TRB-L-RED"))
+                .call("create_exchange_quote", "{}", "{\"quoteId\":\"EQ-5001\",\"replacementSku\":\"TRB-L-BLU\"}")
+                .call("create_exchange_quote", "{}", "{\"quoteId\":\"EQ-5002\",\"replacementSku\":\"TRB-L-RED\"}");
+    }
+
+    private static Map<String, Object> largeTrailblazer(String quoteId, String itemId, String replacementSku) {
+        return Map.of("quoteId", quoteId, "type", "EXCHANGE", "itemId", itemId, "replacementSku", replacementSku,
+                "warehouseId", "WH-CMH", "deliveryMethod", "GROUND");
     }
 
     private static Builder expiredThenSubmitted(Map<String, Object> committed) {
