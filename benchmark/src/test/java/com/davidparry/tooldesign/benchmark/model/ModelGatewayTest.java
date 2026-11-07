@@ -26,6 +26,22 @@ class ModelGatewayTest {
     }
 
     @Test
+    void aSpentBudgetIsntRetriedAndNeitherItNorAnOutageCountsAgainstTheRun() {
+        RuntimeException spendCap = new RuntimeException("429: {type=error, error={type=rate_limit_error, "
+                + "message=You have reached your API usage limits, details={error_code=enforced_spend_limit_reached}}}");
+        RuntimeException quota = new RuntimeException("429: You exceeded your current quota (insufficient_quota)");
+
+        assertThat(ModelGateway.retryable(spendCap)).isFalse();
+        assertThat(ModelGateway.retryable(quota)).isFalse();
+        assertThat(ModelGateway.providerProblem(spendCap)).isTrue();
+        assertThat(ModelGateway.providerProblem(quota)).isTrue();
+        assertThat(ModelGateway.providerProblem(new RuntimeException("401: invalid x-api-key"))).isTrue();
+        assertThat(ModelGateway.providerProblem(new RuntimeException("529: Overloaded"))).isTrue();
+        assertThat(ModelGateway.providerProblem(new IllegalArgumentException("400: tools.3.input_schema: invalid")))
+                .isFalse();
+    }
+
+    @Test
     void theRecordedSettingsLeaveOutWhatWasntSet() {
         ModelSpec spec = new ModelSpec("ollama", "qwen3.6:35b-a3b-nvfp4", 8192, 0.7, null, null, 32768, false, null,
                 null, null);

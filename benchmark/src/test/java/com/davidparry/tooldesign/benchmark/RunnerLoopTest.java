@@ -166,6 +166,29 @@ class RunnerLoopTest {
     }
 
     @Test
+    void aProviderThatStaysDownEndsTheRunAsASetupErrorSoTheBatchStopsAndRunsItAgain() {
+        ScriptedChatModel model = new ScriptedChatModel().toolCall("get_order", "{\"reference\":\"1042\"}")
+                .failure(new RuntimeException("529: Overloaded"));
+
+        RunRecord record = execute(spec("endpoint", c1), model, endpointCatalog());
+
+        assertThat(record.stopReason()).isEqualTo("setup_error");
+        assertThat(record.errors()).singleElement().asString().contains("failed on turn 2", "Overloaded");
+        assertThat(record.turns()).hasSize(1);
+    }
+
+    @Test
+    void aRequestTheProviderRefusesEndsTheRunAsAModelError() {
+        ScriptedChatModel model = new ScriptedChatModel()
+                .failure(new IllegalArgumentException("400: tools.3.input_schema: invalid"));
+
+        RunRecord record = execute(spec("endpoint", c1), model, endpointCatalog());
+
+        assertThat(record.stopReason()).isEqualTo("model_error");
+        assertThat(record.errors()).singleElement().asString().contains("failed on turn 1");
+    }
+
+    @Test
     void theToolCallLimitStopsARunThatKeepsCalling() {
         ScriptedChatModel model = new ScriptedChatModel();
         for (int i = 0; i < 5; i++) {

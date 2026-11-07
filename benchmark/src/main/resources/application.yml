@@ -11,10 +11,16 @@ spring:
       read-timeout: 15m
   ai:
     # Keys come from the environment or a git-ignored .env at the repo root. They're never logged or recorded.
+    # The clients' own retries are off, so the runner's retries are the only ones. A long reasoning turn can run
+    # past Spring AI's default timeout of 60 seconds.
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:not-set}
+      timeout: 10m
+      max-retries: 0
     openai:
       api-key: ${OPENAI_API_KEY:not-set}
+      timeout: 10m
+      max-retries: 0
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       init:
@@ -34,15 +40,25 @@ bench:
     max-tool-calls: 60
     model-retries: 3
     retry-backoff: 10s
+  # Prices are list prices in USD per million tokens, as of November 6, 2026.
   models:
     claude:
       provider: anthropic
       model: claude-opus-4-8
       max-tokens: 8192
+      prices:
+        input: 5.00
+        output: 25.00
+        cacheRead: 0.50
+        cacheWrite: 6.25
     gpt:
       provider: openai
       model: gpt-5
       max-tokens: 16000
+      prices:
+        input: 1.25
+        output: 10.00
+        cacheRead: 0.125
     qwen:
       provider: ollama
       model: qwen3.6:35b-a3b-nvfp4

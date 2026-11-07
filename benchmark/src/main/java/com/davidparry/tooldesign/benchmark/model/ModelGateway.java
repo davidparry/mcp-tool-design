@@ -25,6 +25,10 @@ import com.davidparry.tooldesign.benchmark.config.BenchProperties.ModelSpec;
  */
 public final class ModelGateway {
 
+    private static final List<String> ACCOUNT_PROBLEMS = List.of("invalid x-api-key", "invalid_api_key",
+            "authentication_error", "permission_error", "insufficient_quota", "exceeded your current quota",
+            "enforced_spend_limit_reached", "api usage limits", "billing_hard_limit_reached");
+
     private final String key;
 
     private final ModelSpec spec;
@@ -155,8 +159,19 @@ public final class ModelGateway {
         };
     }
 
+    /**
+     * Whether a failed request says nothing about the run: the provider stayed overloaded or out of reach through
+     * every retry, or the account can't make requests at all. A run that ends this way has to be run again.
+     */
+    public static boolean providerProblem(Throwable error) {
+        return accountProblem(error) || retryable(error);
+    }
+
     /** Rate limits, overloads, server errors, and timeouts are worth another try; bad requests and bad keys aren't. */
     static boolean retryable(Throwable error) {
+        if (accountProblem(error)) {
+            return false;
+        }
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
             String name = cause.getClass().getSimpleName();
             String message = String.valueOf(cause.getMessage()).toLowerCase();
@@ -169,6 +184,22 @@ public final class ModelGateway {
                     || name.contains("Unexpected") || name.contains("Overloaded") || cause instanceof java.io.IOException
                     || message.contains("429") || message.contains("529") || message.contains("503")
                     || message.contains("overloaded") || message.contains("timed out")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A bad key, missing permission, or a spent quota or monthly spend cap. Both providers send the last two as 429s,
+     * but waiting doesn't clear them.
+     */
+    static boolean accountProblem(Throwable error) {
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            String name = cause.getClass().getSimpleName();
+            String message = String.valueOf(cause.getMessage()).toLowerCase();
+            if (name.contains("Unauthorized") || name.contains("PermissionDenied")
+                    || ACCOUNT_PROBLEMS.stream().anyMatch(message::contains)) {
                 return true;
             }
         }

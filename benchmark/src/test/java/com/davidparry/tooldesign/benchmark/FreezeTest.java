@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -29,6 +30,7 @@ import com.davidparry.tooldesign.benchmark.run.RunExecutor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** A final batch runs only against what the freeze recorded. These batches have no models, so nothing is sent. */
@@ -89,6 +91,21 @@ class FreezeTest {
 
         assertThatIllegalStateException().isThrownBy(() -> runner(fixtures, LIMITS).run(finalBatch()))
                 .withMessageContaining("tasks changed since");
+    }
+
+    @Test
+    void aStoppedFinalBatchResumesWhicheverOrderItsManifestKeptTheConversationIn() throws IOException {
+        Path fixtures = copyFixtures();
+        runner(fixtures, LIMITS).freeze(List.of("endpoint", "workflow"), List.of(), false);
+        Path manifest = runner(fixtures, LIMITS).run(finalBatch()).resolve("manifest.json");
+        Map<String, Object> written = read(manifest);
+        Map<?, ?> conversation = (Map<?, ?>) written.get("conversation");
+        Map<Object, Object> reordered = new LinkedHashMap<>();
+        List.copyOf(conversation.keySet()).reversed().forEach(key -> reordered.put(key, conversation.get(key)));
+        written.put("conversation", reordered);
+        Files.writeString(manifest, json.writeValueAsString(written));
+
+        assertThatNoException().isThrownBy(() -> runner(fixtures, LIMITS).run(finalBatch()));
     }
 
     @Test

@@ -75,11 +75,21 @@ pinned in `benchmark/src/main/resources/application.yml` and recorded in every r
 
 - On November 6 the Anthropic and OpenAI keys in the environment were rejected by both APIs
   (`invalid x-api-key` and `invalid_api_key`). The runner reads keys from the environment or from a
-  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place.
+  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place, which
+  is expected on November 9.
 - `qwen3:30b` isn't installed on this machine, so the local model is its successor in the same
   mixture-of-experts family, chosen in [the pilot section](#pilot) below.
-- The hosted IDs stay as the plan set them, `claude-opus-4-8` and `gpt-5`, until a valid key lets the
-  `check` command confirm them.
+- **The hosted models stay as the plan set them**, `claude-opus-4-8` and `gpt-5`, so the results
+  line up with the Skills vs MCP benchmark. Both providers still list them on November 6. Opus 4.8
+  won't be retired before May 28, 2027. GPT-5 is deprecated, with `gpt-5.6-sol` as its replacement,
+  and leaves the API on December 11, 2026, so its runs have to finish before then. OpenAI's newer
+  models aren't a drop-in swap: GPT-6 Astra and GPT-6.1 Sol call tools only through the Responses
+  API, and the GPT-5.6 models refuse tools with reasoning on Chat Completions, which is what the
+  runner's OpenAI adapter uses.
+- **List prices** on November 6, per million tokens: Opus 4.8 is $5 input, $25 output, $0.50 for
+  cache reads, and $6.25 for five-minute cache writes. GPT-5 is $1.25 input, $10 output, and $0.125
+  for cached input. They're set in `bench.models.<key>.prices` for the export's cost columns. qwen
+  runs locally and has none.
 
 ## Persistence and money
 
@@ -170,7 +180,8 @@ verifier grades the card, plus the app's state, rather than parsing prose.
 - In smoke runs before the pilot, qwen replied in plain text first in 7 of 8 runs. Saying that the
   customer never sees text outside a tool call cut that to 4 of 8, and a reminder that names the
   tool and the field got a card in all 8. The plan's fallback, a fenced JSON block in the reply,
-  isn't needed for qwen; the pilot decides for the hosted models.
+  isn't needed for qwen. The conversation is frozen with the reminder and without the fallback, so
+  the hosted models run the same way.
 
 ## The runner's choices
 
@@ -191,8 +202,21 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   with the batch seed, so neither arm gets the warmer cache or the quieter hour. Each run's sampling
   seed comes from the batch seed and the run ID, so repetitions differ and a rerun repeats.
 - **Limits.** 50 model calls and 60 tool calls per run, with `final_answer` not counted. Failed
-  model requests are retried 3 times on rate limits, overloads, server errors, and timeouts, never
-  on bad keys or bad requests. The pilot set the model-call limit; the rule is under "Pilot".
+  model requests are retried 3 times, after 10, 20, and 30 seconds, on rate limits, overloads,
+  server errors, and timeouts, never on bad keys, bad requests, a spent quota, or a reached spend
+  cap. The pilot set the model-call limit; the rule is under "Pilot".
+- **One retry policy.** The Anthropic and OpenAI clients would otherwise retry 2 and 3 times on
+  their own, where the record can't see it, so their retries are off and each turn's `retries` is
+  the whole count. Their timeout is 10 minutes rather than Spring AI's 60 seconds, because a GPT-5
+  turn with reasoning and a 16,000-token budget can run past a minute.
+- **Provider problems stop the batch.** A request that's still failing after its retries, or an
+  account that can't make requests (a bad key, a missing permission, a spent quota, or a reached
+  spend cap), says nothing about the model or the arm. The run stops as a setup error, the batch
+  stops with it, and starting the batch again runs it again. A request the provider refuses, such
+  as a malformed one, ends the run as a model error, and the run is invalid.
+- **Preflight.** Before a batch records anything, each model gets one short request per arm that
+  carries that arm's tool definitions, so a bad key, a wrong model ID, or a tool schema the
+  provider won't accept stops the batch first. `check` sends the same requests.
 - **Credentials.** Keys come from the environment or `.env` and never reach a log line or a
   record. Provider errors echo keys back, sometimes masked with a few real characters left, so the
   runner redacts anything key-shaped before it logs or records an error.
@@ -267,8 +291,10 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   calls, the reminder turns included. Anthropic's input count leaves out cache reads and writes, so
   they're added back. Medians and means are reported over all valid runs and over successful runs
   only.
-- **Cost** per 1,000 tasks uses each model's prices from `bench.models.<key>.prices`, with and
-  without the cache-read discount. It's left empty until prices are set.
+- **Cost** per 1,000 tasks uses each model's list prices from `bench.models.<key>.prices` (see
+  "Three models"), with and without the cache-read discount. OpenAI's prompt tokens include its
+  cached tokens, so those come out before the input price applies. qwen has no prices, so its cost
+  is left empty.
 
 ## Pilot
 
@@ -386,6 +412,28 @@ of 50 model calls and 60 tool calls.
 All 290 runs were valid. 282 ended with a card. 8 stopped as `missing_card` (6 endpoint, 2
 workflow) and were graded on their text. 209 needed the reminder, and the schema check sent 16
 cards back. No run came near a limit: the most was 26 model calls and 23 tool calls.
+
+### Before the hosted runs
+
+With no working keys, both hosted adapters ran the whole loop on November 6 against a local
+stand-in for the Anthropic Messages and OpenAI Chat Completions APIs. The stand-in replayed passing
+qwen runs call for call (C1 and the S2 scenario, in both arms) through the real Spring AI clients,
+app, and servers. All eight runs graded the same as the qwen runs they replayed. Every tool result
+matched, and every tool call ID came back with its result, through a turn with two calls, the
+reminder turns, and S2's second customer message after the clock moved. The stand-in's usage
+numbers came through both clients into the right fields, and the cost columns matched a hand count.
+
+The same stand-in checked the failure paths. An overload was retried once after 10 seconds and the
+run went on. A 65-second answer didn't time out, and with the timeout cut to 30 seconds for the
+test, the request that timed out was retried. A spend-cap error from Anthropic and a quota error
+from OpenAI each stopped the batch after one request, and starting it again ran that run again.
+That check also found that a stopped batch could refuse to resume: the manifest wrote its
+conversation section in an order that can change from one JVM to the next, and the resume check
+compared text. It compares values now. The bug could only refuse a resume, never change a record,
+so the frozen results stand.
+
+When the keys work, `check` and one scratch run per model close the two pilot checks still open:
+the model IDs, and each provider's own usage fields.
 
 ### Results
 

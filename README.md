@@ -69,7 +69,7 @@ root:
 ```bash
 mvn -q -pl benchmark package -DskipTests
 B="java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar"
-$B --command=check                                     # app, both catalogs, one request per model
+$B --command=check                                     # app, both catalogs, each model with each arm's tools
 $B --command=run --phase=pilot --models=qwen --splits=dev --reps=3 --seed=20261106
 $B --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
 $B --command=run --phase=pilot --batch=scenarios --models=qwen --splits=scenario --reps=3
@@ -82,9 +82,10 @@ $B --command=run --phase=final --models=qwen --splits=dev,heldout --reps=5
 A batch is named `<phase>-<models>` unless `--batch` names it, and writes
 `results/<phase>/<batch>/manifest.json`, which records the commit, versions,
 hashes, model settings, exact tool definitions, and seeded run order, plus `runs.jsonl` with
-one record per run. Starting the same batch again skips finished runs and refuses to continue
-if anything in the manifest changed. `--command=catalog --arms=workflow --force` rewrites a
-catalog snapshot, which is only allowed before the catalogs are frozen.
+one record per run. Starting the same batch again skips finished runs, runs setup errors again,
+and refuses to continue if anything in the manifest changed.
+`--command=catalog --arms=workflow --force` rewrites a catalog snapshot, which is only allowed
+before the catalogs are frozen.
 
 `verify` grades each run against its task and writes `verification.jsonl` beside `runs.jsonl`,
 then logs the success count for each model, arm, and split and every failed run. `export` grades
@@ -96,6 +97,25 @@ graded and what the token counts include.
 conversation, OpenAPI document, and both catalogs. A `final` batch won't start unless all of them
 still match, `catalog` won't write a snapshot once they're frozen, and a `final` export won't
 combine batches that ran with different hashes or limits. Only `results/final/` is committed.
+
+The hosted models run the same final batches as qwen, one batch per model, so each can have its
+own stack. `STACK_PORT` starts a second stack on other ports, and the runner finds it through
+`APP_BASE_URL`, `ENDPOINT_MCP_URL`, and `WORKFLOW_MCP_URL`. A batch records its servers, so resume
+it on the stack it started on.
+
+```bash
+$B --command=check --models=claude,gpt
+$B --command=run --phase=scratch --models=claude,gpt --tasks=C1 --reps=1
+$B --command=run --phase=final --models=claude --splits=dev,heldout --reps=5 --seed=20261106
+$B --command=run --phase=final --batch=final-claude-scenarios --models=claude --splits=scenario --reps=5 --seed=20261106
+
+STACK_PORT=9080 scripts/bench-stack.sh up --no-build    # in a second terminal
+export APP_BASE_URL=http://localhost:9080 ENDPOINT_MCP_URL=http://localhost:9081 WORKFLOW_MCP_URL=http://localhost:9082
+$B --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --seed=20261106
+$B --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106
+
+$B --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
+```
 
 ## Viewer
 

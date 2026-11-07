@@ -16,7 +16,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 /** A model that plays back scripted replies, 100 input and 10 output tokens each, and keeps every prompt it got. */
 public final class ScriptedChatModel implements ChatModel {
 
-    private final Deque<AssistantMessage> replies = new ArrayDeque<>();
+    private final Deque<Object> replies = new ArrayDeque<>();
 
     private final List<Prompt> prompts = new ArrayList<>();
 
@@ -40,6 +40,12 @@ public final class ScriptedChatModel implements ChatModel {
         return this;
     }
 
+    /** A request that fails with this error instead of replying. */
+    public ScriptedChatModel failure(RuntimeException error) {
+        this.replies.add(error);
+        return this;
+    }
+
     public List<Prompt> prompts() {
         return this.prompts;
     }
@@ -47,8 +53,12 @@ public final class ScriptedChatModel implements ChatModel {
     @Override
     public ChatResponse call(Prompt prompt) {
         this.prompts.add(prompt);
-        AssistantMessage reply = this.replies.isEmpty() ? AssistantMessage.builder().content("out of script").build()
+        Object next = this.replies.isEmpty() ? AssistantMessage.builder().content("out of script").build()
                 : this.replies.poll();
+        if (next instanceof RuntimeException error) {
+            throw error;
+        }
+        AssistantMessage reply = (AssistantMessage) next;
         return new ChatResponse(List.of(new Generation(reply)),
                 ChatResponseMetadata.builder().model("scripted").usage(new DefaultUsage(100, 10)).build());
     }

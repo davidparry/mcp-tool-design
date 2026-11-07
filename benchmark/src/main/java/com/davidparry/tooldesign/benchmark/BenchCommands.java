@@ -3,6 +3,7 @@ package com.davidparry.tooldesign.benchmark;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -32,7 +33,7 @@ import com.davidparry.tooldesign.benchmark.verify.Verification;
  * The runner's commands, chosen with {@code --command}:
  * <ul>
  * <li>{@code check}: checks the app, each arm's catalog against its snapshot, and each model with one short
- * request</li>
+ * request per arm that carries the arm's tool definitions</li>
  * <li>{@code catalog --arms=workflow}: writes an arm's catalog snapshot from its live server; {@code --force}
  * replaces an existing one</li>
  * <li>{@code run --phase=pilot --models=qwen --arms=endpoint,workflow --splits=dev --reps=3 --seed=20261106}:
@@ -96,8 +97,10 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
     }
 
     private void check(ApplicationArguments args) {
+        Map<String, Map<String, Object>> arms = new LinkedHashMap<>();
         for (String arm : list(args, "arms", "endpoint,workflow")) {
             Map<String, Object> info = this.batches.arm(arm);
+            arms.put(arm, info);
             log.info("{}: catalog {} (snapshot {}), {} tool definitions, protocol {}", arm, info.get("catalogSha256"),
                     info.get("snapshotSha256"), ((List<?>) info.get("toolDefinitions")).size(),
                     info.get("protocolVersion"));
@@ -106,8 +109,9 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
         for (String key : list(args, "models", String.join(",", this.gateways.all().keySet()))) {
             ModelGateway model = this.gateways.get(key);
             try {
-                this.batches.preflight(model);
-                log.info("{}: {} answers", key, model.spec().model());
+                this.batches.preflight(model, arms);
+                log.info("{}: {} answers with the {} tools", key, model.spec().model(),
+                        String.join(" and ", arms.keySet()));
             }
             catch (RuntimeException e) {
                 allUsable = false;

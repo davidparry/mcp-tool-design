@@ -16,6 +16,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.SerializationFeature;
@@ -26,6 +27,7 @@ import com.davidparry.tooldesign.benchmark.config.BenchProperties;
 import com.davidparry.tooldesign.benchmark.config.Redact;
 import com.davidparry.tooldesign.benchmark.mcp.Catalogs;
 import com.davidparry.tooldesign.benchmark.mcp.McpSession;
+import com.davidparry.tooldesign.benchmark.model.DefinitionOnlyTool;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
 import com.davidparry.tooldesign.benchmark.model.ModelGateway;
 
@@ -86,7 +88,7 @@ public class BatchRunner {
             checkFrozen(hashes);
         }
         for (String model : request.models()) {
-            preflight(this.gateways.get(model));
+            preflight(this.gateways.get(model), arms);
         }
 
         List<RunSpec> plan = RunPlan.plan(request.phase(), request.models(), request.arms(), tasks,
@@ -149,16 +151,32 @@ public class BatchRunner {
         return info;
     }
 
-    /** One short request without tools, so a bad key or model ID stops the batch before it records anything. */
-    public void preflight(ModelGateway model) {
-        try {
-            model.call(List.of(new UserMessage("Reply with the single word: ready")), List.of(), null, 0,
-                    Duration.ZERO);
-        }
-        catch (RuntimeException e) {
-            throw new IllegalStateException(model.key() + " (" + model.spec().model() + ") isn't usable: "
-                    + e.getClass().getSimpleName() + ": " + Redact.secrets(firstLine(e.getMessage())));
-        }
+    /**
+     * One short request per arm, carrying that arm's tool definitions, so a bad key, a wrong model ID, or a tool
+     * schema the provider rejects stops the batch before it records anything.
+     *
+     * @param arms each arm's details from {@link #arm(String)}
+     */
+    public void preflight(ModelGateway model, Map<String, Map<String, Object>> arms) {
+        arms.forEach((arm, details) -> {
+            try {
+                model.call(List.of(new UserMessage("Reply with the single word: ready")), tools(details), null, 0,
+                        Duration.ZERO);
+            }
+            catch (RuntimeException e) {
+                throw new IllegalStateException(model.key() + " (" + model.spec().model() + ") isn't usable with the "
+                        + arm + " tools: " + e.getClass().getSimpleName() + ": "
+                        + Redact.secrets(firstLine(e.getMessage())));
+            }
+        });
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<ToolCallback> tools(Map<String, Object> arm) {
+        return ((List<Map<String, Object>>) arm.get("toolDefinitions")).stream()
+                .<ToolCallback>map(d -> DefinitionOnlyTool.of((String) d.get("name"), (String) d.get("description"),
+                        this.json.writeValueAsString(d.get("inputSchema"))))
+                .toList();
     }
 
     /**
@@ -262,8 +280,10 @@ public class BatchRunner {
         manifest.put("models", models);
         manifest.put("limits", this.properties.limits());
         manifest.put("arms", arms);
-        manifest.put("conversation", Map.of("systemPrompt", Conversation.SYSTEM_PROMPT, "reminder",
-                Conversation.REMINDER));
+        Map<String, Object> conversation = new LinkedHashMap<>();
+        conversation.put("systemPrompt", Conversation.SYSTEM_PROMPT);
+        conversation.put("reminder", Conversation.REMINDER);
+        manifest.put("conversation", conversation);
         manifest.put("tasks", tasks.stream().map(TaskSpec::id).toList());
         manifest.put("runs", plan.stream().map(r -> {
             Map<String, Object> run = new LinkedHashMap<>();
@@ -291,7 +311,7 @@ public class BatchRunner {
                         new TypeReference<Map<String, Object>>() {
                         });
                 for (String key : List.of("hashes", "models", "limits", "arms", "runs", "conversation")) {
-                    if (!String.valueOf(existing.get(key)).equals(String.valueOf(current.get(key)))) {
+                    if (!Objects.equals(existing.get(key), current.get(key))) {
                         throw new IllegalStateException("Batch " + manifest.get("batch") + " was planned with a "
                                 + "different " + key + ". Use a new batch name.");
                     }

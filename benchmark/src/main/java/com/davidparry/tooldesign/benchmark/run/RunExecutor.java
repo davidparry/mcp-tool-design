@@ -161,8 +161,12 @@ public class RunExecutor {
                 }
                 catch (RuntimeException e) {
                     cards.add(card);
-                    throw new ModelFailure(model.key() + " failed on turn " + (recorder.modelCalls() + 1) + ": "
-                            + e.getClass().getSimpleName() + ": " + Redact.secrets(e.getMessage()));
+                    String failure = model.key() + " failed on turn " + (recorder.modelCalls() + 1) + ": "
+                            + e.getClass().getSimpleName() + ": " + Redact.secrets(e.getMessage());
+                    if (ModelGateway.providerProblem(e)) {
+                        throw new SetupException(failure);
+                    }
+                    throw new ModelFailure(failure);
                 }
                 AssistantMessage assistant = reply.message();
                 messages.add(assistant);
