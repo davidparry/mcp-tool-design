@@ -76,7 +76,8 @@ pinned in `benchmark/src/main/resources/application.yml` and recorded in every r
 
 - On November 6 the Anthropic and OpenAI keys in the environment were rejected by both APIs
   (`invalid x-api-key` and `invalid_api_key`). The runner reads keys from the environment or from a
-  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place.
+  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place. Keys
+  that work arrived on November 10; [Hosted runs](#hosted-runs) has what happened next.
 - `qwen3:30b` isn't installed on this machine, so the local model is its successor in the same
   mixture-of-experts family, chosen in [the pilot section](#pilot) below.
 - **The hosted models stay as the plan set them**, `claude-opus-4-8` and `gpt-5`, so the results
@@ -412,8 +413,8 @@ sampling: temperature 0.7, top-p 0.8, top-k 20, and a 32K context.
 The plan's final run is 720 runs: the 24 tasks in both arms, five repetitions each, with three
 models. The hosted keys were still rejected, so qwen ran its 240 as `final-qwen`, and the five
 scenarios ran in both arms five times as `final-qwen-scenarios`, 50 more. The 480 Claude and GPT
-runs wait on keys that work. The hashes and limits are frozen, so those runs can join these
-results without rerunning qwen.
+runs, and 50 scenario runs for each, waited on keys that work. The hashes and limits are frozen, so
+those runs can join these results without rerunning qwen.
 
 The first start of `final-qwen` recorded a dirty tree, because the scenario results weren't
 committed yet. I stopped it after 7 runs, deleted it, and started it again on `0dd4143`, the commit
@@ -447,8 +448,8 @@ The qwen manifests record the Anthropic and OpenAI SDK versions as `unknown`: th
 Maven metadata, and the runner read only Maven's. Since November 9 it falls back to the jar
 manifest, so the hosted batches record 2.72.0 and 4.80.0. Qwen's runs never touch either SDK.
 
-When the keys work, `check` and one scratch run per model close the two pilot checks still open:
-the model IDs, and each provider's own usage fields.
+Once the keys worked, `check` and a scratch batch closed the two pilot checks still open, the
+model IDs and each provider's own usage fields. They're under [Hosted runs](#hosted-runs).
 
 ### Results
 
@@ -460,8 +461,8 @@ the model IDs, and each provider's own usage fields.
 The token and call columns cover the dev and held-out runs. In the scenarios the medians are
 70,491 tokens for the endpoint arm and 23,119 for the workflow arm.
 
-- **The gap comes from the turns, not the catalog.** The first call's input is 2,916 tokens in the
-  endpoint arm and 2,446 in the workflow arm. After that the endpoint arm made 885 model calls and
+- **The gap comes from the turns, not the catalog.** The first call's median input is 2,916 tokens
+  in the endpoint arm and 2,446 in the workflow arm. After that the endpoint arm made 885 model calls and
   679 tool calls, where the workflow arm made 420 and 202.
 - **Order 1042 (C1)** took the workflow arm 2 model calls and about 6,100 tokens in all five runs.
   The endpoint arm took 6 to 19 calls and 21,788 to 97,424 tokens, with a median of 51,413.
@@ -585,3 +586,49 @@ None of this changes a grade. Grading it would add requirements written after th
 reason the $0.00 limit above isn't graded either. Backend-call counts aren't compared on their own,
 because a model that's given an order number doesn't need the search the screens make, and the
 workflow server makes more calls than the screens on some tasks, all of them in code.
+
+## Hosted runs
+
+### Checks
+
+- **The first `check` sent the wrong Anthropic key.** The shell also exported
+  `SPRING_AI_ANTHROPIC_API_KEY`, holding an old key, and Spring reads it ahead of the
+  `${ANTHROPIC_API_KEY}` placeholder, so Anthropic answered `invalid x-api-key`. The documented
+  variables win now (see "Credentials"), and `check` passed for both models with both arms' tools.
+- **The two open pilot checks are closed.** Anthropic reports `claude-opus-4-8` on every turn, and
+  OpenAI reports `gpt-5-2025-08-07`, the snapshot behind `gpt-5`. Every hosted turn so far has the
+  provider's raw usage: Anthropic's has cache read and cache creation counts, zero because no prompt
+  caching is set, and OpenAI's has cached prompt tokens, and reasoning tokens that its output count
+  includes.
+- **A scratch batch ran C1 and H1 once per model and arm**, 8 runs, and 7 passed. GPT-5's C1
+  endpoint run offered three large red quotes beside the blue one, all four marked as meeting the
+  limits, the same `wrong_item` as `final-qwen-C1-endpoint-r4`. GPT-5's H1 endpoint run asked the
+  right question but wrote its card as JSON text instead of calling `final_answer`, before and after
+  the reminder, so it stopped as `missing_card`, was graded on its text, and passed. Scratch runs
+  aren't results, and they aren't committed.
+
+### Cost
+
+The checks and the scratch batch cost $0.74 at list prices: $0.51 for Claude and $0.23 for GPT-5.
+Scaled to the full set, 290 runs per model, two ways (the scratch runs' average cost per run, and
+their tokens against qwen's on the same tasks), the estimate was $25 to $27 for Claude and $13 to
+$14 for GPT-5. Claude's cost is mostly input, sent again at full price on every turn. GPT-5's is
+mostly reasoning output, and OpenAI cached about two-thirds of its input without being asked.
+Priced as if each turn had read the previous turn's prompt from Anthropic's prompt cache and written
+the rest to it, Claude's four scratch runs would have cost 17% to 55% less, the most on the six-turn
+endpoint run, which would bring its set to about $16 to $17. Caching isn't set.
+
+The hosted runs have a $20 budget, so GPT-5's 290 run first with `--budget=20`, and Claude's
+haven't run. GPT-5 [leaves the API](https://platform.openai.com/docs/deprecations) on December 11,
+2026, and Opus 4.8 [stays](https://docs.claude.com/en/docs/about-claude/model-deprecations) until at
+least May 28, 2027.
+
+### GPT-5's final runs
+
+`final-gpt-scenarios` started on November 10 at `4724db7` with a clean tree, and `final-gpt`
+starts once those results are committed, the order the qwen batches ran in. The first run,
+`final-gpt-S4-endpoint-r3`, stopped the batch as a setup error on its seventh model call: the
+laptop's lid was closed while it ran on battery, it went to sleep with the request open, and the
+request failed about 11 minutes later. Starting the batch again ran it again from the beginning.
+The six calls before the failure cost $0.05, which the ledger counts, and the batch now runs under
+`caffeinate -i`, which holds off idle sleep but not a closed lid.

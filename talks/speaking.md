@@ -6,7 +6,7 @@ A conference session built on this repository: one Spring Boot application, two 
 [davidparry.com](https://davidparry.com) ·
 [github.com/davidparry](https://github.com/davidparry)
 
-**Status:** measured November 6, 2026, with one model. The local qwen model's 290 final runs are in, graded, and read. The Claude and GPT runs (480 more) are waiting on API keys that work, so every number below is qwen's until they're in. [`docs/decisions.md`](../docs/decisions.md) records how the runs were graded and every change made along the way.
+**Status:** measured November 6, 2026, with one model. The local qwen model's 290 final runs are in, graded, and read. GPT-5's 290 final runs started on November 10, and Claude's 290 haven't run yet, so every number below is qwen's until they're in. [`docs/decisions.md`](../docs/decisions.md) records how the runs were graded and every change made along the way.
 
 Other titles under consideration:
 
@@ -27,7 +27,7 @@ For CFP forms with a length cap.
 
 The test bed is a small Spring Boot and React order-support app for a pet-supply store that sells dog harnesses and toys. Its REST API was built for its four React screens: the screens' API client makes twelve calls, and the screens decide in code which ones to make, in what order, and what to check between them. Two MCP servers sit in front of the same HTTP APIs with the same permissions. The endpoint server is generated from the app's OpenAPI document, the way most teams add MCP to an API they already run: twelve tools, one per REST operation and one per call the screens make, passing the application's own response DTOs straight through. It's typed and documented, and nothing in it is broken on purpose. The workflow server has six tools shaped around the support job. One call previews an exchange; a separate call submits the quote somebody approved. Its orchestration is plain Java, and it never calls a model.
 
-I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama, with Claude and GPT to follow), and this request:
+I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama, with GPT-5 running now and Claude after it), and this request:
 
 > Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.
 
@@ -133,7 +133,7 @@ My rule for every cut: a live run is one sample, so no number on a slide comes f
 | 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately. |
 | 40 to 48 | The failure gallery | One transcript for each failure class the benchmark recorded. |
 | 48 to 52 | What the grades don't show | The two verifier fixes, then every run measured against the screens: the skipped stock checks that quoted only the schema's example warehouse, the warehouses that don't exist, and E1's five passes at a higher price than the store had, beside the screenshot of the same request in the React app. |
-| 52 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or imports. |
+| 52 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or package and import lines. |
 | 55 to 60 | Design rules | When to pass an endpoint through, when to design a tool around the task, and how to tell which one you're looking at. |
 
 **Short session, 30 minutes:** the request and the screens' twelve calls (4 minutes), the two catalogs (3), a recorded side-by-side replay in place of the live demos (9), the numbers with two transcripts from the gallery and the steps the model skipped (9), and the bill and the design rules (5).
@@ -172,7 +172,7 @@ Java and Spring developers and architects putting an agent in front of an API th
 ## Before this talk can be given
 
 - [x] Milestones 1 to 4 of the project plan complete for the local model, with the held-out run frozen.
-- [ ] The Claude and GPT final runs, 480 of them, and every number here checked again with all three models.
+- [ ] The GPT-5 and Claude final runs, 290 each (GPT-5's started November 10), and every number here checked again with all three models.
 - [x] Opening claim checked against the results. It holds for qwen; the status lookup and the scenarios are where it's weaker, and they're in the session.
 - [x] Failure gallery: one fully read transcript per recorded class, each with its run ID.
 - [ ] Run viewer tested on the presentation laptop with the network off.

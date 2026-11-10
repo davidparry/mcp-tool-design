@@ -21,6 +21,22 @@ neither can reach the database or the business rules directly. The design is in
 [results/final/qwen/export/summary.md](results/final/qwen/export/summary.md), and the talk is in
 [talks/speaking.md](talks/speaking.md).
 
+## Results so far
+
+The local qwen model's 290 final runs are graded, and every failed run was read in full. The
+article explains what they show, and [docs/decisions.md](docs/decisions.md#results) has the counts
+behind each number.
+
+| | Endpoint server | Workflow server |
+| --- | ---: | ---: |
+| Task runs that succeeded, of 120 | 93 | 116 |
+| Median tokens per task run | 25,757 | 11,803 |
+| Submission scenarios that succeeded, of 25 | 25 | 25 |
+| Median tokens per scenario | 70,491 | 23,119 |
+
+GPT-5's 290 final runs started on November 10, and Claude Opus 4.8's haven't run yet.
+[Hosted runs](docs/decisions.md#hosted-runs) has the checks, the scratch runs, and the cost so far.
+
 ## Modules
 
 | Module | What it is | Port |
@@ -117,7 +133,10 @@ it on the stack it started on.
 Every hosted call goes into `results/logs/spend.jsonl` at list prices, and every runner shares
 that file. With `--budget=20`, a batch pauses before any run that could take the total past $20,
 exits with status 3, and goes on from the next run when it's started again with a higher budget.
-`bench --command=spend` prints the total by model and by phase, model, and arm.
+`bench --command=spend` prints the total by model and by phase, model, and arm. A hosted batch
+takes hours, so keep the machine awake: a request that's open when it sleeps fails, and the batch
+stops as a setup error. On a Mac, run it under `caffeinate -i` and keep a laptop's lid open, since
+closing it sleeps the machine anyway.
 
 ```bash
 bench --command=check --models=claude,gpt
