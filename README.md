@@ -142,3 +142,7 @@ node viewer/make-examples.mjs --batches=results/final/final-qwen \
 ```
 
 bundles chosen pairs into `viewer/examples/examples.js`, which the page offers when it opens.
+
+## License
+
+Copyright 2026 David Parry. Licensed under the Apache License, Version 2.0; see [LICENSE](LICENSE).
