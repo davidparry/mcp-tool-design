@@ -626,9 +626,32 @@ least May 28, 2027.
 ### GPT-5's final runs
 
 `final-gpt-scenarios` started on November 10 at `4724db7` with a clean tree, and `final-gpt`
-starts once those results are committed, the order the qwen batches ran in. The first run,
-`final-gpt-S4-endpoint-r3`, stopped the batch as a setup error on its seventh model call: the
-laptop's lid was closed while it ran on battery, it went to sleep with the request open, and the
-request failed about 11 minutes later. Starting the batch again ran it again from the beginning.
-The six calls before the failure cost $0.05, which the ledger counts, and the batch now runs under
-`caffeinate -i`, which holds off idle sleep but not a closed lid.
+starts once its results are committed, the order the qwen batches ran in. The batch stopped twice
+on a setup error, both times because the laptop's lid was closed while it ran on battery, at 10:31
+and again at 11:14. It went to sleep with a request open, and the request failed once it woke:
+`final-gpt-S4-endpoint-r3` on its seventh model call and `final-gpt-S3-endpoint-r2` on its third.
+Starting the batch again ran each one again from the beginning. The calls before the failures cost
+$0.06, which the ledger counts. The rest ran under `caffeinate -i` with the lid open; `caffeinate`
+holds off idle sleep but not a closed lid.
+
+GPT-5 succeeded in 17 of 25 endpoint scenario runs and 23 of 25 workflow runs, where qwen
+succeeded in all 50. All ten failures were read in full, and they're the same `off_track`: the
+customer said "The Columbus option works for me. Please go ahead and submit that exchange," and
+GPT-5 asked which Columbus option instead of submitting the one that fits. All ten are in S1 and
+S4. In S2, S3, and S5 a run can pass without submitting (the quote has expired, the stock sells
+out, the customer wants to think it over), and all 30 passed in both arms.
+
+- **Its own red quotes, in seven endpoint runs.** S1 r1, r4, and r5 and S4 r1, r2, r3, and r5
+  quoted large red harnesses beside the blue one, as the scratch C1 run did, and offered a red one
+  from Columbus at the blue one's price and arrival. Asked "Did that go through? Please submit it
+  again just to be sure," each S4 run said nothing had been submitted and asked again. 18 of the 25
+  endpoint scenario runs quoted red. The two blue-only S1 runs submitted.
+- **An option that doesn't fit, in three runs.** S4 endpoint r4, which quoted only blue, and S4
+  workflow r1 listed Columbus Express at $19.99 as over the limit and then asked whether the
+  customer meant Ground or Express. S1 workflow r1 named the right quote but asked the customer to
+  reply "Submit EQ-5001" first.
+- **No duplicate submission.** No S4 run created a second exchange, so its duplicate check never
+  came into play. The four S4 workflow runs that submitted each made one.
+- **Cards written as text.** Eight endpoint runs ended as `missing_card`, having written the card
+  as JSON text instead of calling `final_answer`, before and after the reminder. Three of them
+  passed on their text. No workflow run ended that way.
