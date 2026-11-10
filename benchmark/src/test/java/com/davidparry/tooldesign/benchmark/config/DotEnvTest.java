@@ -2,6 +2,7 @@ package com.davidparry.tooldesign.benchmark.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,16 @@ class DotEnvTest {
         System.clearProperty("DOTENV_TEST_PLAIN");
         System.clearProperty("DOTENV_TEST_QUOTED");
         System.clearProperty("DOTENV_TEST_EXPORTED");
+        System.clearProperty("spring.ai.anthropic.api-key");
+        System.clearProperty("spring.ai.openai.api-key");
+    }
+
+    @Test
+    void theDocumentedKeysWinOverSpringsOwnVariables() {
+        DotEnv.preferDocumentedKeys(Map.of("ANTHROPIC_API_KEY", "documented-anthropic")::get);
+
+        assertThat(System.getProperty("spring.ai.anthropic.api-key")).isEqualTo("documented-anthropic");
+        assertThat(System.getProperty("spring.ai.openai.api-key")).isNull();
     }
 
     @Test

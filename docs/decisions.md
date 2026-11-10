@@ -227,7 +227,9 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   side by side can each start one run near the limit. `spend` prints the total by model and by
   phase, model, and arm.
 - **Credentials.** Keys come from the environment or `.env` and never reach a log line or a
-  record. Provider errors echo keys back, sometimes masked with a few real characters left, so the
+  record. `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` win over Spring's own
+  `SPRING_AI_ANTHROPIC_API_KEY` and `SPRING_AI_OPENAI_API_KEY`, which Spring would otherwise read
+  first, so a key left over from another project can't be sent instead. Provider errors echo keys back, sometimes masked with a few real characters left, so the
   runner redacts anything key-shaped before it logs or records an error.
 - **Usage.** Each turn keeps Spring AI's normalized counts and the provider's own fields. Anthropic's
   input tokens leave out cache reads and writes, OpenAI's prompt tokens include cached tokens, and

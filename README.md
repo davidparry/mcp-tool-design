@@ -72,21 +72,22 @@ scripts/bench-stack.sh up        # builds, starts all three, and stops them on C
 ```
 
 Hosted model keys come from the environment or a git-ignored `.env` at the repo root
-(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). The local model is `qwen3.6:35b-a3b-nvfp4` on Ollama, and
+(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`), and they win over Spring's own `SPRING_AI_ANTHROPIC_API_KEY`
+and `SPRING_AI_OPENAI_API_KEY`. The local model is `qwen3.6:35b-a3b-nvfp4` on Ollama, and
 the runner won't pull it, so run `ollama pull qwen3.6:35b-a3b-nvfp4` first. Then, from the repo
 root:
 
 ```bash
 mvn -q -pl benchmark package -DskipTests
-B="java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar"
-$B --command=check                                     # app, both catalogs, each model with each arm's tools
-$B --command=run --phase=pilot --models=qwen --splits=dev --reps=3 --seed=20261106
-$B --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
-$B --command=run --phase=pilot --batch=scenarios --models=qwen --splits=scenario --reps=3
-$B --command=verify --phase=pilot --batch=pilot-qwen      # grade a batch
-$B --command=export --phase=pilot --batches=pilot-qwen,scenarios --name=pilot
-$B --command=freeze --pilot=pilot-qwen,scenarios          # after the pilot, on a clean commit
-$B --command=run --phase=final --models=qwen --splits=dev,heldout --reps=5
+bench() { java -jar benchmark/target/benchmark-0.1.0-SNAPSHOT.jar "$@"; }
+bench --command=check                                     # app, both catalogs, each model with each arm's tools
+bench --command=run --phase=pilot --models=qwen --splits=dev --reps=3 --seed=20261106
+bench --command=run --phase=scratch --models=qwen --tasks=C1,H1 --reps=1
+bench --command=run --phase=pilot --batch=scenarios --models=qwen --splits=scenario --reps=3
+bench --command=verify --phase=pilot --batch=pilot-qwen      # grade a batch
+bench --command=export --phase=pilot --batches=pilot-qwen,scenarios --name=pilot
+bench --command=freeze --pilot=pilot-qwen,scenarios          # after the pilot, on a clean commit
+bench --command=run --phase=final --models=qwen --splits=dev,heldout --reps=5
 ```
 
 A batch is named `<phase>-<models>` unless `--batch` names it, and writes
@@ -116,21 +117,21 @@ it on the stack it started on.
 Every hosted call goes into `results/logs/spend.jsonl` at list prices, and every runner shares
 that file. With `--budget=20`, a batch pauses before any run that could take the total past $20,
 exits with status 3, and goes on from the next run when it's started again with a higher budget.
-`$B --command=spend` prints the total by model and by phase, model, and arm.
+`bench --command=spend` prints the total by model and by phase, model, and arm.
 
 ```bash
-$B --command=check --models=claude,gpt
-$B --command=run --phase=scratch --models=claude,gpt --tasks=C1 --reps=1 --budget=20
-$B --command=run --phase=final --models=claude --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
-$B --command=run --phase=final --batch=final-claude-scenarios --models=claude --splits=scenario --reps=5 --seed=20261106 --budget=20
+bench --command=check --models=claude,gpt
+bench --command=run --phase=scratch --models=claude,gpt --tasks=C1 --reps=1 --budget=20
+bench --command=run --phase=final --models=claude --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
+bench --command=run --phase=final --batch=final-claude-scenarios --models=claude --splits=scenario --reps=5 --seed=20261106 --budget=20
 
 STACK_PORT=9080 scripts/bench-stack.sh up --no-build    # in a second terminal
 export APP_BASE_URL=http://localhost:9080 ENDPOINT_MCP_URL=http://localhost:9081 WORKFLOW_MCP_URL=http://localhost:9082
-$B --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
-$B --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106 --budget=20
-$B --command=spend
+bench --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
+bench --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106 --budget=20
+bench --command=spend
 
-$B --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
+bench --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
 ```
 
 ## Viewer

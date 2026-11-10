@@ -169,8 +169,9 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
 
     private void spend() {
         Spend.Summary summary = this.spend.summary();
-        log.info("Spent ${} at list prices over {} model calls, from {}. The costliest run cost ${}.",
-                money(summary.total()), summary.calls(), this.spend.ledger(), money(summary.costliestRun()));
+        log.info("Spent ${} at list prices over {} model calls, from {}.{}", money(summary.total()), summary.calls(),
+                this.spend.ledger(), summary.costliestRun() > 0
+                        ? " The costliest run cost $" + money(summary.costliestRun()) + "." : "");
         summary.byModel().forEach((model, usd) -> log.info("  {}: ${}", model, money(usd)));
         Map<String, Double> byGroup = new TreeMap<>();
         Map<String, Integer> runs = new TreeMap<>();
