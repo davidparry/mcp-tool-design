@@ -21,8 +21,10 @@ import com.davidparry.tooldesign.benchmark.config.BenchProperties;
 import com.davidparry.tooldesign.benchmark.config.Redact;
 import com.davidparry.tooldesign.benchmark.mcp.Catalogs;
 import com.davidparry.tooldesign.benchmark.mcp.McpSession;
+import com.davidparry.tooldesign.benchmark.model.BudgetReached;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
 import com.davidparry.tooldesign.benchmark.model.ModelGateway;
+import com.davidparry.tooldesign.benchmark.model.Spend;
 import com.davidparry.tooldesign.benchmark.run.BatchRunner;
 import com.davidparry.tooldesign.benchmark.run.Provenance;
 import com.davidparry.tooldesign.benchmark.verify.Exporter;
@@ -37,7 +39,10 @@ import com.davidparry.tooldesign.benchmark.verify.Verification;
  * <li>{@code catalog --arms=workflow}: writes an arm's catalog snapshot from its live server; {@code --force}
  * replaces an existing one</li>
  * <li>{@code run --phase=pilot --models=qwen --arms=endpoint,workflow --splits=dev --reps=3 --seed=20261106}:
- * runs a batch, optionally limited with {@code --tasks=C1,H1} and named with {@code --batch}</li>
+ * runs a batch, optionally limited with {@code --tasks=C1,H1} and named with {@code --batch}. With
+ * {@code --budget=20} it pauses before a run that could take the hosted spend past $20 at list prices, and exits
+ * with status 3</li>
+ * <li>{@code spend}: what the hosted models have cost so far, by model and by phase, model, and arm</li>
  * <li>{@code verify --phase=pilot --batch=pilot-qwen}: grades a batch and writes {@code verification.jsonl}</li>
  * <li>{@code export --phase=final --batches=final-claude,final-gpt,final-qwen --name=final}: grades and writes
  * the summary, CSVs, and the order 1042 token series to {@code results/<phase>/<name>/export}</li>
@@ -59,15 +64,18 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
 
     private final JsonMapper json;
 
+    private final Spend spend;
+
     private int exitCode;
 
     public BenchCommands(BatchRunner batches, Results results, Gateways gateways, BenchProperties properties,
-            JsonMapper json) {
+            JsonMapper json, Spend spend) {
         this.batches = batches;
         this.results = results;
         this.gateways = gateways;
         this.properties = properties;
         this.json = json;
+        this.spend = spend;
     }
 
     @Override
@@ -81,9 +89,14 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
                 case "verify" -> verify(args);
                 case "export" -> export(args);
                 case "freeze" -> freeze(args);
+                case "spend" -> spend();
                 default -> throw new IllegalArgumentException("Unknown command " + command
-                        + "; use check, catalog, run, verify, export, or freeze");
+                        + "; use check, catalog, run, verify, export, freeze, or spend");
             }
+        }
+        catch (BudgetReached e) {
+            log.warn("{}", e.getMessage());
+            this.exitCode = 3;
         }
         catch (RuntimeException e) {
             log.error("{} failed: {}", command, Redact.secrets(e.getMessage()));
@@ -149,8 +162,30 @@ public class BenchCommands implements ApplicationRunner, ExitCodeGenerator {
         BatchRunner.Request request = new BatchRunner.Request(phase,
                 one(args, "batch", phase + "-" + String.join("-", models)), models,
                 list(args, "arms", "endpoint,workflow"), list(args, "splits", "dev"), list(args, "tasks", ""),
-                Integer.parseInt(one(args, "reps", "3")), Long.parseLong(one(args, "seed", "20261106")));
+                Integer.parseInt(one(args, "reps", "3")), Long.parseLong(one(args, "seed", "20261106")),
+                args.containsOption("budget") ? Double.valueOf(one(args, "budget", "")) : null);
         this.batches.run(request);
+    }
+
+    private void spend() {
+        Spend.Summary summary = this.spend.summary();
+        log.info("Spent ${} at list prices over {} model calls, from {}. The costliest run cost ${}.",
+                money(summary.total()), summary.calls(), this.spend.ledger(), money(summary.costliestRun()));
+        summary.byModel().forEach((model, usd) -> log.info("  {}: ${}", model, money(usd)));
+        Map<String, Double> byGroup = new TreeMap<>();
+        Map<String, Integer> runs = new TreeMap<>();
+        summary.byPurpose().forEach((purpose, usd) -> {
+            String[] id = purpose.split("-");
+            String group = id.length == 5 ? id[0] + " " + id[1] + " " + id[3] : purpose;
+            byGroup.merge(group, usd, Double::sum);
+            runs.merge(group, 1, Integer::sum);
+        });
+        byGroup.forEach((group, usd) -> log.info("  {}: ${}{}", group, money(usd),
+                Spend.PREFLIGHT.equals(group) ? "" : " over " + runs.get(group) + " runs"));
+    }
+
+    private static String money(double usd) {
+        return String.format("%.2f", usd);
     }
 
     private void verify(ApplicationArguments args) {

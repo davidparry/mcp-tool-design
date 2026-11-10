@@ -18,7 +18,7 @@ public class Gateways {
 
     private final Map<String, ModelGateway> gateways = new LinkedHashMap<>();
 
-    public Gateways(BenchProperties properties, ObjectProvider<AnthropicChatModel> anthropic,
+    public Gateways(BenchProperties properties, Spend spend, ObjectProvider<AnthropicChatModel> anthropic,
             ObjectProvider<OpenAiChatModel> openai, ObjectProvider<OllamaChatModel> ollama) {
         properties.models().forEach((key, spec) -> {
             ChatModel chatModel = switch (spec.provider()) {
@@ -31,7 +31,7 @@ public class Gateways {
                 throw new IllegalStateException("No Spring AI chat model for provider " + spec.provider() + " ("
                         + key + ")");
             }
-            this.gateways.put(key, new ModelGateway(key, spec, chatModel));
+            this.gateways.put(key, new ModelGateway(key, spec, chatModel, spend));
         });
     }
 

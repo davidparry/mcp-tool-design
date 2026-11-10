@@ -217,6 +217,15 @@ verifier grades the card, plus the app's state, rather than parsing prose.
 - **Preflight.** Before a batch records anything, each model gets one short request per arm that
   carries that arm's tool definitions, so a bad key, a wrong model ID, or a tool schema the
   provider won't accept stops the batch first. `check` sends the same requests.
+- **A budget for the hosted runs.** The hosted keys have spending limits, so every call that
+  returns usage, preflights included, goes into `results/logs/spend.jsonl` priced at the list
+  prices under "Three models", and every runner process appends to that one file. With
+  `--budget=20`, a batch pauses before any run that could take the total past $20, meaning the spend
+  so far plus the costliest run so far, and exits with status 3. Nothing is cut short, so starting
+  the same batch again with a higher budget goes on from the next run. It's an estimate: a request
+  that times out after the provider did the work costs money and returns no usage, and two batches
+  side by side can each start one run near the limit. `spend` prints the total by model and by
+  phase, model, and arm.
 - **Credentials.** Keys come from the environment or `.env` and never reach a log line or a
   record. Provider errors echo keys back, sometimes masked with a few real characters left, so the
   runner redacts anything key-shaped before it logs or records an error.

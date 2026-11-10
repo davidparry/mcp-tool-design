@@ -30,6 +30,7 @@ import com.davidparry.tooldesign.benchmark.mcp.McpSession;
 import com.davidparry.tooldesign.benchmark.model.DefinitionOnlyTool;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
 import com.davidparry.tooldesign.benchmark.model.ModelGateway;
+import com.davidparry.tooldesign.benchmark.model.Spend;
 
 /**
  * Plans a batch, records its manifest, and runs it one run at a time against a single app. A batch that stops can
@@ -56,21 +57,33 @@ public class BatchRunner {
 
     private final JsonMapper pretty;
 
+    private final Spend spend;
+
     public BatchRunner(RunExecutor executor, Gateways gateways, AdminClient admin, BenchProperties properties,
-            JsonMapper json) {
+            JsonMapper json, Spend spend) {
         this.executor = executor;
         this.gateways = gateways;
         this.admin = admin;
         this.properties = properties;
         this.json = json;
         this.pretty = json.rebuild().enable(SerializationFeature.INDENT_OUTPUT).build();
+        this.spend = spend;
     }
 
+    /**
+     * @param budget USD at list prices that every runner's spend together mustn't pass, or null for no limit
+     */
     public record Request(String phase, String batch, List<String> models, List<String> arms, List<String> splits,
-            List<String> taskIds, int repetitions, long seed) {
+            List<String> taskIds, int repetitions, long seed, Double budget) {
+
+        public Request(String phase, String batch, List<String> models, List<String> arms, List<String> splits,
+                List<String> taskIds, int repetitions, long seed) {
+            this(phase, batch, models, arms, splits, taskIds, repetitions, seed, null);
+        }
     }
 
     public Path run(Request request) {
+        this.spend.check(request.budget());
         if (!this.admin.reachable()) {
             throw new IllegalStateException("The app isn't answering at " + this.properties.appUrl());
         }
@@ -104,15 +117,19 @@ public class BatchRunner {
             if (finished.contains(spec.runId())) {
                 continue;
             }
+            this.spend.check(request.budget());
             String catalog = (String) arms.get(spec.arm()).get("catalogSha256");
-            RunRecord record = this.executor.execute(spec, request.batch(), request.phase(),
-                    this.gateways.get(spec.model()), catalog);
+            ModelGateway model = this.gateways.get(spec.model());
+            RunRecord record = this.executor.execute(spec, request.batch(), request.phase(), model, catalog);
             records.append(record);
             done++;
-            log.info("[{}/{}] {} {} | {} model calls, {} tool calls, {} in + {} out tokens | {}s", spec.position(),
-                    plan.size(), spec.runId(), record.stopReason(), record.totals().modelCalls(),
-                    record.totals().toolCalls(), record.totals().inputTokens(), record.totals().outputTokens(),
-                    record.durationMs() / 1000);
+            RunRecord.Totals totals = record.totals();
+            double cost = Spend.usd(model.spec(), totals.inputTokens(), totals.outputTokens(),
+                    totals.cacheReadTokens(), totals.cacheWriteTokens());
+            log.info("[{}/{}] {} {} | {} model calls, {} tool calls, {} in + {} out tokens | {}s{}", spec.position(),
+                    plan.size(), spec.runId(), record.stopReason(), totals.modelCalls(), totals.toolCalls(),
+                    totals.inputTokens(), totals.outputTokens(), record.durationMs() / 1000,
+                    cost == 0 ? "" : String.format(" | $%.2f, $%.2f spent so far", cost, this.spend.summary().total()));
             if ("setup_error".equals(record.stopReason())) {
                 throw new IllegalStateException("Stopping the batch: " + record.errors());
             }
@@ -160,8 +177,8 @@ public class BatchRunner {
     public void preflight(ModelGateway model, Map<String, Map<String, Object>> arms) {
         arms.forEach((arm, details) -> {
             try {
-                model.call(List.of(new UserMessage("Reply with the single word: ready")), tools(details), null, 0,
-                        Duration.ZERO);
+                model.call(Spend.PREFLIGHT, List.of(new UserMessage("Reply with the single word: ready")),
+                        tools(details), null, 0, Duration.ZERO);
             }
             catch (RuntimeException e) {
                 throw new IllegalStateException(model.key() + " (" + model.spec().model() + ") isn't usable with the "

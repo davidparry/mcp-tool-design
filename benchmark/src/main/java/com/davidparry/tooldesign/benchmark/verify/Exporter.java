@@ -21,6 +21,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import com.davidparry.tooldesign.benchmark.config.BenchProperties;
 import com.davidparry.tooldesign.benchmark.config.BenchProperties.ModelSpec;
+import com.davidparry.tooldesign.benchmark.model.Spend;
 import com.davidparry.tooldesign.benchmark.run.RunRecord;
 import com.davidparry.tooldesign.benchmark.run.TaskSpec;
 
@@ -189,19 +190,15 @@ public class Exporter {
         }
         double in = prices.getOrDefault("input", 0.0);
         double out = prices.getOrDefault("output", 0.0);
-        double read = prices.getOrDefault("cacheRead", in);
-        double write = prices.getOrDefault("cacheWrite", in);
         double withCache = 0;
         double withoutCache = 0;
         for (Row row : rows) {
             RunRecord.Totals t = row.run().totals();
-            double uncached = "anthropic".equals(row.provider()) ? t.inputTokens()
-                    : t.inputTokens() - t.cacheReadTokens();
-            withCache += uncached * in + t.cacheReadTokens() * read + t.cacheWriteTokens() * write
-                    + t.outputTokens() * out;
-            withoutCache += row.allInputTokens() * in + t.outputTokens() * out;
+            withCache += Spend.usd(spec, t.inputTokens(), t.outputTokens(), t.cacheReadTokens(),
+                    t.cacheWriteTokens());
+            withoutCache += (row.allInputTokens() * in + t.outputTokens() * out) / 1_000_000.0;
         }
-        double perTask = 1000.0 / rows.size() / 1_000_000.0;
+        double perTask = 1000.0 / rows.size();
         Map<String, Object> cost = new LinkedHashMap<>();
         cost.put("withCacheReads", round(withCache * perTask, 2));
         cost.put("withoutCacheReads", round(withoutCache * perTask, 2));

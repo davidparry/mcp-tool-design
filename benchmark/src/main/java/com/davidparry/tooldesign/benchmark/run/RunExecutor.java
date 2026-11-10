@@ -156,7 +156,7 @@ public class RunExecutor {
                 int sent = messages.size();
                 ModelReply reply;
                 try {
-                    reply = model.call(messages, definitions, spec.seed(), limits.modelRetries(),
+                    reply = model.call(spec.runId(), messages, definitions, spec.seed(), limits.modelRetries(),
                             limits.retryBackoff());
                 }
                 catch (RuntimeException e) {

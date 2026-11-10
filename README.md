@@ -113,16 +113,22 @@ own stack. `STACK_PORT` starts a second stack on other ports, and the runner fin
 `APP_BASE_URL`, `ENDPOINT_MCP_URL`, and `WORKFLOW_MCP_URL`. A batch records its servers, so resume
 it on the stack it started on.
 
+Every hosted call goes into `results/logs/spend.jsonl` at list prices, and every runner shares
+that file. With `--budget=20`, a batch pauses before any run that could take the total past $20,
+exits with status 3, and goes on from the next run when it's started again with a higher budget.
+`$B --command=spend` prints the total by model and by phase, model, and arm.
+
 ```bash
 $B --command=check --models=claude,gpt
-$B --command=run --phase=scratch --models=claude,gpt --tasks=C1 --reps=1
-$B --command=run --phase=final --models=claude --splits=dev,heldout --reps=5 --seed=20261106
-$B --command=run --phase=final --batch=final-claude-scenarios --models=claude --splits=scenario --reps=5 --seed=20261106
+$B --command=run --phase=scratch --models=claude,gpt --tasks=C1 --reps=1 --budget=20
+$B --command=run --phase=final --models=claude --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
+$B --command=run --phase=final --batch=final-claude-scenarios --models=claude --splits=scenario --reps=5 --seed=20261106 --budget=20
 
 STACK_PORT=9080 scripts/bench-stack.sh up --no-build    # in a second terminal
 export APP_BASE_URL=http://localhost:9080 ENDPOINT_MCP_URL=http://localhost:9081 WORKFLOW_MCP_URL=http://localhost:9082
-$B --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --seed=20261106
-$B --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106
+$B --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --seed=20261106 --budget=20
+$B --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106 --budget=20
+$B --command=spend
 
 $B --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
 ```

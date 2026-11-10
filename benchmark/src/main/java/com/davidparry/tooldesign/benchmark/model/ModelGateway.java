@@ -35,10 +35,17 @@ public final class ModelGateway {
 
     private final ChatModel chatModel;
 
+    private final Spend spend;
+
     public ModelGateway(String key, ModelSpec spec, ChatModel chatModel) {
+        this(key, spec, chatModel, null);
+    }
+
+    public ModelGateway(String key, ModelSpec spec, ChatModel chatModel, Spend spend) {
         this.key = key;
         this.spec = spec;
         this.chatModel = chatModel;
+        this.spend = spend;
     }
 
     public String key() {
@@ -52,9 +59,10 @@ public final class ModelGateway {
     /**
      * Sends the conversation and tools, retrying a failed request up to {@code retries} times with a growing pause.
      *
+     * @param purpose the run ID, or {@link Spend#PREFLIGHT}, for the spend ledger
      * @param seed the sampling seed, for providers that take one
      */
-    public ModelReply call(List<Message> messages, List<ToolCallback> tools, Integer seed, int retries,
+    public ModelReply call(String purpose, List<Message> messages, List<ToolCallback> tools, Integer seed, int retries,
             Duration backoff) {
         RuntimeException last = null;
         for (int attempt = 0; attempt <= retries; attempt++) {
@@ -62,11 +70,12 @@ public final class ModelGateway {
                 pause(backoff.multipliedBy(attempt));
             }
             long started = System.nanoTime();
+            ModelReply reply;
             try {
                 ChatResponse response = this.chatModel.call(new Prompt(List.copyOf(messages), options(tools, seed)));
                 long latency = Duration.ofNanos(System.nanoTime() - started).toMillis();
                 var generation = response.getResult();
-                return new ModelReply(generation.getOutput(),
+                reply = new ModelReply(generation.getOutput(),
                         generation.getMetadata() == null ? null : generation.getMetadata().getFinishReason(),
                         response.getMetadata().getModel(), UsageReader.usage(response.getMetadata().getUsage()),
                         UsageReader.nativeUsage(response.getMetadata().getUsage()),
@@ -77,7 +86,12 @@ public final class ModelGateway {
                     throw e;
                 }
                 last = e;
+                continue;
             }
+            if (this.spend != null) {
+                this.spend.record(this.key, purpose, this.spec, reply.usage());
+            }
+            return reply;
         }
         throw last;
     }

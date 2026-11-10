@@ -24,13 +24,17 @@ import tools.jackson.databind.json.JsonMapper;
 import com.davidparry.tooldesign.benchmark.app.AdminClient;
 import com.davidparry.tooldesign.benchmark.config.BenchProperties;
 import com.davidparry.tooldesign.benchmark.config.BenchProperties.Limits;
+import com.davidparry.tooldesign.benchmark.config.BenchProperties.ModelSpec;
+import com.davidparry.tooldesign.benchmark.model.BudgetReached;
 import com.davidparry.tooldesign.benchmark.model.Gateways;
+import com.davidparry.tooldesign.benchmark.model.Spend;
 import com.davidparry.tooldesign.benchmark.run.BatchRunner;
 import com.davidparry.tooldesign.benchmark.run.RunExecutor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalStateException;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** A final batch runs only against what the freeze recorded. These batches have no models, so nothing is sent. */
@@ -56,6 +60,23 @@ class FreezeTest {
         if (stack != null) {
             stack.close();
         }
+    }
+
+    @Test
+    void aBatchWontStartOnceEveryRunnersSpendHasReachedTheBudget() throws IOException {
+        Path fixtures = copyFixtures();
+        runner(fixtures, LIMITS).freeze(List.of("endpoint", "workflow"), List.of("pilot-test"), false);
+        ModelSpec claude = new ModelSpec("anthropic", "claude-opus-4-8", null, null, null, null, null, null, null,
+                null, Map.of("input", 5.00, "output", 25.00));
+        new Spend(this.dir.resolve("results/logs/spend.jsonl"), json).record("claude", "final-claude-C1-endpoint-r1",
+                claude, Map.of("inputTokens", 4_000_000L, "outputTokens", 0L));
+        BatchRunner.Request request = finalBatch();
+        BatchRunner.Request budgeted = new BatchRunner.Request(request.phase(), request.batch(), request.models(),
+                request.arms(), request.splits(), request.taskIds(), request.repetitions(), request.seed(), 20.0);
+
+        assertThatThrownBy(() -> runner(fixtures, LIMITS).run(budgeted)).isInstanceOf(BudgetReached.class)
+                .hasMessageContaining("$20.00 budget: $20.00 is spent");
+        assertThat(this.dir.resolve("results/final/final-test")).doesNotExist();
     }
 
     @Test
@@ -131,9 +152,10 @@ class FreezeTest {
                 fixtures.toString(), this.dir.resolve("results").toString(), "verify");
         AdminClient admin = new AdminClient(properties, json);
         DefaultListableBeanFactory none = new DefaultListableBeanFactory();
-        Gateways gateways = new Gateways(properties, none.getBeanProvider(AnthropicChatModel.class),
+        Spend spend = new Spend(properties, json);
+        Gateways gateways = new Gateways(properties, spend, none.getBeanProvider(AnthropicChatModel.class),
                 none.getBeanProvider(OpenAiChatModel.class), none.getBeanProvider(OllamaChatModel.class));
-        return new BatchRunner(new RunExecutor(admin, properties, json), gateways, admin, properties, json);
+        return new BatchRunner(new RunExecutor(admin, properties, json), gateways, admin, properties, json, spend);
     }
 
     private Path copyFixtures() throws IOException {
