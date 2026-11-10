@@ -1,5 +1,11 @@
 # MCP tool design experiment
 
+This application is only a supporting project for the article
+[One Tool per Endpoint Hands the Model Your Frontend's Job](https://davidparry.com/blog/2026/11/06/one-tool-per-endpoint/).
+It exists to prove that designing an MCP server is critical, and to show why: a server generated
+with one tool per REST endpoint hands the model the orchestration your frontend already does in
+code, and the model pays for it on every turn.
+
 One pet-supply order-support API, two MCP servers in front of it, and a benchmark that measures
 what each server costs a model in tokens and in mistakes.
 
