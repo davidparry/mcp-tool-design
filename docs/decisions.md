@@ -5,11 +5,12 @@ Each entry says what was decided, why, and what it changes in the measurement. T
 
 ## Coding standards
 
-Qodo's org rules weren't loaded. `qodo read whoami` answered `invalid_token` on November 6, 2026,
-three times, so no ERROR or WARNING rules were applied. The code follows the conventions of the
-`factory-springai` repo instead: Boot 4 and Spring AI 2.0 idioms, records for values, constructor
-injection, and comments only for constraints the code can't show. Rerun the `qodo-get-rules` skill
-after `qodo login` and fix anything it flags before the final run is frozen.
+Qodo's org rules weren't loaded. `qodo read whoami` answered `invalid_token` three times on
+November 6, 2026, and again on November 9, so no ERROR or WARNING rules were applied, and the final
+run was frozen without them. The code follows the conventions of the `factory-springai` repo
+instead: Boot 4 and Spring AI 2.0 idioms, records for values, constructor injection, and comments
+only for constraints the code can't show. Run the `qodo-get-rules` skill after `qodo login` to
+check the code against them.
 
 ## Versions
 
@@ -75,8 +76,7 @@ pinned in `benchmark/src/main/resources/application.yml` and recorded in every r
 
 - On November 6 the Anthropic and OpenAI keys in the environment were rejected by both APIs
   (`invalid x-api-key` and `invalid_api_key`). The runner reads keys from the environment or from a
-  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place, which
-  is expected on November 9.
+  git-ignored `.env` at the repo root, and the hosted arms run once valid keys are in place.
 - `qwen3:30b` isn't installed on this machine, so the local model is its successor in the same
   mixture-of-experts family, chosen in [the pilot section](#pilot) below.
 - **The hosted models stay as the plan set them**, `claude-opus-4-8` and `gpt-5`, so the results
@@ -431,6 +431,10 @@ That check also found that a stopped batch could refuse to resume: the manifest 
 conversation section in an order that can change from one JVM to the next, and the resume check
 compared text. It compares values now. The bug could only refuse a resume, never change a record,
 so the frozen results stand.
+
+The qwen manifests record the Anthropic and OpenAI SDK versions as `unknown`: those jars carry no
+Maven metadata, and the runner read only Maven's. Since November 9 it falls back to the jar
+manifest, so the hosted batches record 2.72.0 and 4.80.0. Qwen's runs never touch either SDK.
 
 When the keys work, `check` and one scratch run per model close the two pilot checks still open:
 the model IDs, and each provider's own usage fields.

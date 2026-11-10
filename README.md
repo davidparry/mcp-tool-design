@@ -17,7 +17,9 @@ what each server costs a model in tokens and in mistakes.
 Both servers call the same API with the same key. Neither depends on `app` at compile time, so
 neither can reach the database or the business rules directly. The design is in
 [docs/project-plan.md](docs/project-plan.md), the choices the build made are in
-[docs/decisions.md](docs/decisions.md), and the talk is in [talks/speaking.md](talks/speaking.md).
+[docs/decisions.md](docs/decisions.md), the graded results so far, from a local qwen model, are in
+[results/final/qwen/export/summary.md](results/final/qwen/export/summary.md), and the talk is in
+[talks/speaking.md](talks/speaking.md).
 
 ## Modules
 
@@ -52,7 +54,8 @@ java -jar mcp-workflow/target/mcp-workflow-0.1.0-SNAPSHOT.jar
 Open http://localhost:8080 for the support screens and http://localhost:8080/swagger-ui.html for
 the API. The business date is fixed at Friday, November 6, 2026, 9:00 a.m. Central.
 
-The Playwright walk-through of the order 1042 exchange preview starts its own app on port 8090:
+The Playwright walk-throughs of the order 1042 and order 1025 exchange previews start their own app
+on port 8090. On a new machine, run `npx playwright install chromium` in `frontend/` first.
 
 ```bash
 mvn -q -pl frontend,app package -DskipTests && (cd frontend && npx playwright test)
@@ -69,7 +72,8 @@ scripts/bench-stack.sh up        # builds, starts all three, and stops them on C
 ```
 
 Hosted model keys come from the environment or a git-ignored `.env` at the repo root
-(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). The local model runs on Ollama. Then, from the repo
+(`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`). The local model is `qwen3.6:35b-a3b-nvfp4` on Ollama, and
+the runner won't pull it, so run `ollama pull qwen3.6:35b-a3b-nvfp4` first. Then, from the repo
 root:
 
 ```bash

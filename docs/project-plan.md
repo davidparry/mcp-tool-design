@@ -1,6 +1,6 @@
 # MCP Tool Design Experiment: Pet Supply Order Support
 
-**Status:** Project plan; implementation and benchmark results pending.  
+**Status:** The original plan, not edited since the build began. Where the build departed from it, and the results so far, are in [decisions.md](decisions.md).  
 **Created:** November 6, 2026.  
 **Deliverable:** A reproducible Spring Boot application and benchmark supporting a technical post about designing MCP tools for LLMs.
 

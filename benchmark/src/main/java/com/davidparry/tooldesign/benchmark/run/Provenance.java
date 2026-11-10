@@ -2,10 +2,14 @@ package com.davidparry.tooldesign.benchmark.run;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 import org.springframework.boot.SpringBootVersion;
 
@@ -26,7 +30,7 @@ public final class Provenance {
         versions.put("java", System.getProperty("java.runtime.version"));
         versions.put("springBoot", SpringBootVersion.getVersion());
         for (String[] artifact : ARTIFACTS) {
-            versions.put(artifact[0], pomVersion(artifact[1], artifact[2]));
+            versions.put(artifact[0], version(artifact[1], artifact[2]));
         }
         return versions;
     }
@@ -40,11 +44,11 @@ public final class Provenance {
         return source;
     }
 
-    private static String pomVersion(String group, String artifact) {
+    private static String version(String group, String artifact) {
         String resource = "META-INF/maven/" + group + "/" + artifact + "/pom.properties";
         try (InputStream in = Provenance.class.getClassLoader().getResourceAsStream(resource)) {
             if (in == null) {
-                return "unknown";
+                return manifestVersion(artifact);
             }
             Properties properties = new Properties();
             properties.load(in);
@@ -53,6 +57,21 @@ public final class Provenance {
         catch (IOException e) {
             return "unknown";
         }
+    }
+
+    /** Jars with no Maven metadata, like the Anthropic and OpenAI SDKs, name and version themselves in their manifest. */
+    private static String manifestVersion(String artifact) throws IOException {
+        Enumeration<URL> manifests = Provenance.class.getClassLoader().getResources("META-INF/MANIFEST.MF");
+        while (manifests.hasMoreElements()) {
+            try (InputStream in = manifests.nextElement().openStream()) {
+                Attributes main = new Manifest(in).getMainAttributes();
+                if (artifact.equals(main.getValue(Attributes.Name.IMPLEMENTATION_TITLE))) {
+                    String version = main.getValue(Attributes.Name.IMPLEMENTATION_VERSION);
+                    return version == null ? "unknown" : version;
+                }
+            }
+        }
+        return "unknown";
     }
 
     private static String git(String... args) {

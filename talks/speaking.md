@@ -167,7 +167,7 @@ Java and Spring developers and architects putting an agent in front of an API th
 
 ## The post from the same runs
 
-A post on davidparry.com comes out of the same records, and it carries the evidence: the per-turn token chart for the order 1042 request on both servers, the task success and token tables, and the failure gallery with run IDs and transcript excerpts. Both quote the same numbers. The draft is `content/blog/one-tool-per-endpoint.md` in the site's repository, and it stays a draft until the repository it links to is public.
+[One Tool per Endpoint Hands the Model Your Frontend's Job](https://davidparry.com/blog/2026/11/06/one-tool-per-endpoint/) comes out of the same records and quotes the same numbers: the order 1042 request on both servers, turn by turn, the task success and token table, the failures in the model's own words, and the steps the call log shows the endpoint server skipping.
 
 ## Before this talk can be given
 
@@ -178,4 +178,4 @@ A post on davidparry.com comes out of the same records, and it carries the evide
 - [ ] Run viewer tested on the presentation laptop with the network off.
 - [x] Presenter notes, with a fallback for each live demo.
 - [x] Slides in `talks/slides/index.html`, with the 60- and 30-minute cuts.
-- [ ] The post published, quoting the same numbers.
+- [x] The post published, quoting the same numbers.
