@@ -17,17 +17,20 @@ what each server costs a model in tokens and in mistakes.
 Both servers call the same API with the same key. Neither depends on `app` at compile time, so
 neither can reach the database or the business rules directly. The design is in
 [docs/project-plan.md](docs/project-plan.md), the choices the build made are in
-[docs/decisions.md](docs/decisions.md), the graded results so far, from a local qwen model and
-GPT-5, are in [results/final/qwen/export/summary.md](results/final/qwen/export/summary.md) and
-[results/final/gpt/export/summary.md](results/final/gpt/export/summary.md), and the talk is in
+[docs/decisions.md](docs/decisions.md), the graded results so far, from a local qwen model,
+GPT-5, and Claude Opus 4.8's submission scenarios, are in
+[results/final/qwen/export/summary.md](results/final/qwen/export/summary.md),
+[results/final/gpt/export/summary.md](results/final/gpt/export/summary.md), and
+[results/final/claude/export/summary.md](results/final/claude/export/summary.md), and the talk is in
 [talks/speaking.md](talks/speaking.md).
 
 ## Results so far
 
-The local qwen model's 290 final runs and GPT-5's 290 are graded, and every failed run was read in
-full. The article explains what they show, and docs/decisions.md has the counts behind each number,
-under [Results](docs/decisions.md#results) for qwen and
-[GPT-5's final runs](docs/decisions.md#gpt-5s-final-runs).
+The local qwen model's 290 final runs, GPT-5's 290, and Claude Opus 4.8's 50 submission scenarios
+are graded, and every failed run was read in full. The article explains what they show, and
+docs/decisions.md has the counts behind each number, under [Results](docs/decisions.md#results)
+for qwen, [GPT-5's final runs](docs/decisions.md#gpt-5s-final-runs), and
+[Claude's scenario runs](docs/decisions.md#claudes-scenario-runs).
 
 | Model | Server | Task runs that succeeded, of 120 | Median tokens per task run | Submission scenarios that succeeded, of 25 | Median tokens per scenario |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -35,9 +38,12 @@ under [Results](docs/decisions.md#results) for qwen and
 | qwen | workflow | 116 | 11,803 | 25 | 23,119 |
 | GPT-5 | endpoint | 107 | 23,566 | 17 | 49,844 |
 | GPT-5 | workflow | 120 | 7,484 | 23 | 17,313 |
+| Claude Opus 4.8 | endpoint | not run | not run | 16 | 65,705 |
+| Claude Opus 4.8 | workflow | not run | not run | 25 | 25,607 |
 
 GPT-5's runs cost $14.92 at list prices, a median of 6.4 cents per endpoint task run and 2.7 cents
-per workflow task run. Claude Opus 4.8's 290 haven't run yet.
+per workflow task run. Claude's 50 scenario runs cost $13.21, and its 240 task runs, projected at
+$23 to $29 more, weren't run.
 [Hosted runs](docs/decisions.md#hosted-runs) has the checks, the scratch runs, and every cost.
 
 ## Modules
@@ -154,7 +160,8 @@ bench --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --spl
 bench --command=spend
 
 bench --command=export --phase=final --batches=final-gpt,final-gpt-scenarios --name=gpt
-bench --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
+bench --command=export --phase=final --batches=final-claude-scenarios --name=claude
+bench --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-gpt,final-gpt-scenarios,final-claude-scenarios --name=all
 ```
 
 ## Viewer

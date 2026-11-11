@@ -1,0 +1,261 @@
+{
+  "runs" : 50,
+  "validRuns" : 50,
+  "groups" : [ {
+    "model" : "claude",
+    "arm" : "endpoint",
+    "split" : "scenario",
+    "runs" : 25,
+    "valid" : 25,
+    "succeeded" : 16,
+    "successRate" : 0.64,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 16,
+        "mean" : 69728.6,
+        "median" : 68118.5,
+        "p95" : 90491.0,
+        "min" : 45718.0,
+        "max" : 101303.0
+      },
+      "allAttempts" : {
+        "n" : 25,
+        "mean" : 65422.2,
+        "median" : 65705.0,
+        "p95" : 86726.6,
+        "min" : 45718.0,
+        "max" : 101303.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 25,
+      "mean" : 62839.4,
+      "median" : 63050.0,
+      "p95" : 83292.0,
+      "min" : 43735.0,
+      "max" : 97263.0
+    },
+    "outputTokens" : {
+      "n" : 25,
+      "mean" : 2582.8,
+      "median" : 2527.0,
+      "p95" : 3517.8,
+      "min" : 1980.0,
+      "max" : 4040.0
+    },
+    "cacheReadTokens" : {
+      "n" : 25,
+      "mean" : 0.0,
+      "median" : 0.0,
+      "p95" : 0.0,
+      "min" : 0.0,
+      "max" : 0.0
+    },
+    "modelCalls" : {
+      "n" : 25,
+      "mean" : 9.0,
+      "median" : 9.0,
+      "p95" : 11.0,
+      "min" : 7.0,
+      "max" : 12.0
+    },
+    "toolCalls" : {
+      "n" : 25,
+      "mean" : 11.2,
+      "median" : 11.0,
+      "p95" : 13.8,
+      "min" : 9.0,
+      "max" : 15.0
+    },
+    "backendCalls" : {
+      "n" : 25,
+      "mean" : 11.1,
+      "median" : 11.0,
+      "p95" : 13.0,
+      "min" : 9.0,
+      "max" : 14.0
+    },
+    "toolResultChars" : {
+      "n" : 25,
+      "mean" : 4739.4,
+      "median" : 4753.0,
+      "p95" : 5717.0,
+      "min" : 3833.0,
+      "max" : 5857.0
+    },
+    "reminders" : 0,
+    "latencyMs" : {
+      "n" : 25,
+      "mean" : 31993.1,
+      "median" : 32307.0,
+      "p95" : 42731.0,
+      "min" : 25632.0,
+      "max" : 45365.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 378.77,
+      "withoutCacheReads" : 378.77,
+      "prices" : {
+        "input" : 5.0,
+        "output" : 25.0,
+        "cacheRead" : 0.5,
+        "cacheWrite" : 6.25
+      }
+    },
+    "runsFailingByClass" : {
+      "hallucinated_value" : 9
+    }
+  }, {
+    "model" : "claude",
+    "arm" : "workflow",
+    "split" : "scenario",
+    "runs" : 25,
+    "valid" : 25,
+    "succeeded" : 25,
+    "successRate" : 1.0,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 25,
+        "mean" : 24328.8,
+        "median" : 25607.0,
+        "p95" : 34384.8,
+        "min" : 13827.0,
+        "max" : 34932.0
+      },
+      "allAttempts" : {
+        "n" : 25,
+        "mean" : 24328.8,
+        "median" : 25607.0,
+        "p95" : 34384.8,
+        "min" : 13827.0,
+        "max" : 34932.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 25,
+      "mean" : 23072.6,
+      "median" : 24275.0,
+      "p95" : 32794.6,
+      "min" : 13046.0,
+      "max" : 33242.0
+    },
+    "outputTokens" : {
+      "n" : 25,
+      "mean" : 1256.2,
+      "median" : 1332.0,
+      "p95" : 1615.0,
+      "min" : 781.0,
+      "max" : 1690.0
+    },
+    "cacheReadTokens" : {
+      "n" : 25,
+      "mean" : 0.0,
+      "median" : 0.0,
+      "p95" : 0.0,
+      "min" : 0.0,
+      "max" : 0.0
+    },
+    "modelCalls" : {
+      "n" : 25,
+      "mean" : 4.7,
+      "median" : 5.0,
+      "p95" : 6.0,
+      "min" : 3.0,
+      "max" : 6.0
+    },
+    "toolCalls" : {
+      "n" : 25,
+      "mean" : 2.5,
+      "median" : 2.0,
+      "p95" : 4.0,
+      "min" : 1.0,
+      "max" : 4.0
+    },
+    "backendCalls" : {
+      "n" : 25,
+      "mean" : 17.3,
+      "median" : 13.0,
+      "p95" : 26.0,
+      "min" : 12.0,
+      "max" : 26.0
+    },
+    "toolResultChars" : {
+      "n" : 25,
+      "mean" : 3210.6,
+      "median" : 2551.0,
+      "p95" : 4898.0,
+      "min" : 2029.0,
+      "max" : 4898.0
+    },
+    "reminders" : 0,
+    "latencyMs" : {
+      "n" : 25,
+      "mean" : 15933.6,
+      "median" : 16347.0,
+      "p95" : 21394.6,
+      "min" : 10045.0,
+      "max" : 22754.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 146.77,
+      "withoutCacheReads" : 146.77,
+      "prices" : {
+        "input" : 5.0,
+        "output" : 25.0,
+        "cacheRead" : 0.5,
+        "cacheWrite" : 6.25
+      }
+    },
+    "runsFailingByClass" : { }
+  } ],
+  "failures" : [ {
+    "class" : "hallucinated_value",
+    "taskFailures" : [ "final-claude-S3-endpoint-r5", "final-claude-S1-endpoint-r4", "final-claude-S5-endpoint-r3", "final-claude-S1-endpoint-r1", "final-claude-S3-endpoint-r4", "final-claude-S5-endpoint-r5", "final-claude-S1-endpoint-r5", "final-claude-S3-endpoint-r3", "final-claude-S5-endpoint-r1" ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 9,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "wrong_constraint_verdict",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "model_arithmetic",
+    "taskFailures" : [ ],
+    "processOnly" : [ "final-claude-S4-endpoint-r3", "final-claude-S3-workflow-r4", "final-claude-S3-endpoint-r5", "final-claude-S3-workflow-r5", "final-claude-S3-endpoint-r2", "final-claude-S2-endpoint-r4", "final-claude-S3-endpoint-r4", "final-claude-S5-endpoint-r4", "final-claude-S1-endpoint-r5", "final-claude-S1-endpoint-r2" ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 10
+  }, {
+    "class" : "wrong_item",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "skipped_clarification",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "unapproved_action",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "off_track",
+    "taskFailures" : [ ],
+    "processOnly" : [ "final-claude-S2-endpoint-r4", "final-claude-S2-endpoint-r3" ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 2
+  }, {
+    "class" : "false_success",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  } ],
+  "frontendSteps" : [ ]
+}

@@ -72,8 +72,8 @@
   <h1>Same API, Two MCP Servers</h1>
   <p style="font-size:1.3em;margin:0">The price of one tool per endpoint</p>
   <p style="margin-top:auto">David Parry · davidparry.com</p>
-  <p class="small">Every number in this talk comes from recorded runs: 290 final runs with a local qwen model, and 290 with GPT-5. Claude is next.</p>
-  <aside class="notes">0:00. One Spring Boot app, two MCP servers in front of it, and the same model asking both the same questions. Say up front that every number comes from recorded runs, not from what happens live today, and that so far it's two models: qwen running locally, and GPT-5. Claude's runs come after. Don't apologize for it; it's a benchmark in progress and the records are public.</aside>
+  <p class="small">Every number in this talk comes from recorded runs: 290 final runs with a local qwen model, 290 with GPT-5, and Claude's 50 submission scenarios.</p>
+  <aside class="notes">0:00. One Spring Boot app, two MCP servers in front of it, and the same model asking both the same questions. Say up front that every number comes from recorded runs, not from what happens live today, and that it's two models on every task, qwen running locally and GPT-5, plus Claude on the five submission scenarios. Claude's task runs were stopped on cost. Don't apologize for it; it's a benchmark in progress and the records are public.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -116,8 +116,8 @@
   <div class="kicker">The claim</div>
   <h1 style="font-size:1.9em">Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code.</h1>
   <p style="font-size:1.2em">And you pay for that job on every model turn.</p>
-  <p class="small" style="margin-top:auto">With two of the three models measured, it holds for both. Where it's weaker is in the talk too.</p>
-  <aside class="notes">0:05. This is the claim I set out to test, written before any run. The results support it for qwen and for GPT-5. I'll show where it's weaker for qwen: a status lookup where the workflow server cost more, and scenarios where both servers got everything right and the difference was only tokens.</aside>
+  <p class="small" style="margin-top:auto">Measured on every task with two models and on the scenarios with a third, it holds for all three. Where it's weaker is in the talk too.</p>
+  <aside class="notes">0:05. This is the claim I set out to test, written before any run. The results support it for qwen and for GPT-5, and Claude's scenario runs agree. I'll show where it's weaker for qwen: a status lookup where the workflow server cost more, and scenarios where both servers got everything right and the difference was only tokens.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -272,6 +272,20 @@
   <aside class="notes">0:34. The same frozen tasks, catalogs, and limits, on GPT-5. It fails fewer task runs on both servers, and the token gap is wider: about three times per task, where qwen's was about twice. Don't compare the token counts across the two slides; OpenAI's include cached input and reasoning output. GPT-5 never skipped a check the screens make. Its failures go the other way: it answers the request correctly and then offers more, like red harnesses beside the blue one on order 1042, and the verifier fails an answer that rests on an item nobody asked for. The scenarios cost it most: told "the Columbus option works for me, please submit it", 8 endpoint runs and 2 workflow runs asked another question instead. Dollars are list prices.</aside>
 </section>
 
+<section class="slide" data-cuts="60">
+  <div class="kicker">The numbers · Claude Opus 4.8 · 50 scenario runs</div>
+  <table>
+    <tr><th></th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
+    <tr><td>Submission scenarios that succeeded</td><td class="n">16 of 25</td><td class="n">25 of 25</td></tr>
+    <tr><td>Median tokens per scenario</td><td class="n">65,705</td><td class="n">25,607</td></tr>
+    <tr><td>Model calls, tool calls across the 25 runs</td><td class="n">225, 277</td><td class="n">117, 62</td></tr>
+    <tr><td>The 25 runs at list prices</td><td class="n">$9.47</td><td class="n">$3.67</td></tr>
+  </table>
+  <p class="small">All nine endpoint failures gave Thursday, November 12 another weekday. The 240 task runs were stopped on cost.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/claude/export/summary.md · docs/decisions.md</span></div>
+  <aside class="notes">0:35. Claude ran only the five submission scenarios; its task runs were projected past the budget, so they didn't run. On the scenarios the gap holds: the endpoint server took 2.6 times the tokens, where qwen's took 3.0 and GPT-5's 2.9, and it got 16 of 25 against 25 of 25. Every endpoint failure is the mistake qwen made on D1 and D2: November 12 is a Thursday, and seven runs called it Monday. No tool on either server returns a weekday, so that's the model's own calendar. Claude quoted only the blue harness, never red. Dollars are list prices.</aside>
+</section>
+
 <section class="slide" data-cuts="60 30">
   <div class="kicker">Order 1042, five times each</div>
   <table>
@@ -284,7 +298,7 @@
   </table>
   <p>The workflow runs are nearly identical. The endpoint runs range from 6 calls to 19.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-*-r1 to r5 · tokens-order-1042.csv</span></div>
-  <aside class="notes">0:35. Same request, same seed data, five runs each. The median gap here is 51,413 against 6,105. The spread matters as much as the median: you can't budget a support queue on the median when the same question costs 22,000 tokens one time and 97,000 the next. Run 4 is in the gallery.</aside>
+  <aside class="notes">0:36. Same request, same seed data, five runs each. The median gap here is 51,413 against 6,105. The spread matters as much as the median: you can't budget a support queue on the median when the same question costs 22,000 tokens one time and 97,000 the next. Run 4 is in the gallery.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -415,14 +429,15 @@
 
 <section class="slide" data-cuts="60">
   <div class="kicker">Reading every failure</div>
-  <h2>Two mistakes in my verifier</h2>
+  <h2>Three mistakes in my verifier</h2>
   <ul>
     <li><b>G3:</b> four answers said, correctly, that the jacket hadn't been delivered yet, but labeled the card <code>order_status</code></li>
     <li><b>H3:</b> four answers quoted both matching harnesses, each under its own quote ID, and the verifier called that picking one</li>
+    <li><b>Weekdays:</b> it read "Monday, Nov 12" but not "Mon, Nov 12", so six of Claude's endpoint runs passed with the wrong weekday</li>
   </ul>
-  <p>Both had been counting against the endpoint server. Fixed, tested, and written down: held-out endpoint success went from 27 of 40 to 35 of 40.</p>
-  <div class="footer"><span>Same API, Two MCP Servers</span><span>docs/decisions.md · Final run</span></div>
-  <aside class="notes">0:49. This is why I read every failure instead of trusting the classifier. Both fixes moved runs in the endpoint server's favor and changed no other grade, in the final run or either pilot. If you build one of these, budget time to read the failures, because your verifier is code too.</aside>
+  <p>The first two counted against the endpoint server: held-out endpoint success went from 27 of 40 to 35 of 40. The third counted for it: Claude's endpoint scenarios went from 22 of 25 to 16. All three are fixed, tested, and written down.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>docs/decisions.md · Final run · Claude's scenario runs</span></div>
+  <aside class="notes">0:49. This is why I read every failure instead of trusting the classifier. The first two fixes moved runs in the endpoint server's favor and changed no other grade, in the final run or either pilot. The third went the other way. After reading Claude's three weekday failures I counted every weekday in its answers and found six more the verifier had missed, written short. Fixing it changed those six and nothing else, no qwen or GPT-5 grade. If you build one of these, budget time to read the failures, because your verifier is code too.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -456,12 +471,12 @@
   <div class="kicker">The workflow server's bill</div>
   <ul>
     <li><b>A plain lookup cost qwen more.</b> "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?" took a median of <span class="workflow">11,285</span> tokens against <span class="endpoint">9,429</span>. With GPT-5 it cost less.</li>
-    <li><b>Correct either way, with qwen.</b> Both servers got all 25 submission scenarios right. The endpoint server took three times the tokens. With GPT-5: 17 on the endpoint server, 23 on this one.</li>
+    <li><b>Correct either way, with qwen.</b> Both servers got all 25 submission scenarios right. The endpoint server took three times the tokens. With GPT-5: 17 on the endpoint server, 23 on this one. With Claude: 16 and 25.</li>
     <li><b>More code to keep correct.</b> 1,069 lines of Java against 347, and it only covers the tasks it was designed for.</li>
     <li><b>It can be talked around.</b> Two qwen H2 runs went past its matching.</li>
   </ul>
-  <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · final-gpt-scenarios · mcp-workflow/</span></div>
-  <aside class="notes">0:52. A3 is one lookup on both servers. qwen's workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. GPT-5's wasn't: 4,293 against 7,285. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest for qwen: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument. GPT-5's scenarios were: 17 of 25 on the endpoint server, 23 on the workflow server.</aside>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · final-gpt-scenarios · final-claude-scenarios · mcp-workflow/</span></div>
+  <aside class="notes">0:52. A3 is one lookup on both servers. qwen's workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. GPT-5's wasn't: 4,293 against 7,285. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest for qwen: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument. GPT-5's scenarios were: 17 of 25 on the endpoint server, 23 on the workflow server. So were Claude's: 16 of 25 against 25 of 25.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -518,8 +533,8 @@
 
 <section class="slide" data-cuts="60 30">
   <div class="kicker">What's next</div>
-  <h2>Claude, 290 more runs</h2>
-  <p>The contracts, fixtures, catalogs, and limits are frozen by hash, so those runs join qwen's and GPT-5's without rerunning either.</p>
+  <h2>Claude's 240 task runs</h2>
+  <p>They were stopped on cost. The contracts, fixtures, catalogs, and limits are frozen by hash, so they can join qwen's runs, GPT-5's, and Claude's scenarios without rerunning any of them.</p>
   <ul>
     <li>Every run record, grade, and export is in the repository</li>
     <li>The run viewer replays any two runs side by side from local files</li>
@@ -527,7 +542,7 @@
   </ul>
   <p style="margin-top:auto">David Parry · davidparry.com</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/ · viewer/ · docs/decisions.md</span></div>
-  <aside class="notes">0:59. Close on the frozen design: nothing gets tuned between models. GPT-5 didn't narrow the gap. If Claude does, that's a result too, and it'll be stated as one. Questions.</aside>
+  <aside class="notes">0:59. Close on the frozen design: nothing gets tuned between models. GPT-5 didn't narrow the gap, and Claude didn't on the scenarios. If its task runs do, that's a result too, and it'll be stated as one. Questions.</aside>
 </section>
 
 </div>

@@ -268,8 +268,10 @@ verifier grades the card, plus the app's state, rather than parsing prose.
   recorded but don't decide success.
 - **Grounding.** Every amount, date, SKU, quote ID, and exchange or return ID in an answer has to
   appear in a tool result from that run, or in what the customer said. A weekday the customer names
-  grounds its next date, so "by Saturday" covers November 7. A weekday written beside a date has to
-  be that date's weekday. The tools return ISO dates only, so a weekday is the model's own calendar
+  grounds its next date, so "by Saturday" covers November 7. A weekday written beside a date, in
+  full or short ("Monday, Nov 12" or "Mon, Nov 12"), has to be that date's weekday; the short form
+  was added after Claude's scenario runs (see [Claude's scenario runs](#claudes-scenario-runs)).
+  The tools return ISO dates only, so a weekday is the model's own calendar
   math in both arms; the first scratch batch had an endpoint answer with the right dates and three
   wrong weekdays, one of them beside the customer's Monday deadline.
 - **Arithmetic.** An amount no tool returned that equals a sum, a difference, or a double or triple
@@ -415,7 +417,9 @@ models. The hosted keys were still rejected, so qwen ran its 240 as `final-qwen`
 scenarios ran in both arms five times as `final-qwen-scenarios`, 50 more. The 480 Claude and GPT
 runs, and 50 scenario runs for each, waited on keys that work. The hashes and limits are frozen, so
 those runs can join these results without rerunning qwen. GPT-5's ran on November 10 and are under
-[GPT-5's final runs](#gpt-5s-final-runs). Claude's haven't run.
+[GPT-5's final runs](#gpt-5s-final-runs). Claude ran only its 50 scenario runs, the same day, under
+[Claude's scenario runs](#claudes-scenario-runs). Its 240 task runs weren't run, for the reason
+under [Cost](#cost).
 
 The first start of `final-qwen` recorded a dirty tree, because the scenario results weren't
 committed yet. I stopped it after 7 runs, deleted it, and started it again on `0dd4143`, the commit
@@ -621,14 +625,25 @@ Priced as if each turn had read the previous turn's prompt from Anthropic's prom
 the rest to it, Claude's four scratch runs would have cost 17% to 55% less, the most on the six-turn
 endpoint run, which would bring its set to about $16 to $17. Caching isn't set.
 
-The hosted runs have a $20 budget, so GPT-5's 290 ran first, with `--budget=20`: GPT-5
+The hosted runs had a $20 budget, so GPT-5's 290 ran first, with `--budget=20`: GPT-5
 [leaves the API](https://platform.openai.com/docs/deprecations) on December 11, 2026, and Opus 4.8
 [stays](https://docs.claude.com/en/docs/about-claude/model-deprecations) until at least May 28, 2027.
 They cost $14.92 at list prices, counting the preflight calls and the failed attempts, about $1 over
 the estimate. With the checks and the scratch batch, the ledger holds $15.66 from 1,516 model calls:
 $15.15 for GPT-5 and $0.51 for Claude. Four calls made by hand while the task batch was stopped, to
-see whether OpenAI was answering, aren't in the ledger, and they cost about $0.0005. That leaves
-$4.34 of the budget, short of Claude's estimate, so Claude's 290 haven't run.
+see whether OpenAI was answering, aren't in the ledger, and they cost about $0.0005. That left
+$4.34 of the budget, short of Claude's estimate.
+
+The budget then went up to $45 for Claude's 290, and its scenarios ran first, as GPT-5's had. Nine
+runs in, they were costing about three times what the scratch runs suggested, about 40 cents a run
+on the endpoint server and 15 on the workflow server: each scenario is C1's request and then
+one or two more messages, and the scratch runs were C1 and the shorter H1. Scaled from Claude's own
+runs, its 290 would cost $31 to $37, past $45, so the batch was stopped between two runs. The budget
+went up to $55, and the scenarios finished. Scaled from all 50 two ways, by Claude's tokens against
+qwen's on the same scenarios and against GPT-5's, the 240 task runs would have cost $23 to $29
+more, ending at $52 to $58, so they weren't run. Claude's 50 scenario runs cost $13.21 with their
+preflight calls. The ledger holds $28.86 from 1,862 model calls: $15.15 for GPT-5 and $13.72 for
+Claude.
 
 ### GPT-5's final runs
 
@@ -671,8 +686,10 @@ out, the customer wants to think it over), and all 30 passed in both arms.
   workflow r1 listed Columbus Express at $19.99 as over the limit and then asked whether the
   customer meant Ground or Express. S1 workflow r1 named the right quote but asked the customer to
   reply "Submit EQ-5001" first.
-- **No duplicate submission.** No S4 run created a second exchange, so its duplicate check never
-  came into play. The four S4 workflow runs that submitted each made one.
+- **No duplicate exchange.** Asked to submit again, the four S4 workflow runs that had submitted
+  each called `submit_exchange` a second time, and the store answered `already_submitted`: "Nothing
+  new was committed or charged." Run 5 then told the customer "I did not submit it again," though
+  it had. No S4 run made a second exchange.
 - **Cards written as text.** Eight endpoint runs ended as `missing_card`, having written the card
   as JSON text instead of calling `final_answer`, before and after the reminder. Three of them
   passed on their text. No workflow run ended that way.
@@ -761,3 +778,68 @@ asked for:
   fits.
 
 As with qwen, none of this changes a grade.
+
+### Claude's scenario runs
+
+`final-claude-scenarios` started on November 10 at `b7cfcbd`, the commit that adds GPT-5's results,
+with a clean tree. It was stopped on purpose between its ninth and tenth runs, for the cost reason
+under [Cost](#cost), and started again on the same commit with the larger budget. A resumed batch
+keeps the manifest it started with once its plan, hashes, models, and limits match. It finished 23
+minutes after it first started. Claude's task batch didn't run, so Claude isn't in the task tables
+or in the comparison with the frontend's screens, which covers single-message tasks only.
+
+| Arm | Scenarios | Median tokens | Median model calls | Median tool calls | Median latency (s) | Cost of the 25 runs |
+| --- | --- | --- | --- | --- | --- | --- |
+| endpoint | 16 of 25 | 65,705 | 9 | 11 | 32.3 | $9.47 |
+| workflow | 25 of 25 | 25,607 | 5 | 2 | 16.3 | $3.67 |
+
+No prompt caching or extended thinking is set, so Claude's input counts are each turn's whole
+prompt, and its output is what it wrote. The endpoint arm's median is 2.6 times the workflow arm's,
+where qwen's was 3.0 times and GPT-5's 2.9. In all, the endpoint arm made 225 model calls and 277
+tool calls, and the workflow arm 117 and 62. A run cost a median of 38 cents on the endpoint server
+and 16 on the workflow server.
+
+**One verifier change, after the run.** The weekday check read only weekdays written in full, so
+"Monday, Nov 12" failed a run and "Mon, Nov 12" didn't. After Claude's three failures were read, a
+count of every weekday in its cards found six more runs that had written it short, as "Mon, Nov 12"
+or "Mon Nov 12", and passed.
+The check now reads three-letter weekdays too, with a test for each form. Every final and pilot
+batch was verified again, and only those six runs changed, from passed to failed, so the endpoint
+arm went from 22 of 25 to 16. No qwen or GPT-5 grade moved.
+
+**Every failure was read.** All nine are endpoint runs, S1 r1, r4, and r5, S3 r3, r4, and r5, and
+S5 r1, r3, and r5, and all nine are `hallucinated_value` for the same date. November 12, 2026 is a
+Thursday. Seven runs called it a Monday, S1 r4 a Wednesday, and S1 r5 a Tuesday. Every endpoint run
+that put a weekday beside November 12 got it wrong. The three that also named November 10 called it
+a Tuesday, and the two that named November 16 a Monday, both right, and the two workflow runs that
+named a weekday, S4 r2 and r3, called November 12 a Thursday. No tool result on either server names
+a weekday, so each is the model's own calendar math, the mistake four of qwen's D1 and D2 runs
+made. Otherwise the nine did what their scenario asks. Each checked eligibility and stock, quoted
+only the blue large, and offered Columbus Ground at $11.99 by November 12 as the one option that
+fits. The S1 runs submitted it when the customer said to, the S3 runs tried to, found that
+Columbus had sold out, and said nothing was submitted, and the S5 runs waited.
+
+- **No other color.** Every quote and preview in the 50 runs was for the blue large, where 18 of
+  GPT-5's 25 endpoint scenario runs quoted red.
+- **One amount under the wrong label.** S3 r3's second card gave Reno Ground's "additional cost
+  $4.99", which is its shipping charge; the additional cost is $9.99. The verifier checks that an
+  amount came from a tool, not what the card calls it, so this doesn't fail the run. It fails anyway,
+  on its weekday.
+- **"Submit it again."** Four S4 runs, endpoint r2 and r3 and workflow r2 and r5, told the customer
+  the exchange had gone through and then submitted the same quote again to confirm it. The store
+  returned EX-7001 each time, and on the workflow server it said "Nothing new was committed or
+  charged." All ten of qwen's S4 runs and the four GPT-5 workflow runs above did the same, and no
+  run in any batch made a second exchange. The check that stops one is in the store, behind both
+  servers.
+- **Past the workflow server's next step.** All ten S2 runs re-quoted the Columbus option once the
+  first quote had expired and submitted it at the same terms without asking again, which S2 allows.
+  On the workflow server that meant going past the expired-quote result's `nextStep`, which says to
+  "get the customer's approval again before submitting."
+- **Cards.** Each of the 110 customer messages got its card through `final_answer`, and no run
+  needed the reminder. The schema check sent back four cards, two each in S2 endpoint r3 and r4,
+  that left out `outcome`, and each run sent the same card again before adding it. The export notes
+  them as `off_track` "arguments that aren't a JSON object", its note for every card the check
+  refuses; these were JSON objects without `outcome`.
+- **Arithmetic.** Ten runs, eight endpoint and two workflow, worked out an amount themselves, such
+  as Reno Express's $17.99 from the $5.00 price difference and $12.99 shipping. None contradicted a
+  quoted cost, so they're recorded, not failed.
