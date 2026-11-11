@@ -110,6 +110,22 @@ It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/bl
 - **Only the color the customer has.** Every quote was for the blue large, where GPT-5 quoted red in 18 of its 25 endpoint scenario runs.
 - **The store's duplicate check did its job.** Asked to "submit it again just to be sure", four runs said it had gone through and submitted the same quote again anyway, and the store returned the same exchange. All ten of qwen's S4 runs, and four of GPT-5's, did the same.
 
+## How strong the evidence is
+
+Every task ran five times on both servers, so the servers can be compared task by task, and run by run where two runs share a task and a repetition. The tests were chosen after the runs. [`docs/decisions.md`](../docs/decisions.md#how-strong-the-evidence-is) has them and what they don't show, and [`results/final/evidence.md`](../results/final/evidence.md) has every number, from `scripts/evidence_stats.py`.
+
+| The 24 tasks, five runs each per server | qwen | GPT-5 |
+| --- | --- | --- |
+| Tasks where the endpoint server took more tokens | 23 of 24 | 24 of 24 |
+| Endpoint tokens per task, against the workflow server's (95% interval) | 2.2 times (1.8 to 2.8) | 2.8 times (2.4 to 3.2) |
+| Paired runs where only the endpoint run failed, and where only the workflow run did | 23 and 0 | 13 and 0 |
+| Tasks where the endpoint server failed more often, and less often | 10 and 0 | 4 and 0 |
+
+- **Tokens are the strong result.** The exact Wilcoxon test across tasks gives p = 1.2e-06 for qwen and 1.2e-07 for GPT-5, and the held-out tasks alone still show the gap (p = 0.039 and 0.008).
+- **Mistakes are clear but rest on fewer events.** Run by run, p = 2.4e-07 and 2.4e-04. Counting each task once, qwen's p is 0.002 and GPT-5's 0.125, since its 13 failures sit on four tasks. The held-out tasks alone have too few failures to tell the servers apart.
+- **The gap follows the steps.** It's smallest on lookups and largest on exchanges, the case for keeping a pass-through for a single read.
+- **The scope is one API, one generator, and tasks I wrote for a server I designed for them.** It shows the designed server winning on tasks shaped like the frontend's sequences, not on tasks it wasn't built for.
+
 ## The failure gallery
 
 This is the segment a demo reel can't fake. Every run goes through a verifier that checks it against the fixture facts, the tool trace, and the application's database, and proposes a class for each failure. Every failed run in the final run was read in full, and each failure shown carries its run ID.
@@ -171,7 +187,7 @@ My rule for every cut: a live run is one sample, so no number on a slide comes f
 | 5 to 12 | Two tool catalogs | Twelve endpoint tools beside six workflow tools, and how many tokens each catalog puts in front of the model before the first turn. |
 | 12 to 24 | Demo: the endpoint server | The request, live. The turn count, the token chart per turn, and the backend calls the model chose to make. |
 | 24 to 32 | Demo: the workflow server | The same request. One preview call, the same backend calls made inside the server, and one focused result. |
-| 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately, for qwen and then GPT-5, and Claude's scenarios. |
+| 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately, for qwen and then GPT-5, and Claude's scenarios. Then how strong the gap is, task by task and run by run. |
 | 40 to 48 | The failure gallery | One transcript for each failure class the benchmark recorded. |
 | 48 to 52 | What the grades don't show | The three verifier fixes, then every run measured against the screens: the skipped stock checks that quoted only the schema's example warehouse, the warehouses that don't exist, and E1's five passes at a higher price than the store had, beside the screenshot of the same request in the React app. |
 | 52 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or package and import lines. |

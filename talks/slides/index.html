@@ -286,6 +286,21 @@
   <aside class="notes">0:35. Claude ran only the five submission scenarios; its task runs were projected past the budget, so they didn't run. On the scenarios the gap holds: the endpoint server took 2.6 times the tokens, where qwen's took 3.0 and GPT-5's 2.9, and it got 16 of 25 against 25 of 25. Every endpoint failure is the mistake qwen made on D1 and D2: November 12 is a Thursday, and seven runs called it Monday. No tool on either server returns a weekday, so that's the model's own calendar. Claude quoted only the blue harness, never red. Dollars are list prices.</aside>
 </section>
 
+<section class="slide" data-cuts="60">
+  <div class="kicker">How strong the evidence is · 24 tasks, five runs each per server</div>
+  <table>
+    <tr><th></th><th class="n">qwen</th><th class="n">GPT-5</th></tr>
+    <tr><td>Tasks where the endpoint server took more tokens</td><td class="n">23 of 24</td><td class="n">24 of 24</td></tr>
+    <tr><td>Endpoint tokens per task, against the workflow server's</td><td class="n">2.2 times</td><td class="n">2.8 times</td></tr>
+    <tr><td>95% interval, resampling tasks</td><td class="n">1.8 to 2.8</td><td class="n">2.4 to 3.2</td></tr>
+    <tr><td>Paired runs that failed only on the endpoint server, only on the workflow server</td><td class="n">23, 0</td><td class="n">13, 0</td></tr>
+    <tr><td>Tasks the endpoint server failed more often, less often</td><td class="n">10, 0</td><td class="n">4, 0</td></tr>
+  </table>
+  <p class="small">The held-out tasks alone keep the token gap, but have too few failures to separate the servers.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/evidence.md · scripts/evidence_stats.py · docs/decisions.md</span></div>
+  <aside class="notes">0:36. The question I'd ask from the audience: is this noise? Every task ran five times on both servers, so compare them task by task and run by run. Tokens: the endpoint server cost more on 23 of 24 tasks with qwen and all 24 with GPT-5, and an exact Wilcoxon test puts that at about one in a million for qwen and one in ten million for GPT-5. Mistakes: in runs that share a task and a repetition, the endpoint server failed 23 and 13 runs the workflow server passed, and the reverse never happened. Counting each task once is stricter, because failures cluster: qwen's gap still holds at p = 0.002, and GPT-5's 13 failures sit on four tasks, p = 0.125 on that count alone. I chose these tests after the runs, and the script that computes them is in the repo. Scope: one API, one generator, and tasks I wrote.</aside>
+</section>
+
 <section class="slide" data-cuts="60 30">
   <div class="kicker">Order 1042, five times each</div>
   <table>
@@ -298,7 +313,7 @@
   </table>
   <p>The workflow runs are nearly identical. The endpoint runs range from 6 calls to 19.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-C1-*-r1 to r5 · tokens-order-1042.csv</span></div>
-  <aside class="notes">0:36. Same request, same seed data, five runs each. The median gap here is 51,413 against 6,105. The spread matters as much as the median: you can't budget a support queue on the median when the same question costs 22,000 tokens one time and 97,000 the next. Run 4 is in the gallery.</aside>
+  <aside class="notes">0:37. Same request, same seed data, five runs each. The median gap here is 51,413 against 6,105. The spread matters as much as the median: you can't budget a support queue on the median when the same question costs 22,000 tokens one time and 97,000 the next. Run 4 is in the gallery.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">

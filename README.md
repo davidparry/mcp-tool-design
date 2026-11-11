@@ -41,6 +41,13 @@ for qwen, [GPT-5's final runs](docs/decisions.md#gpt-5s-final-runs), and
 | Claude Opus 4.8 | endpoint | not run | not run | 16 | 65,705 |
 | Claude Opus 4.8 | workflow | not run | not run | 25 | 25,607 |
 
+Task by task, the endpoint server used more tokens on 23 of the 24 tasks with qwen and all 24 with
+GPT-5, 2.2 and 2.8 times as many per task. In runs paired by task and repetition, it failed 23 with
+qwen and 13 with GPT-5 that the workflow server passed, and the workflow server never failed a run
+the endpoint server passed. [How strong the evidence is](docs/decisions.md#how-strong-the-evidence-is)
+has the tests and what they don't show, and [results/final/evidence.md](results/final/evidence.md)
+has every number.
+
 GPT-5's runs cost $14.92 at list prices, a median of 6.4 cents per endpoint task run and 2.7 cents
 per workflow task run. Claude's 50 scenario runs cost $13.21, and its 240 task runs, projected at
 $23 to $29 more, weren't run.
@@ -162,6 +169,15 @@ bench --command=spend
 bench --command=export --phase=final --batches=final-gpt,final-gpt-scenarios --name=gpt
 bench --command=export --phase=final --batches=final-claude-scenarios --name=claude
 bench --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-gpt,final-gpt-scenarios,final-claude-scenarios --name=all
+```
+
+`scripts/evidence_stats.py` reads the qwen, GPT-5, and Claude exports and prints the per-task
+ratios, paired runs, exact tests, and intervals that
+[How strong the evidence is](docs/decisions.md#how-strong-the-evidence-is) cites. It needs only
+Python 3.
+
+```bash
+python3 scripts/evidence_stats.py > results/final/evidence.md
 ```
 
 ## Viewer

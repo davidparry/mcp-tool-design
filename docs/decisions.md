@@ -476,6 +476,9 @@ The token and call columns cover the dev and held-out runs. In the scenarios the
 - **One task went the other way.** A3, a held-out status lookup, cost the workflow arm a median of
   11,285 tokens and the endpoint arm 9,429.
 
+How strong the differences are, task by task and run by run, is under
+[How strong the evidence is](#how-strong-the-evidence-is).
+
 ### Every failure was read
 
 Every failed run was read in full before any result was used.
@@ -843,3 +846,44 @@ Columbus had sold out, and said nothing was submitted, and the S5 runs waited.
 - **Arithmetic.** Ten runs, eight endpoint and two workflow, worked out an amount themselves, such
   as Reno Express's $17.99 from the $5.00 price difference and $12.99 shipping. None contradicted a
   quoted cost, so they're recorded, not failed.
+
+### How strong the evidence is
+
+Every number in this section is in [`results/final/evidence.md`](../results/final/evidence.md),
+which `python3 scripts/evidence_stats.py` prints from the exports with nothing beyond Python 3.
+Each task ran five times on each server, so the servers can be compared task by task, and run by
+run where two runs share a task and a repetition. Runs of one task aren't independent, so the
+intervals resample tasks, not runs, and the per-task tests count each task once. The plan named the
+measures and the pairing but no tests; these were chosen after the runs and applied the same way to
+every model and subset. qwen and GPT-5 are the two models that ran every task.
+
+- **Tokens.** The endpoint arm's median was higher on 23 of the 24 tasks with qwen and all 24 with
+  GPT-5 (exact Wilcoxon signed-rank p = 1.2e-06 and 1.2e-07). Per task it took 2.23 times the
+  workflow arm's tokens with qwen (95% interval 1.79 to 2.79) and 2.78 times with GPT-5 (2.41 to
+  3.18). In the pairs, the endpoint run took more in 111 of 120 with qwen and 118 of 120 with GPT-5.
+- **The gap follows the steps a task takes.** The smallest ratios are lookups: A3 at 0.84 with qwen,
+  the one task where the workflow arm cost more, and A1 at 1.05 with GPT-5. The largest are
+  exchanges, C1 at 8.42 with qwen and G3 at 5.49 with GPT-5. The first model call costs about the
+  same in both arms, 2,916 and 2,446 input tokens with qwen and 2,023 and 1,695 with GPT-5, and the
+  endpoint arm made about twice the model calls and 3.4 to 4.5 times the tool calls.
+- **Failed runs.** 27 of 120 endpoint task runs failed with qwen, against 4 (Fisher's exact
+  p = 1.0e-05), and 13 with GPT-5, against none (p = 1.7e-04). In the pairs, the endpoint run
+  failed where the workflow run passed 23 times with qwen and 13 with GPT-5, and the reverse never
+  happened (exact McNemar p = 2.4e-07 and 2.4e-04).
+- **Counted by task**, the stricter test, since failures cluster in a few tasks. qwen's endpoint arm
+  failed more often on 10 tasks and less often on none (sign test p = 0.002), a gap of 19.2 points
+  (95% interval 8.3 to 31.7). GPT-5's failures are on 4 tasks (p = 0.125 on that count alone), and
+  its gap is 10.8 points (0.8 to 22.5).
+- **Held-out tasks alone.** The token gap holds, 2.20 times with qwen (p = 0.039) and 2.82 with
+  GPT-5 (p = 0.008). The failures are too few to tell the arms apart: 5 against 1 of 40 with qwen
+  (Fisher's p = 0.20) and 3 against none with GPT-5 (p = 0.24).
+- **Scenarios.** The endpoint run took more tokens in all 25 pairs for each of qwen, GPT-5, and
+  Claude. qwen got all 50 right. GPT-5's 8 endpoint failures against 2 aren't significant counted by
+  run (Fisher's p = 0.074), though the pairs split 6 and 0 (McNemar p = 0.031). Claude's 9 against
+  none give p = 0.002.
+- **What it doesn't show.** This is one API, one generator, and 24 tasks written by the person who
+  designed the workflow server for them. The held-out tasks guard against tuning to particular
+  requests, not against designing the server for these kinds of task, so the comparison covers tasks
+  shaped like the frontend's sequences and says nothing about tasks the workflow server wasn't
+  built for. Two models ran every task, five times each, and token counts can't be compared across
+  providers.
