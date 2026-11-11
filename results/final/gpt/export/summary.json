@@ -1,0 +1,709 @@
+{
+  "runs" : 290,
+  "validRuns" : 290,
+  "groups" : [ {
+    "model" : "gpt",
+    "arm" : "endpoint",
+    "split" : "dev",
+    "runs" : 80,
+    "valid" : 80,
+    "succeeded" : 70,
+    "successRate" : 0.875,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 70,
+        "mean" : 19855.9,
+        "median" : 15755.5,
+        "p95" : 39143.9,
+        "min" : 4494.0,
+        "max" : 42067.0
+      },
+      "allAttempts" : {
+        "n" : 80,
+        "mean" : 22238.4,
+        "median" : 21985.5,
+        "p95" : 41396.0,
+        "min" : 4494.0,
+        "max" : 59893.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 80,
+      "mean" : 16995.7,
+      "median" : 16102.5,
+      "p95" : 30448.6,
+      "min" : 4191.0,
+      "max" : 46597.0
+    },
+    "outputTokens" : {
+      "n" : 80,
+      "mean" : 5242.6,
+      "median" : 4760.0,
+      "p95" : 11085.8,
+      "min" : 303.0,
+      "max" : 13296.0
+    },
+    "cacheReadTokens" : {
+      "n" : 80,
+      "mean" : 13958.4,
+      "median" : 13440.0,
+      "p95" : 25593.6,
+      "min" : 3584.0,
+      "max" : 34048.0
+    },
+    "modelCalls" : {
+      "n" : 80,
+      "mean" : 6.1,
+      "median" : 6.0,
+      "p95" : 10.0,
+      "min" : 2.0,
+      "max" : 13.0
+    },
+    "toolCalls" : {
+      "n" : 80,
+      "mean" : 7.1,
+      "median" : 6.0,
+      "p95" : 15.0,
+      "min" : 1.0,
+      "max" : 19.0
+    },
+    "backendCalls" : {
+      "n" : 80,
+      "mean" : 7.1,
+      "median" : 6.0,
+      "p95" : 15.0,
+      "min" : 1.0,
+      "max" : 19.0
+    },
+    "toolResultChars" : {
+      "n" : 80,
+      "mean" : 2830.6,
+      "median" : 2137.0,
+      "p95" : 6438.5,
+      "min" : 453.0,
+      "max" : 8231.0
+    },
+    "reminders" : 52,
+    "latencyMs" : {
+      "n" : 80,
+      "mean" : 84457.7,
+      "median" : 58395.0,
+      "p95" : 147371.2,
+      "min" : 5859.0,
+      "max" : 1635312.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 57.97,
+      "withoutCacheReads" : 73.67,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : {
+      "hallucinated_value" : 3,
+      "wrong_constraint_verdict" : 3,
+      "wrong_item" : 10
+    }
+  }, {
+    "model" : "gpt",
+    "arm" : "endpoint",
+    "split" : "heldout",
+    "runs" : 40,
+    "valid" : 40,
+    "succeeded" : 37,
+    "successRate" : 0.925,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 37,
+        "mean" : 21335.1,
+        "median" : 23209.0,
+        "p95" : 35784.6,
+        "min" : 4695.0,
+        "max" : 42282.0
+      },
+      "allAttempts" : {
+        "n" : 40,
+        "mean" : 23544.5,
+        "median" : 23615.5,
+        "p95" : 43520.2,
+        "min" : 4695.0,
+        "max" : 57560.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 40,
+      "mean" : 17538.3,
+      "median" : 18012.5,
+      "p95" : 32175.9,
+      "min" : 4193.0,
+      "max" : 44379.0
+    },
+    "outputTokens" : {
+      "n" : 40,
+      "mean" : 6006.2,
+      "median" : 6139.0,
+      "p95" : 13251.9,
+      "min" : 502.0,
+      "max" : 15865.0
+    },
+    "cacheReadTokens" : {
+      "n" : 40,
+      "mean" : 14707.2,
+      "median" : 14848.0,
+      "p95" : 28505.6,
+      "min" : 3584.0,
+      "max" : 39168.0
+    },
+    "modelCalls" : {
+      "n" : 40,
+      "mean" : 6.5,
+      "median" : 7.0,
+      "p95" : 11.0,
+      "min" : 2.0,
+      "max" : 14.0
+    },
+    "toolCalls" : {
+      "n" : 40,
+      "mean" : 6.5,
+      "median" : 7.0,
+      "p95" : 11.0,
+      "min" : 1.0,
+      "max" : 13.0
+    },
+    "backendCalls" : {
+      "n" : 40,
+      "mean" : 6.5,
+      "median" : 7.0,
+      "p95" : 11.0,
+      "min" : 1.0,
+      "max" : 13.0
+    },
+    "toolResultChars" : {
+      "n" : 40,
+      "mean" : 2482.5,
+      "median" : 2297.0,
+      "p95" : 4298.0,
+      "min" : 434.0,
+      "max" : 4907.0
+    },
+    "reminders" : 27,
+    "latencyMs" : {
+      "n" : 40,
+      "mean" : 74655.9,
+      "median" : 65005.5,
+      "p95" : 170808.5,
+      "min" : 8691.0,
+      "max" : 237553.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 65.44,
+      "withoutCacheReads" : 81.98,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : {
+      "wrong_item" : 3
+    }
+  }, {
+    "model" : "gpt",
+    "arm" : "endpoint",
+    "split" : "scenario",
+    "runs" : 25,
+    "valid" : 25,
+    "succeeded" : 17,
+    "successRate" : 0.68,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 17,
+        "mean" : 46179.7,
+        "median" : 46098.0,
+        "p95" : 59662.6,
+        "min" : 28491.0,
+        "max" : 59949.0
+      },
+      "allAttempts" : {
+        "n" : 25,
+        "mean" : 51816.9,
+        "median" : 49844.0,
+        "p95" : 75471.0,
+        "min" : 28491.0,
+        "max" : 79339.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 25,
+      "mean" : 40508.1,
+      "median" : 39157.0,
+      "p95" : 62056.4,
+      "min" : 21268.0,
+      "max" : 66337.0
+    },
+    "outputTokens" : {
+      "n" : 25,
+      "mean" : 11308.8,
+      "median" : 11142.0,
+      "p95" : 14131.4,
+      "min" : 7223.0,
+      "max" : 14261.0
+    },
+    "cacheReadTokens" : {
+      "n" : 25,
+      "mean" : 34913.3,
+      "median" : 33152.0,
+      "p95" : 54784.0,
+      "min" : 18176.0,
+      "max" : 58752.0
+    },
+    "modelCalls" : {
+      "n" : 25,
+      "mean" : 10.1,
+      "median" : 10.0,
+      "p95" : 12.8,
+      "min" : 7.0,
+      "max" : 14.0
+    },
+    "toolCalls" : {
+      "n" : 25,
+      "mean" : 13.9,
+      "median" : 16.0,
+      "p95" : 17.8,
+      "min" : 9.0,
+      "max" : 18.0
+    },
+    "backendCalls" : {
+      "n" : 25,
+      "mean" : 13.9,
+      "median" : 16.0,
+      "p95" : 17.8,
+      "min" : 9.0,
+      "max" : 18.0
+    },
+    "toolResultChars" : {
+      "n" : 25,
+      "mean" : 6262.0,
+      "median" : 7305.0,
+      "p95" : 8040.2,
+      "min" : 3944.0,
+      "max" : 8221.0
+    },
+    "reminders" : 41,
+    "latencyMs" : {
+      "n" : 25,
+      "mean" : 151154.2,
+      "median" : 148561.0,
+      "p95" : 220323.8,
+      "min" : 95629.0,
+      "max" : 244792.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 124.45,
+      "withoutCacheReads" : 163.72,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : {
+      "off_track" : 8
+    }
+  }, {
+    "model" : "gpt",
+    "arm" : "workflow",
+    "split" : "dev",
+    "runs" : 80,
+    "valid" : 80,
+    "succeeded" : 80,
+    "successRate" : 1.0,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 80,
+        "mean" : 7404.7,
+        "median" : 7339.5,
+        "p95" : 11882.6,
+        "min" : 4092.0,
+        "max" : 14294.0
+      },
+      "allAttempts" : {
+        "n" : 80,
+        "mean" : 7404.7,
+        "median" : 7339.5,
+        "p95" : 11882.6,
+        "min" : 4092.0,
+        "max" : 14294.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 80,
+      "mean" : 5205.1,
+      "median" : 5768.5,
+      "p95" : 8338.3,
+      "min" : 3610.0,
+      "max" : 9021.0
+    },
+    "outputTokens" : {
+      "n" : 80,
+      "mean" : 2199.6,
+      "median" : 2166.0,
+      "p95" : 3740.2,
+      "min" : 380.0,
+      "max" : 5327.0
+    },
+    "cacheReadTokens" : {
+      "n" : 80,
+      "mean" : 4214.4,
+      "median" : 3456.0,
+      "p95" : 6924.8,
+      "min" : 1536.0,
+      "max" : 7424.0
+    },
+    "modelCalls" : {
+      "n" : 80,
+      "mean" : 2.6,
+      "median" : 3.0,
+      "p95" : 4.0,
+      "min" : 2.0,
+      "max" : 4.0
+    },
+    "toolCalls" : {
+      "n" : 80,
+      "mean" : 1.5,
+      "median" : 1.0,
+      "p95" : 2.0,
+      "min" : 1.0,
+      "max" : 3.0
+    },
+    "backendCalls" : {
+      "n" : 80,
+      "mean" : 9.4,
+      "median" : 9.0,
+      "p95" : 18.0,
+      "min" : 4.0,
+      "max" : 18.0
+    },
+    "toolResultChars" : {
+      "n" : 80,
+      "mean" : 1521.1,
+      "median" : 1524.0,
+      "p95" : 2594.0,
+      "min" : 604.0,
+      "max" : 3075.0
+    },
+    "reminders" : 15,
+    "latencyMs" : {
+      "n" : 80,
+      "mean" : 26674.3,
+      "median" : 24481.0,
+      "p95" : 50340.7,
+      "min" : 4930.0,
+      "max" : 74139.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 23.76,
+      "withoutCacheReads" : 28.5,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : { }
+  }, {
+    "model" : "gpt",
+    "arm" : "workflow",
+    "split" : "heldout",
+    "runs" : 40,
+    "valid" : 40,
+    "succeeded" : 40,
+    "successRate" : 1.0,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 40,
+        "mean" : 8193.8,
+        "median" : 8463.5,
+        "p95" : 12783.7,
+        "min" : 4253.0,
+        "max" : 15912.0
+      },
+      "allAttempts" : {
+        "n" : 40,
+        "mean" : 8193.8,
+        "median" : 8463.5,
+        "p95" : 12783.7,
+        "min" : 4253.0,
+        "max" : 15912.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 40,
+      "mean" : 5692.3,
+      "median" : 5862.0,
+      "p95" : 9062.7,
+      "min" : 3609.0,
+      "max" : 10928.0
+    },
+    "outputTokens" : {
+      "n" : 40,
+      "mean" : 2501.5,
+      "median" : 2742.0,
+      "p95" : 4422.6,
+      "min" : 572.0,
+      "max" : 4984.0
+    },
+    "cacheReadTokens" : {
+      "n" : 40,
+      "mean" : 4438.4,
+      "median" : 4864.0,
+      "p95" : 6931.2,
+      "min" : 3072.0,
+      "max" : 9216.0
+    },
+    "modelCalls" : {
+      "n" : 40,
+      "mean" : 2.8,
+      "median" : 3.0,
+      "p95" : 4.0,
+      "min" : 2.0,
+      "max" : 5.0
+    },
+    "toolCalls" : {
+      "n" : 40,
+      "mean" : 1.7,
+      "median" : 2.0,
+      "p95" : 2.0,
+      "min" : 1.0,
+      "max" : 4.0
+    },
+    "backendCalls" : {
+      "n" : 40,
+      "mean" : 9.5,
+      "median" : 9.0,
+      "p95" : 15.0,
+      "min" : 4.0,
+      "max" : 18.0
+    },
+    "toolResultChars" : {
+      "n" : 40,
+      "mean" : 1634.1,
+      "median" : 1471.0,
+      "p95" : 2746.0,
+      "min" : 769.0,
+      "max" : 2962.0
+    },
+    "reminders" : 7,
+    "latencyMs" : {
+      "n" : 40,
+      "mean" : 29157.2,
+      "median" : 27816.0,
+      "p95" : 52635.3,
+      "min" : 7053.0,
+      "max" : 61407.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 27.14,
+      "withoutCacheReads" : 32.13,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : { }
+  }, {
+    "model" : "gpt",
+    "arm" : "workflow",
+    "split" : "scenario",
+    "runs" : 25,
+    "valid" : 25,
+    "succeeded" : 23,
+    "successRate" : 0.92,
+    "completeTaskTokens" : {
+      "successfulOnly" : {
+        "n" : 23,
+        "mean" : 19486.3,
+        "median" : 17313.0,
+        "p95" : 30220.3,
+        "min" : 11123.0,
+        "max" : 35402.0
+      },
+      "allAttempts" : {
+        "n" : 25,
+        "mean" : 19388.3,
+        "median" : 17313.0,
+        "p95" : 29742.6,
+        "min" : 11123.0,
+        "max" : 35402.0
+      }
+    },
+    "inputTokens" : {
+      "n" : 25,
+      "mean" : 14216.4,
+      "median" : 13398.0,
+      "p95" : 23467.6,
+      "min" : 7035.0,
+      "max" : 28698.0
+    },
+    "outputTokens" : {
+      "n" : 25,
+      "mean" : 5172.0,
+      "median" : 5083.0,
+      "p95" : 6699.4,
+      "min" : 3472.0,
+      "max" : 7939.0
+    },
+    "cacheReadTokens" : {
+      "n" : 25,
+      "mean" : 11325.4,
+      "median" : 9344.0,
+      "p95" : 20812.8,
+      "min" : 5888.0,
+      "max" : 23296.0
+    },
+    "modelCalls" : {
+      "n" : 25,
+      "mean" : 5.1,
+      "median" : 5.0,
+      "p95" : 7.8,
+      "min" : 3.0,
+      "max" : 9.0
+    },
+    "toolCalls" : {
+      "n" : 25,
+      "mean" : 2.2,
+      "median" : 2.0,
+      "p95" : 3.0,
+      "min" : 1.0,
+      "max" : 4.0
+    },
+    "backendCalls" : {
+      "n" : 25,
+      "mean" : 16.2,
+      "median" : 14.0,
+      "p95" : 24.4,
+      "min" : 12.0,
+      "max" : 25.0
+    },
+    "toolResultChars" : {
+      "n" : 25,
+      "mean" : 2955.5,
+      "median" : 3075.0,
+      "p95" : 4328.2,
+      "min" : 2029.0,
+      "max" : 4376.0
+    },
+    "reminders" : 20,
+    "latencyMs" : {
+      "n" : 25,
+      "mean" : 69134.8,
+      "median" : 59389.0,
+      "p95" : 119133.4,
+      "min" : 24625.0,
+      "max" : 133592.0
+    },
+    "costPer1000Tasks" : {
+      "withCacheReads" : 56.75,
+      "withoutCacheReads" : 69.49,
+      "prices" : {
+        "input" : 1.25,
+        "output" : 10.0,
+        "cacheRead" : 0.125
+      }
+    },
+    "runsFailingByClass" : {
+      "off_track" : 2
+    }
+  } ],
+  "failures" : [ {
+    "class" : "hallucinated_value",
+    "taskFailures" : [ "final-gpt-E1-endpoint-r5", "final-gpt-E1-endpoint-r4", "final-gpt-E1-endpoint-r3" ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 3,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "wrong_constraint_verdict",
+    "taskFailures" : [ "final-gpt-E1-endpoint-r5", "final-gpt-E1-endpoint-r4", "final-gpt-E1-endpoint-r3" ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 3,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "model_arithmetic",
+    "taskFailures" : [ ],
+    "processOnly" : [ "final-gpt-C3-workflow-r3", "final-gpt-S3-workflow-r3" ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 2
+  }, {
+    "class" : "wrong_item",
+    "taskFailures" : [ "final-gpt-E1-endpoint-r5", "final-gpt-E1-endpoint-r4", "final-gpt-C1-endpoint-r2", "final-gpt-C1-endpoint-r3", "final-gpt-C2-endpoint-r1", "final-gpt-D3-endpoint-r2", "final-gpt-E1-endpoint-r2", "final-gpt-D3-endpoint-r4", "final-gpt-E1-endpoint-r1", "final-gpt-D3-endpoint-r1", "final-gpt-C1-endpoint-r5", "final-gpt-C1-endpoint-r4", "final-gpt-E1-endpoint-r3" ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 13,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "skipped_clarification",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "unapproved_action",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  }, {
+    "class" : "off_track",
+    "taskFailures" : [ "final-gpt-S4-endpoint-r3", "final-gpt-S4-endpoint-r2", "final-gpt-S1-endpoint-r4", "final-gpt-S4-endpoint-r5", "final-gpt-S1-workflow-r1", "final-gpt-S4-endpoint-r1", "final-gpt-S1-endpoint-r1", "final-gpt-S4-endpoint-r4", "final-gpt-S1-endpoint-r5", "final-gpt-S4-workflow-r1" ],
+    "processOnly" : [ "final-gpt-H2-endpoint-r3", "final-gpt-B2-endpoint-r3", "final-gpt-F2-endpoint-r2", "final-gpt-G2-endpoint-r2", "final-gpt-D3-endpoint-r5", "final-gpt-F3-endpoint-r5", "final-gpt-A2-endpoint-r3", "final-gpt-G1-endpoint-r4", "final-gpt-H3-endpoint-r2", "final-gpt-D2-endpoint-r5", "final-gpt-G1-endpoint-r2", "final-gpt-F3-endpoint-r2", "final-gpt-H1-endpoint-r4", "final-gpt-F1-endpoint-r4", "final-gpt-H2-endpoint-r4", "final-gpt-E1-endpoint-r2", "final-gpt-F2-workflow-r3", "final-gpt-F3-workflow-r5", "final-gpt-F2-workflow-r1", "final-gpt-G3-endpoint-r4", "final-gpt-E3-endpoint-r1", "final-gpt-F1-endpoint-r2", "final-gpt-F2-endpoint-r4", "final-gpt-C1-endpoint-r1", "final-gpt-D3-endpoint-r4", "final-gpt-H2-workflow-r2", "final-gpt-B3-endpoint-r2", "final-gpt-A2-endpoint-r4", "final-gpt-B1-endpoint-r1", "final-gpt-B3-endpoint-r3", "final-gpt-F3-endpoint-r4", "final-gpt-F2-endpoint-r5", "final-gpt-G3-endpoint-r1", "final-gpt-B3-endpoint-r1", "final-gpt-D1-endpoint-r2", "final-gpt-E1-endpoint-r1", "final-gpt-E3-endpoint-r4", "final-gpt-D3-endpoint-r1", "final-gpt-G2-endpoint-r4", "final-gpt-G3-endpoint-r5", "final-gpt-F2-endpoint-r1", "final-gpt-F3-endpoint-r3", "final-gpt-D2-endpoint-r3", "final-gpt-F1-endpoint-r5", "final-gpt-E2-endpoint-r5", "final-gpt-D2-endpoint-r1", "final-gpt-F2-endpoint-r3", "final-gpt-G3-endpoint-r2", "final-gpt-A3-endpoint-r2", "final-gpt-F3-endpoint-r1", "final-gpt-H1-endpoint-r2", "final-gpt-F1-endpoint-r1", "final-gpt-G1-endpoint-r1", "final-gpt-F3-workflow-r4", "final-gpt-G1-endpoint-r3", "final-gpt-H2-endpoint-r5", "final-gpt-S3-endpoint-r1", "final-gpt-S5-endpoint-r4", "final-gpt-S5-endpoint-r1" ],
+    "taskFailureCount" : 10,
+    "processOnlyCount" : 59
+  }, {
+    "class" : "false_success",
+    "taskFailures" : [ ],
+    "processOnly" : [ ],
+    "taskFailureCount" : 0,
+    "processOnlyCount" : 0
+  } ],
+  "frontendSteps" : [ {
+    "model" : "gpt",
+    "arm" : "endpoint",
+    "runs" : 120,
+    "runsWithOptions" : 45,
+    "runsQuotingFewerOptions" : 5,
+    "optionsQuoted" : 170,
+    "optionsOnScreen" : 180,
+    "runsMissingAFit" : 0,
+    "stockChecksDue" : 60,
+    "runsWithoutStockCheck" : 0,
+    "eligibilityChecksDue" : 90,
+    "runsWithoutEligibilityCheck" : 0,
+    "refusedCalls" : 4,
+    "runsWithRefusedCalls" : 3,
+    "unaskedQuotes" : 85,
+    "runsWithUnaskedQuotes" : 26,
+    "noMatchRuns" : 45,
+    "noMatchCardsLabeledOtherwise" : 45
+  }, {
+    "model" : "gpt",
+    "arm" : "workflow",
+    "runs" : 120,
+    "runsWithOptions" : 45,
+    "runsQuotingFewerOptions" : 0,
+    "optionsQuoted" : 180,
+    "optionsOnScreen" : 180,
+    "runsMissingAFit" : 0,
+    "stockChecksDue" : 60,
+    "runsWithoutStockCheck" : 0,
+    "eligibilityChecksDue" : 90,
+    "runsWithoutEligibilityCheck" : 0,
+    "refusedCalls" : 0,
+    "runsWithRefusedCalls" : 0,
+    "unaskedQuotes" : 3,
+    "runsWithUnaskedQuotes" : 3,
+    "noMatchRuns" : 45,
+    "noMatchCardsLabeledOtherwise" : 5
+  } ]
+}
