@@ -35,7 +35,8 @@ final class Extract {
             + "Sunday)\\b", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern WEEKDAY_DATE = Pattern.compile("\\b(Monday|Tuesday|Wednesday|Thursday|Friday|"
-            + "Saturday|Sunday),?\\s+(?:the\\s+)?(January|February|March|April|May|June|July|August|September|October|"
+            + "Saturday|Sunday|Mon|Tues|Tue|Wed|Thurs|Thur|Thu|Fri|Sat|Sun)\\.?,?\\s+(?:the\\s+)?(January|February|"
+            + "March|April|May|June|July|August|September|October|"
             + "November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?"
             + "(?:,?\\s+(20\\d{2}))?\\b");
 
@@ -110,7 +111,7 @@ final class Extract {
         return dates;
     }
 
-    /** A weekday written next to a date, as in "Monday, November 10". */
+    /** A weekday written next to a date, as in "Monday, November 10" or "Tue, Nov 10". */
     record NamedDay(DayOfWeek said, LocalDate date) {
 
         boolean matches() {
@@ -128,7 +129,7 @@ final class Extract {
             int year = m.group(4) == null ? BUSINESS_DATE.getYear() : Integer.parseInt(m.group(4));
             Set<LocalDate> date = new LinkedHashSet<>();
             date(year, month(m.group(2)).getValue(), Integer.parseInt(m.group(3)), date);
-            date.forEach(d -> days.add(new NamedDay(DayOfWeek.valueOf(m.group(1).toUpperCase(Locale.ROOT)), d)));
+            date.forEach(d -> days.add(new NamedDay(weekday(m.group(1)), d)));
         }
         return days;
     }
@@ -186,6 +187,16 @@ final class Extract {
         for (Month month : Month.values()) {
             if (month.name().startsWith(prefix)) {
                 return month;
+            }
+        }
+        throw new IllegalArgumentException(name);
+    }
+
+    private static DayOfWeek weekday(String name) {
+        String prefix = name.substring(0, 3).toUpperCase(Locale.ROOT);
+        for (DayOfWeek day : DayOfWeek.values()) {
+            if (day.name().startsWith(prefix)) {
+                return day;
             }
         }
         throw new IllegalArgumentException(name);

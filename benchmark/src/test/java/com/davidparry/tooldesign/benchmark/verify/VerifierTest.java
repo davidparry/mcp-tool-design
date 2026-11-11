@@ -267,6 +267,29 @@ class VerifierTest {
     }
 
     @Test
+    void aShortWrongWeekdayIsAHallucinatedValueToo() {
+        Verification v = verify("C1", "workflow", run().call("preview_exchange", "{}", C1_PREVIEW).card("""
+                {"message":"Columbus by ground arrives Mon, Nov 12, for $11.99.","outcome":"options_available",
+                 "options":[{"ships_from":"Columbus","method":"GROUND","arrives_by":"2026-11-12","additional_cost":"11.99",
+                 "meets_all_constraints":true}]}"""));
+
+        assertThat(v.failures()).singleElement().satisfies(f -> {
+            assertThat(f.failureClass()).isEqualTo(Verification.HALLUCINATED_VALUE);
+            assertThat(f.detail()).isEqualTo("calls 2026-11-12 a Monday; it's a Thursday");
+        });
+    }
+
+    @Test
+    void aShortRightWeekdayPasses() {
+        Verification v = verify("C1", "workflow", run().call("preview_exchange", "{}", C1_PREVIEW).card("""
+                {"message":"Columbus by ground arrives Thu. Nov 12, and Reno by ground Mon., Nov 16.",
+                 "outcome":"options_available","options":[{"ships_from":"Columbus","method":"GROUND",
+                 "arrives_by":"2026-11-12","additional_cost":"11.99","meets_all_constraints":true}]}"""));
+
+        assertThat(v.failures()).isEmpty();
+    }
+
+    @Test
     void whatTheCustomerSaidIsGroundedIncludingAWeekdayWithoutADate() {
         Verification v = verify("D2", "workflow", run().call("preview_exchange", "{}", """
                 {"outcome":"no_matching_option","earliestArrival":"2026-11-09"}""").card("""
