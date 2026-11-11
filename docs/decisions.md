@@ -414,7 +414,8 @@ The plan's final run is 720 runs: the 24 tasks in both arms, five repetitions ea
 models. The hosted keys were still rejected, so qwen ran its 240 as `final-qwen`, and the five
 scenarios ran in both arms five times as `final-qwen-scenarios`, 50 more. The 480 Claude and GPT
 runs, and 50 scenario runs for each, waited on keys that work. The hashes and limits are frozen, so
-those runs can join these results without rerunning qwen.
+those runs can join these results without rerunning qwen. GPT-5's ran on November 10 and are under
+[GPT-5's final runs](#gpt-5s-final-runs). Claude's haven't run.
 
 The first start of `final-qwen` recorded a dirty tree, because the scenario results weren't
 committed yet. I stopped it after 7 runs, deleted it, and started it again on `0dd4143`, the commit
@@ -453,6 +454,8 @@ model IDs and each provider's own usage fields. They're under [Hosted runs](#hos
 
 ### Results
 
+These are qwen's 290 runs.
+
 | Arm | Dev tasks | Held-out tasks | Scenarios | Median tokens per task | Median model calls | Tokens, all 120 task runs |
 | --- | --- | --- | --- | --- | --- | --- |
 | endpoint | 58 of 80 | 35 of 40 | 25 of 25 | 25,757 | 7 | 3,365,868 |
@@ -462,7 +465,7 @@ The token and call columns cover the dev and held-out runs. In the scenarios the
 70,491 tokens for the endpoint arm and 23,119 for the workflow arm.
 
 - **The gap comes from the turns, not the catalog.** The first call's median input is 2,916 tokens
-  in the endpoint arm and 2,446 in the workflow arm. After that the endpoint arm made 885 model calls and
+  in the endpoint arm and 2,446 in the workflow arm. In all, the endpoint arm made 885 model calls and
   679 tool calls, where the workflow arm made 420 and 202.
 - **Order 1042 (C1)** took the workflow arm 2 model calls and about 6,100 tokens in all five runs.
   The endpoint arm took 6 to 19 calls and 21,788 to 97,424 tokens, with a median of 51,413.
@@ -618,26 +621,44 @@ Priced as if each turn had read the previous turn's prompt from Anthropic's prom
 the rest to it, Claude's four scratch runs would have cost 17% to 55% less, the most on the six-turn
 endpoint run, which would bring its set to about $16 to $17. Caching isn't set.
 
-The hosted runs have a $20 budget, so GPT-5's 290 run first with `--budget=20`, and Claude's
-haven't run. GPT-5 [leaves the API](https://platform.openai.com/docs/deprecations) on December 11,
-2026, and Opus 4.8 [stays](https://docs.claude.com/en/docs/about-claude/model-deprecations) until at
-least May 28, 2027.
+The hosted runs have a $20 budget, so GPT-5's 290 ran first, with `--budget=20`: GPT-5
+[leaves the API](https://platform.openai.com/docs/deprecations) on December 11, 2026, and Opus 4.8
+[stays](https://docs.claude.com/en/docs/about-claude/model-deprecations) until at least May 28, 2027.
+They cost $14.92 at list prices, counting the preflight calls and the failed attempts, about $1 over
+the estimate. With the checks and the scratch batch, the ledger holds $15.66 from 1,516 model calls:
+$15.15 for GPT-5 and $0.51 for Claude. Four calls made by hand while the task batch was stopped, to
+see whether OpenAI was answering, aren't in the ledger, and they cost about $0.0005. That leaves
+$4.34 of the budget, short of Claude's estimate, so Claude's 290 haven't run.
 
 ### GPT-5's final runs
 
-`final-gpt-scenarios` started on November 10 at `4724db7` with a clean tree, and `final-gpt`
-starts once its results are committed, the order the qwen batches ran in. The batch stopped twice
-on a setup error, both times because the laptop's lid was closed while it ran on battery, at 10:31
-and again at 11:14. It went to sleep with a request open, and the request failed once it woke:
-`final-gpt-S4-endpoint-r3` on its seventh model call and `final-gpt-S3-endpoint-r2` on its third.
-Starting the batch again ran each one again from the beginning. The calls before the failures cost
-$0.06, which the ledger counts. The rest ran under `caffeinate -i` with the lid open; `caffeinate`
-holds off idle sleep but not a closed lid.
+The scenarios ran first, the order the qwen batches ran in. `final-gpt-scenarios` started on
+November 10 at `4724db7` with a clean tree, and `final-gpt` started at 12:41 on `8306329`, the
+commit that adds the scenario results, also with a clean tree. The times here are Central.
 
-GPT-5 succeeded in 17 of 25 endpoint scenario runs and 23 of 25 workflow runs, where qwen
+**Two stops in the scenarios.** The scenario batch stopped twice on a setup error, both times
+because the laptop's lid was closed while it ran on battery, at 10:31 and again at 11:14. It went to
+sleep with a request open, and the request failed once it woke: `final-gpt-S4-endpoint-r3` on its
+seventh model call and `final-gpt-S3-endpoint-r2` on its third. Starting the batch again ran each one
+again from the beginning. The calls before the failures cost $0.06, which the ledger counts. The rest
+ran under `caffeinate -i` with the lid open; `caffeinate` holds off idle sleep but not a closed lid.
+
+**One stop in the tasks.** At 12:54 the fifth model call of `final-gpt-D3-endpoint-r5` failed with
+`OpenAIIoException: Request failed`, and the batch stopped. The laptop hadn't slept, and the log
+doesn't say why the request failed. The next start's preflight call failed the same way at 12:59, and
+the start after it, at 1:08, ran D3 r5 again from the beginning and went on. The lid was closed again
+from 1:12 to 1:38, five seconds into the third model call of `final-gpt-B1-endpoint-r3`. That request
+stayed open and finished after the wake, and the run passed, but its `durationMs` of 1,635,312 counts
+the 26 minutes asleep, so it isn't a measure of time. Its turns' `latencyMs` don't count the sleep.
+The export's latency counts it: for the endpoint arm's dev runs, a median of 58.4 seconds and a p95
+of 147.4, which are 58.3 and 138.1 without it.
+The batch was stopped on purpose between runs 169 and 170, at 3:51, started again at 5:30, and
+finished at 6:14.
+
+**The scenarios.** GPT-5 succeeded in 17 of 25 endpoint scenario runs and 23 of 25 workflow runs, where qwen
 succeeded in all 50. All ten failures were read in full, and they're the same `off_track`: the
 customer said "The Columbus option works for me. Please go ahead and submit that exchange," and
-GPT-5 asked which Columbus option instead of submitting the one that fits. All ten are in S1 and
+GPT-5 asked another question instead of submitting the one that fits. All ten are in S1 and
 S4. In S2, S3, and S5 a run can pass without submitting (the quote has expired, the stock sells
 out, the customer wants to think it over), and all 30 passed in both arms.
 
@@ -655,3 +676,88 @@ out, the customer wants to think it over), and all 30 passed in both arms.
 - **Cards written as text.** Eight endpoint runs ended as `missing_card`, having written the card
   as JSON text instead of calling `final_answer`, before and after the reminder. Three of them
   passed on their text. No workflow run ended that way.
+
+**The tasks.**
+
+| Arm | Dev tasks | Held-out tasks | Scenarios | Median tokens per task | Median model calls | Tokens, all 120 task runs |
+| --- | --- | --- | --- | --- | --- | --- |
+| endpoint | 70 of 80 | 37 of 40 | 17 of 25 | 23,566 | 6 | 2,720,848 |
+| workflow | 80 of 80 | 40 of 40 | 23 of 25 | 7,484 | 3 | 920,129 |
+
+As in qwen's table, the token and call columns cover the dev and held-out runs. In the scenarios the
+medians are 49,844 tokens for the endpoint arm and 17,313 for the workflow arm. GPT-5's input counts
+include the tokens OpenAI cached, and its output counts include reasoning, so its tokens compare
+across its two arms but not with qwen's. At list prices the endpoint arm's 120 task runs cost $7.29
+and the workflow arm's $2.99, a median of 6.4 cents a run against 2.7. The scenarios cost $3.17 and
+$1.42. These include the failed attempts.
+
+- **The gap comes from the turns here too.** The first call's median input is 2,023 tokens in the
+  endpoint arm and 1,695 in the workflow arm. In all, the endpoint arm made 746 model calls and 822
+  tool calls, where the workflow arm made 323 and 184.
+- **Order 1042 (C1)** took the workflow arm 2 model calls and 6,695 to 8,298 tokens in all five
+  runs. The endpoint arm took 7 to 13 calls and 34,575 to 59,893 tokens, with a median of 37,933.
+- **A3 didn't go the other way.** The status lookup took GPT-5's workflow arm a median of 4,293
+  tokens and its endpoint arm 7,285.
+- **53 runs wrote their card as text.** 237 runs ended with a card. 53 stopped as `missing_card`,
+  having written the card as JSON text instead of calling `final_answer`, before and after the
+  reminder: 43 endpoint task runs, spread over 21 of the 24 tasks, 8 endpoint scenario runs, and 2
+  workflow task runs. They were graded on their text, and 44 passed. The schema check sent no card
+  back, 141 runs needed the reminder, and no run came near a limit: the most was 14 model calls and
+  19 tool calls.
+- **No $0.00 limit.** None of GPT-5's 15 workflow runs on the deadline tasks sent `preview_exchange`
+  a cost limit, where 11 of qwen's 15 sent 0.00.
+
+**Every failure was read.** All 13 task failures are in the endpoint arm, and all 13 are
+`wrong_item`. Each run answered what the customer asked and then offered a color or a size nobody
+asked for:
+
+- **C1, runs 2 to 5.** Each offered the large blue harness from Columbus, $11.99 by November 12, and
+  three large red options, all four marked as meeting the limits: the scratch run's failure and
+  `final-qwen-C1-endpoint-r4`'s. The customer never named a color.
+- **C2, run 1.** It offered six large yellow jackets beside the four large navy ones, navy being the
+  color the customer has, and marked all ten as meeting the limits. The customer didn't name a color
+  here either.
+- **D3, runs 1, 2, and 4.** The customer asked for "a medium in the same color", red, by November 9.
+  Each run said that the red medium ships only from Reno and arrives November 10 at the earliest,
+  which is right, and then offered a blue medium from Dallas that arrives November 9, marked as not
+  meeting every limit and named as blue. The verifier fails a card that cites a quote for another
+  item when the store has quotes for the right one, as it does here. When the replacement is out of
+  stock everywhere, it fails only an option marked as meeting every limit, so the four F1 runs that
+  offered a blue XL harness in place of the red one passed.
+- **E1, all five runs.** Runs 1 to 4 quoted the XL bed at both warehouses that stock it, and run 5 at
+  Reno only. Each named Reno's $45.00 Ground by November 10 as the cheapest and said nothing comes in
+  under $30. Then each offered large beds that do, marked as meeting every limit, and asked whether a
+  large would do. Runs 1 and 2 wrote their cards as text. On runs 3 to 5 the verifier also records
+  `hallucinated_value` and `wrong_constraint_verdict`, because it matches a card's options to quotes
+  by warehouse and method, and so compared the large bed's $25.00 Reno Ground quote with the XL's
+  $45.00. Those prices are the store's quotes for the large bed, and no GPT-5 run made a price up.
+  Every E1 run fails on `wrong_item` anyway, so the labels change no grade. They stay in the export
+  because the verifier is frozen.
+
+**Against the frontend's screens.** On the 120 task runs per arm, measured as for qwen:
+
+| | Endpoint | Workflow |
+| --- | --- | --- |
+| Options quoted, of those the screens quote | 170 of 180 | 180 of 180 |
+| Runs that quoted fewer options than the screens | 5 of 45 | 0 of 45 |
+| Runs that left out an option meeting every limit | 0 | 0 |
+| Exchange runs with no stock check for the replacement | 0 of 60 | 0 of 60 |
+| Return and exchange runs with no eligibility check | 0 of 90 | 0 of 90 |
+| Calls the store refused | 4, in 3 runs | 0 |
+| Quotes for an item or a color nobody asked about | 85, in 26 runs | 3, in 3 runs |
+
+- **Every check, and then more.** GPT-5's endpoint runs checked stock and eligibility every time, so
+  in E1 they found Reno's $45.00, where all five of qwen's endpoint answers gave Columbus's $47.99.
+  They went past the screens instead: 85 quotes nobody asked for, in 26 runs. 50 are in the 13
+  failures (C1's 21, E1's 18, C2's 6, and D3's 5). The other 35 are in 13 runs that passed. F1's 24,
+  in four runs, priced a blue XL harness when the red one was out of stock everywhere. F2's 4 and
+  five of F3's 7 were refund previews, offered when the exchange couldn't be made, and F3 r2's other
+  two quoted a small collar.
+- **The workflow arm's three** were refund previews too, in F2 r1 and F3 r4 and r5. None of its
+  quotes was for another color or size.
+- **Refused calls.** F3 r2 asked for delivery options from `WH-LAX`, which doesn't exist, and G3 r1
+  and r4 asked to quote an exchange for a jacket that hasn't been delivered. All three passed.
+- **The 5 runs that quoted fewer**, C1 r2, D2 r5, E1 r5, E2 r1, and E2 r2, left out no option that
+  fits.
+
+As with qwen, none of this changes a grade.

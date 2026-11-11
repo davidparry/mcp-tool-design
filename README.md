@@ -17,25 +17,28 @@ what each server costs a model in tokens and in mistakes.
 Both servers call the same API with the same key. Neither depends on `app` at compile time, so
 neither can reach the database or the business rules directly. The design is in
 [docs/project-plan.md](docs/project-plan.md), the choices the build made are in
-[docs/decisions.md](docs/decisions.md), the graded results so far, from a local qwen model, are in
-[results/final/qwen/export/summary.md](results/final/qwen/export/summary.md), and the talk is in
+[docs/decisions.md](docs/decisions.md), the graded results so far, from a local qwen model and
+GPT-5, are in [results/final/qwen/export/summary.md](results/final/qwen/export/summary.md) and
+[results/final/gpt/export/summary.md](results/final/gpt/export/summary.md), and the talk is in
 [talks/speaking.md](talks/speaking.md).
 
 ## Results so far
 
-The local qwen model's 290 final runs are graded, and every failed run was read in full. The
-article explains what they show, and [docs/decisions.md](docs/decisions.md#results) has the counts
-behind each number.
+The local qwen model's 290 final runs and GPT-5's 290 are graded, and every failed run was read in
+full. The article explains what they show, and docs/decisions.md has the counts behind each number,
+under [Results](docs/decisions.md#results) for qwen and
+[GPT-5's final runs](docs/decisions.md#gpt-5s-final-runs).
 
-| | Endpoint server | Workflow server |
-| --- | ---: | ---: |
-| Task runs that succeeded, of 120 | 93 | 116 |
-| Median tokens per task run | 25,757 | 11,803 |
-| Submission scenarios that succeeded, of 25 | 25 | 25 |
-| Median tokens per scenario | 70,491 | 23,119 |
+| Model | Server | Task runs that succeeded, of 120 | Median tokens per task run | Submission scenarios that succeeded, of 25 | Median tokens per scenario |
+| --- | --- | ---: | ---: | ---: | ---: |
+| qwen | endpoint | 93 | 25,757 | 25 | 70,491 |
+| qwen | workflow | 116 | 11,803 | 25 | 23,119 |
+| GPT-5 | endpoint | 107 | 23,566 | 17 | 49,844 |
+| GPT-5 | workflow | 120 | 7,484 | 23 | 17,313 |
 
-GPT-5's 290 final runs started on November 10, and Claude Opus 4.8's haven't run yet.
-[Hosted runs](docs/decisions.md#hosted-runs) has the checks, the scratch runs, and the cost so far.
+GPT-5's runs cost $14.92 at list prices, a median of 6.4 cents per endpoint task run and 2.7 cents
+per workflow task run. Claude Opus 4.8's 290 haven't run yet.
+[Hosted runs](docs/decisions.md#hosted-runs) has the checks, the scratch runs, and every cost.
 
 ## Modules
 
@@ -117,8 +120,8 @@ before the catalogs are frozen.
 `verify` grades each run against its task and writes `verification.jsonl` beside `runs.jsonl`,
 then logs the success count for each model, arm, and split and every failed run. `export` grades
 the batches it's given and writes `results/<phase>/<name>/export/`: `runs.csv`, `failures.csv`,
-`tokens-order-1042.csv`, `summary.json`, and `summary.md`. `docs/decisions.md` says how runs are
-graded and what the token counts include.
+`frontend-steps.csv`, `tokens-order-1042.csv`, `summary.json`, and `summary.md`.
+`docs/decisions.md` says how runs are graded and what the token counts include.
 
 `freeze` writes `fixtures/freeze.json` with the run limits and the hashes of the seed data, tasks,
 conversation, OpenAPI document, and both catalogs. A `final` batch won't start unless all of them
@@ -150,6 +153,7 @@ bench --command=run --phase=final --models=gpt --splits=dev,heldout --reps=5 --s
 bench --command=run --phase=final --batch=final-gpt-scenarios --models=gpt --splits=scenario --reps=5 --seed=20261106 --budget=20
 bench --command=spend
 
+bench --command=export --phase=final --batches=final-gpt,final-gpt-scenarios --name=gpt
 bench --command=export --phase=final --batches=final-qwen,final-qwen-scenarios,final-claude,final-claude-scenarios,final-gpt,final-gpt-scenarios --name=all
 ```
 

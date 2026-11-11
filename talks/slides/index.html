@@ -72,8 +72,8 @@
   <h1>Same API, Two MCP Servers</h1>
   <p style="font-size:1.3em;margin:0">The price of one tool per endpoint</p>
   <p style="margin-top:auto">David Parry · davidparry.com</p>
-  <p class="small">Every number in this talk comes from recorded runs: 290 final runs with a local qwen model. GPT-5 is running now; Claude is next.</p>
-  <aside class="notes">0:00. One Spring Boot app, two MCP servers in front of it, and the same model asking both the same questions. Say up front that every number comes from recorded runs, not from what happens live today, and that so far it's one model: qwen running locally. GPT-5's runs are underway, and Claude's come after. Don't apologize for it; it's a benchmark in progress and the records are public.</aside>
+  <p class="small">Every number in this talk comes from recorded runs: 290 final runs with a local qwen model, and 290 with GPT-5. Claude is next.</p>
+  <aside class="notes">0:00. One Spring Boot app, two MCP servers in front of it, and the same model asking both the same questions. Say up front that every number comes from recorded runs, not from what happens live today, and that so far it's two models: qwen running locally, and GPT-5. Claude's runs come after. Don't apologize for it; it's a benchmark in progress and the records are public.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -116,8 +116,8 @@
   <div class="kicker">The claim</div>
   <h1 style="font-size:1.9em">Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code.</h1>
   <p style="font-size:1.2em">And you pay for that job on every model turn.</p>
-  <p class="small" style="margin-top:auto">With the first model measured, it holds. Where it's weaker is in the talk too.</p>
-  <aside class="notes">0:05. This is the claim I set out to test, written before any run. The results support it for qwen. I'll show where it's weaker: a status lookup where the workflow server cost more, and scenarios where both servers got everything right and the difference was only tokens.</aside>
+  <p class="small" style="margin-top:auto">With two of the three models measured, it holds for both. Where it's weaker is in the talk too.</p>
+  <aside class="notes">0:05. This is the claim I set out to test, written before any run. The results support it for qwen and for GPT-5. I'll show where it's weaker for qwen: a status lookup where the workflow server cost more, and scenarios where both servers got everything right and the difference was only tokens.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -253,6 +253,23 @@
   </table>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/qwen/export/summary.md · docs/decisions.md</span></div>
   <aside class="notes">0:32. Eight of the 24 tasks were held out: they never ran until the catalogs, contracts, fixtures, and limits were frozen by hash. Success first, then tokens. Medians, because a few endpoint runs ran long. Latency is my laptop, so read the ratio, not the seconds. Limits were 50 model calls and 60 tool calls; no run came near them (the most was 26 and 23).</aside>
+</section>
+
+<section class="slide" data-cuts="60 30">
+  <div class="kicker">The numbers · GPT-5 · 290 final runs</div>
+  <table>
+    <tr><th></th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
+    <tr><td>Dev task runs that succeeded</td><td class="n">70 of 80</td><td class="n">80 of 80</td></tr>
+    <tr><td>Held-out task runs that succeeded</td><td class="n">37 of 40</td><td class="n">40 of 40</td></tr>
+    <tr><td>Submission scenarios that succeeded</td><td class="n">17 of 25</td><td class="n">23 of 25</td></tr>
+    <tr><td>Median tokens per task</td><td class="n">23,566</td><td class="n">7,484</td></tr>
+    <tr><td>Tokens across the 120 task runs</td><td class="n">2,720,848</td><td class="n">920,129</td></tr>
+    <tr><td>Model calls, tool calls across the 120 task runs</td><td class="n">746, 822</td><td class="n">323, 184</td></tr>
+    <tr><td>The 120 task runs at list prices</td><td class="n">$7.29</td><td class="n">$2.99</td></tr>
+  </table>
+  <p class="small">Every stock and eligibility check, in every run. All 13 endpoint failures offered a color or size nobody asked for.</p>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/gpt/export/summary.md · docs/decisions.md</span></div>
+  <aside class="notes">0:34. The same frozen tasks, catalogs, and limits, on GPT-5. It fails fewer task runs on both servers, and the token gap is wider: about three times per task, where qwen's was about twice. Don't compare the token counts across the two slides; OpenAI's include cached input and reasoning output. GPT-5 never skipped a check the screens make. Its failures go the other way: it answers the request correctly and then offers more, like red harnesses beside the blue one on order 1042, and the verifier fails an answer that rests on an item nobody asked for. The scenarios cost it most: told "the Columbus option works for me, please submit it", 8 endpoint runs and 2 workflow runs asked another question instead. Dollars are list prices.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -409,7 +426,7 @@
 </section>
 
 <section class="slide" data-cuts="60 30">
-  <div class="kicker">What the grades don't show · the app's call log and quotes, 120 task runs per server</div>
+  <div class="kicker">What the grades don't show · qwen · the app's call log and quotes, 120 task runs per server</div>
   <h2>The steps the screens take, and the model skipped</h2>
   <table>
     <tr><th>What the screens do</th><th class="n endpoint">Endpoint</th><th class="n workflow">Workflow</th></tr>
@@ -422,14 +439,14 @@
   <p>All 14 runs that skipped the stock check quoted Columbus and nowhere else. <code>WH-CMH</code> is the example in the generated tool's schema, copied from the API's Swagger annotation.</p>
   <p class="small">14 of 90 runs skipped the eligibility check too. The store checks it again before it quotes, so nothing got through.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/qwen/export/frontend-steps.csv · docs/decisions.md · Against the frontend's screens</span></div>
-  <aside class="notes">0:50. The grades check the answer. This checks the work, from records the app keeps anyway: the call log and the quote table. The yardstick is the screens' calls, the same for both servers, whoever made the calls. In 14 runs the endpoint model never looked at stock, so it used the one warehouse the tool schema mentions. springdoc put the @Schema example, WH-CMH, into the OpenAPI document for the Swagger page, and the generator passed it through: documentation written for a person became an instruction for the model. Three runs invented warehouses in the same pattern. The other 26 refusals are quotes at warehouses with no stock. Credit to the backend: the runs that skipped the eligibility check couldn't quote anything ineligible, because the store checks again. None of this changed a grade, and I didn't make it one after the fact.</aside>
+  <aside class="notes">0:50. The grades check the answer. This checks the work, from records the app keeps anyway: the call log and the quote table. The yardstick is the screens' calls, the same for both servers, whoever made the calls. In 14 runs the endpoint model never looked at stock, so it used the one warehouse the tool schema mentions. springdoc put the @Schema example, WH-CMH, into the OpenAPI document for the Swagger page, and the generator passed it through: documentation written for a person became an instruction for the model. Three runs invented warehouses in the same pattern. The other 26 refusals are quotes at warehouses with no stock. Credit to the backend: the runs that skipped the eligibility check couldn't quote anything ineligible, because the store checks again. None of this changed a grade, and I didn't make it one after the fact. GPT-5 skipped none of these checks; it quoted 85 options nobody asked for instead.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
   <div class="kicker">Graded a pass, five runs out of five · task E1</div>
   <blockquote class="small-quote">Could I exchange the dog bed from order 1025 for an extra large? I can only spend under $30 more. Show me before doing anything.</blockquote>
   <blockquote class="endpoint-said small-quote">Unfortunately, both options exceed your budget of under $30. The cheapest option would still cost you $47.99 additional.</blockquote>
-  <img class="shot" src="order-1025-options.png" alt="The support screen for order 1025 with a limit of under $30: four options, all marked costs too much, cheapest first. Reno by ground, $45.00, arriving Tuesday, November 10; Columbus by ground, $47.99, arriving Monday, November 16; Reno by express, $49.99; Columbus by express, $56.99.">
+  <img class="shot" style="height:9em" src="order-1025-options.png" alt="The support screen for order 1025 with a limit of under $30: four options, all marked costs too much, cheapest first. Reno by ground, $45.00, arriving Tuesday, November 10; Columbus by ground, $47.99, arriving Monday, November 16; Reno by express, $49.99; Columbus by express, $56.99.">
   <p>The support screen, same request: Reno by ground, $45.00, six days sooner. All five workflow runs found it.</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>final-qwen-E1-endpoint-r3 · final-qwen-E1-*-r1 to r5 · frontend/e2e/exchange-preview.spec.js</span></div>
   <aside class="notes">0:51. For a no-match task the verifier checks that nothing is offered as fitting, and nothing was, so all ten runs pass. It doesn't check the lowest price an answer names, and I haven't added that check after the fact. But read what the customer got: an XL bed for $47.99 from Columbus, arriving the 16th, called the cheapest. The screenshot is the same request in the React app, from the e2e test: twelve calls, four options, Reno first at $45.00, arriving the 10th. That's the stock check the model skipped, and the endpoint runs spent a median of 29,482 tokens skipping it, against 13,008 for the workflow runs. Viewer example: "E1, run 3".</aside>
@@ -438,13 +455,13 @@
 <section class="slide" data-cuts="60 30">
   <div class="kicker">The workflow server's bill</div>
   <ul>
-    <li><b>A plain lookup cost more.</b> "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?" took a median of <span class="workflow">11,285</span> tokens against <span class="endpoint">9,429</span>.</li>
-    <li><b>Correct either way.</b> Both servers got all 25 submission scenarios right. The endpoint server took three times the tokens.</li>
+    <li><b>A plain lookup cost qwen more.</b> "Quick question about order 1027: has it shipped, or is it still waiting at the warehouse?" took a median of <span class="workflow">11,285</span> tokens against <span class="endpoint">9,429</span>. With GPT-5 it cost less.</li>
+    <li><b>Correct either way, with qwen.</b> Both servers got all 25 submission scenarios right. The endpoint server took three times the tokens. With GPT-5: 17 on the endpoint server, 23 on this one.</li>
     <li><b>More code to keep correct.</b> 1,069 lines of Java against 347, and it only covers the tasks it was designed for.</li>
-    <li><b>It can be talked around.</b> Two H2 runs went past its matching.</li>
+    <li><b>It can be talked around.</b> Two qwen H2 runs went past its matching.</li>
   </ul>
-  <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · mcp-workflow/</span></div>
-  <aside class="notes">0:52. A3 is one lookup on both servers. The workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument.</aside>
+  <div class="footer"><span>Same API, Two MCP Servers</span><span>A3 · final-qwen-scenarios · final-gpt-scenarios · mcp-workflow/</span></div>
+  <aside class="notes">0:52. A3 is one lookup on both servers. qwen's workflow median is higher because three of its five runs sent a final answer missing its required outcome field and had to send it again. GPT-5's wasn't: 4,293 against 7,285. Either way, a read with nothing to compare doesn't need a task-shaped tool. The scenarios are where the claim is weakest for qwen: same success, just a bigger token bill (70,491 median against 23,119). That's still a real cost, but it isn't a correctness argument. GPT-5's scenarios were: 17 of 25 on the endpoint server, 23 on the workflow server.</aside>
 </section>
 
 <section class="slide" data-cuts="60 30">
@@ -482,7 +499,7 @@
       <ul>
         <li>One read the frontend shows as-is</li>
         <li>No limits to compare, no money moving</li>
-        <li>The status lookup that cost less this way</li>
+        <li>The status lookup that cost qwen less this way</li>
       </ul>
     </div>
     <div>
@@ -501,8 +518,8 @@
 
 <section class="slide" data-cuts="60 30">
   <div class="kicker">What's next</div>
-  <h2>GPT-5 and Claude, 580 more runs</h2>
-  <p>The contracts, fixtures, catalogs, and limits are frozen by hash, so those runs join these results without rerunning qwen.</p>
+  <h2>Claude, 290 more runs</h2>
+  <p>The contracts, fixtures, catalogs, and limits are frozen by hash, so those runs join qwen's and GPT-5's without rerunning either.</p>
   <ul>
     <li>Every run record, grade, and export is in the repository</li>
     <li>The run viewer replays any two runs side by side from local files</li>
@@ -510,7 +527,7 @@
   </ul>
   <p style="margin-top:auto">David Parry · davidparry.com</p>
   <div class="footer"><span>Same API, Two MCP Servers</span><span>results/final/ · viewer/ · docs/decisions.md</span></div>
-  <aside class="notes">0:59. Close on the frozen design: nothing gets tuned between models. If the hosted models narrow the gap, that's a result too, and it'll be stated as one. Questions.</aside>
+  <aside class="notes">0:59. Close on the frozen design: nothing gets tuned between models. GPT-5 didn't narrow the gap. If Claude does, that's a result too, and it'll be stated as one. Questions.</aside>
 </section>
 
 </div>

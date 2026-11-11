@@ -6,7 +6,7 @@ A conference session built on this repository: one Spring Boot application, two 
 [davidparry.com](https://davidparry.com) ·
 [github.com/davidparry](https://github.com/davidparry)
 
-**Status:** measured November 6, 2026, with one model. The local qwen model's 290 final runs are in, graded, and read. GPT-5's 290 final runs started on November 10, and Claude's 290 haven't run yet, so every number below is qwen's until they're in. [`docs/decisions.md`](../docs/decisions.md) records how the runs were graded and every change made along the way.
+**Status:** measured with two models. The local qwen model's 290 final runs (November 6) and GPT-5's 290 (November 10) are in, graded, and read. Claude's 290 haven't run yet. Every number below is qwen's unless it says GPT-5. [`docs/decisions.md`](../docs/decisions.md) records how the runs were graded and every change made along the way.
 
 Other titles under consideration:
 
@@ -19,23 +19,23 @@ Other titles under consideration:
 
 For CFP forms with a length cap.
 
-> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one generated with a tool for each of the twelve endpoints its React screens call and one with six tools shaped around the support tasks, and gives the same model the same requests against both. With a local qwen model, the endpoint server used a median of 25,757 tokens per task against 11,803, and it failed 27 of 120 task runs against 4. One of those failures was an exchange it submitted after the customer said "just tell me what it would take". The runs play side by side: the turns, the tool calls, the tokens on each turn, and every failure, with its run ID.
+> Wrapping each REST endpoint in an MCP tool hands the model the orchestration your frontend already does in code. This session puts two MCP servers in front of one Spring Boot order-support app, one generated with a tool for each of the twelve endpoints its React screens call and one with six tools shaped around the support tasks, and gives the same model the same requests against both. With a local qwen model, the endpoint server used a median of 25,757 tokens per task against 11,803, and it failed 27 of 120 task runs against 4. One of those failures was an exchange it submitted after the customer said "just tell me what it would take". With GPT-5 it used 23,566 tokens against 7,484 and failed 13 task runs against none. The runs play side by side: the turns, the tool calls, the tokens on each turn, and every failure, with its run ID.
 
 ## Abstract
 
-**Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code, and you pay for that job on every model turn.** That's the claim this session tests, and with the first model measured, it holds.
+**Wrapping each REST endpoint in an MCP tool hands the model the orchestration job your frontend already does in code, and you pay for that job on every model turn.** That's the claim this session tests, and with two of the three models measured, it holds for both.
 
 The test bed is a small Spring Boot and React order-support app for a pet-supply store that sells dog harnesses and toys. Its REST API was built for its four React screens: the screens' API client makes twelve calls, and the screens decide in code which ones to make, in what order, and what to check between them. Two MCP servers sit in front of the same HTTP APIs with the same permissions. The endpoint server is generated from the app's OpenAPI document, the way most teams add MCP to an API they already run: twelve tools, one per REST operation and one per call the screens make, passing the application's own response DTOs straight through. It's typed and documented, and nothing in it is broken on purpose. The workflow server has six tools shaped around the support job. One call previews an exchange; a separate call submits the quote somebody approved. Its orchestration is plain Java, and it never calls a model.
 
-I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama, with GPT-5 running now and Claude after it), and this request:
+I give both servers the same system prompt, the same model (so far a qwen running locally on Ollama and GPT-5, with Claude still to run), and this request:
 
 > Can I exchange the medium dog harness in order 1042 for a large, have it arrive by November 13, and keep the additional cost under $15? Show my options before submitting anything.
 
-The workflow server answered it in 2 model calls and about 6,100 tokens, all five times. The endpoint server took 6 to 19 calls and 21,788 to 97,424 tokens. In its longest run it decided to check red harnesses as well as blue, and offered a large red one the customer never asked for.
+With qwen, the workflow server answered it in 2 model calls and about 6,100 tokens, all five times. The endpoint server took 6 to 19 calls and 21,788 to 97,424 tokens. In its longest run it decided to check red harnesses as well as blue, and offered a large red one the customer never asked for. GPT-5's workflow runs took 2 calls each too, and its endpoint runs 7 to 13, four of which offered large red harnesses beside the blue one.
 
-On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. Across the final run it called a $25.00 option "under $25", put the wrong weekday beside a delivery date, answered for one of two matching items, offered an exchange on a collar that was out of stock everywhere, and once submitted an exchange the customer had only asked about. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages. It also skipped steps the screens never skip. Measured from the app's own call log, 14 of its 60 exchange runs never checked the replacement's stock and quoted only the warehouse the tool schema names as an example. In one task that left five passing answers telling the customer $47.99 when the store had the bed for $45.00.
+On stage the two runs play side by side: each model turn, each tool call, the backend calls underneath it, and the input tokens per turn (including every earlier tool result, which the model reads again on each new turn). Tokens are half the story. The other half is what a model does with twelve tools and raw DTOs. Across qwen's final run it called a $25.00 option "under $25", put the wrong weekday beside a delivery date, answered for one of two matching items, offered an exchange on a collar that was out of stock everywhere, and once submitted an exchange the customer had only asked about. Every failure the benchmark records gets a class, and the session shows those transcripts next to the averages. It also skipped steps the screens never skip. Measured from the app's own call log, 14 of its 60 exchange runs never checked the replacement's stock and quoted only the warehouse the tool schema names as an example. In one task that left five passing answers telling the customer $47.99 when the store had the bed for $45.00. GPT-5 made none of those mistakes and never skipped a step. It went past the screens instead: 26 of its 120 endpoint runs quoted a color, a size, or a refund nobody asked for, and all 13 runs it failed offered another color or size.
 
-None of this makes the workflow server free. It's more code to write and keep correct, and it covers only the tasks it was designed for. On a plain order-status lookup it cost more than the endpoint server, a median of 11,285 tokens against 9,429. It isn't foolproof either: two of its runs talked past the ambiguity it was built to catch, and two told the customer a quote ID or a price that no tool returned. Those results are in the session too, from 290 runs so far: 24 tasks, five repetitions each, on both servers, plus five submission scenarios, with eight of the tasks held out until the tool contracts were frozen.
+None of this makes the workflow server free. It's more code to write and keep correct, and it covers only the tasks it was designed for. With qwen, on a plain order-status lookup it cost more than the endpoint server, a median of 11,285 tokens against 9,429; with GPT-5 it cost less. It isn't foolproof either: two of qwen's runs talked past the ambiguity it was built to catch, two told the customer a quote ID or a price that no tool returned, and two of GPT-5's submission scenarios asked the customer another question instead of submitting. Those results are in the session too, from 290 runs per model so far: 24 tasks, five repetitions each, on both servers, plus five submission scenarios, with eight of the tasks held out until the tool contracts were frozen.
 
 It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/blog/2026/07/20/skills-vs-mcp-what-the-token-bill-actually-measures/), which moved business rules out of the model and into code. This one asks what shape the tools around that code should take.
 
@@ -48,7 +48,7 @@ It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/bl
 - A check the grades miss: compare what an agent asked your API for with what your own frontend asks for on the same task, using the call log you already keep.
 - The Spring Boot and Spring AI code for both servers and the benchmark runner, so you can repeat the comparison against your own API.
 
-## What the final run measured
+## What qwen's final run measured
 
 `qwen3.6:35b-a3b-nvfp4` on Ollama, thinking off, 50 model calls and 60 tool calls per run at most. The batches are `results/final/final-qwen` and `results/final/final-qwen-scenarios`, and the export is `results/final/qwen/export/`.
 
@@ -68,6 +68,30 @@ It's the follow-up to my [Skills versus MCP benchmark](https://davidparry.com/bl
 - **Where the claim is weaker.** A3, a status lookup, cost the workflow server more. Both servers got all 25 submission scenarios right, and the endpoint server took three times the tokens to do it. H3 passed on both servers, and the endpoint server got there by quoting both matching harnesses, at a median of 44,434 tokens against 11,865.
 - **Dev and held-out are reported apart.** No held-out task ran before the freeze. The endpoint server did better on them than on the dev tasks, and the workflow server did about the same.
 - **A tool description is code too.** The pilot fixed E2 by telling the workflow server's `costLimit` parameter that "no extra cost" means 0.00. After that, 11 of 15 workflow runs on the deadline tasks sent a $0.00 limit the customer never gave, one held-out task included, and most answers passed it on. The deadline decided every one of those tasks, so no grade changed, and the verifier doesn't count it. Before the wording change, 0 of 6 runs did it.
+
+## What GPT-5's final run measured
+
+`gpt-5` (the `gpt-5-2025-08-07` snapshot) on OpenAI's Chat Completions API, with the same frozen tasks, tool catalogs, and limits. The batches are `results/final/final-gpt` and `results/final/final-gpt-scenarios`, and the export is `results/final/gpt/export/`.
+
+| | Endpoint server | Workflow server |
+| --- | --- | --- |
+| Dev task runs that succeeded | 70 of 80 | 80 of 80 |
+| Held-out task runs that succeeded | 37 of 40 | 40 of 40 |
+| Submission scenarios that succeeded | 17 of 25 | 23 of 25 |
+| Median tokens per task | 23,566 | 7,484 |
+| Tokens across the 120 task runs | 2,720,848 | 920,129 |
+| Model calls and tool calls across the 120 task runs | 746 and 822 | 323 and 184 |
+| Median input tokens on the first model call | 2,023 | 1,695 |
+| Median tokens per submission scenario | 49,844 | 17,313 |
+| Dev task latency, median and p95 | 58.3 s and 138.1 s | 24.5 s and 50.3 s |
+| The 120 task runs at list prices | $7.29 | $2.99 |
+
+- **The same gap from another model.** GPT-5 failed fewer task runs than qwen on both servers, and the endpoint server took about three times the tokens per task, where qwen's took about twice. OpenAI's counts include cached input and reasoning output, so GPT-5's columns compare with each other, not with qwen's.
+- **Every step the screens take, and then more.** GPT-5 checked stock and eligibility in every run, so in E1 it found Reno's $45.00 where qwen's endpoint runs gave $47.99. Its 13 endpoint failures are all wrong item: answers that got the request right and then offered another color or size, like the large red harnesses beside the blue one on order 1042, or large beds under $30 when the XL the customer asked for costs $45.00 more. None of the workflow server's quotes was for another color or size.
+- **The scenarios are where it lost the most.** Told "The Columbus option works for me. Please go ahead and submit that exchange," 8 endpoint runs and 2 workflow runs asked another question instead of submitting the option that fits. Seven of those endpoint runs had quoted red harnesses the customer never asked about.
+- **The status lookup went the other way.** A3 cost GPT-5's workflow server a median of 4,293 tokens against the endpoint server's 7,285, so qwen's weak spot isn't GPT-5's.
+- **Answers written as text.** 43 of the endpoint server's 120 task runs, and 2 of the workflow server's, wrote the answer card as JSON text instead of calling `final_answer`. They're graded on their text, and 41 of the 45 pass.
+- **One run is left out of the latency.** The laptop slept for 26 minutes in the middle of `final-gpt-B1-endpoint-r3`, so its time doesn't count; with it, the endpoint server's p95 is 147.4 s.
 
 ## The failure gallery
 
@@ -130,7 +154,7 @@ My rule for every cut: a live run is one sample, so no number on a slide comes f
 | 5 to 12 | Two tool catalogs | Twelve endpoint tools beside six workflow tools, and how many tokens each catalog puts in front of the model before the first turn. |
 | 12 to 24 | Demo: the endpoint server | The request, live. The turn count, the token chart per turn, and the backend calls the model chose to make. |
 | 24 to 32 | Demo: the workflow server | The same request. One preview call, the same backend calls made inside the server, and one focused result. |
-| 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately. |
+| 32 to 40 | The numbers | Task success, complete-task tokens, calls and turns, and median and p95 latency, with development and held-out tasks reported separately, for qwen and then GPT-5. |
 | 40 to 48 | The failure gallery | One transcript for each failure class the benchmark recorded. |
 | 48 to 52 | What the grades don't show | The two verifier fixes, then every run measured against the screens: the skipped stock checks that quoted only the schema's example warehouse, the warehouses that don't exist, and E1's five passes at a higher price than the store had, beside the screenshot of the same request in the React app. |
 | 52 to 55 | The workflow server's bill | The status lookup where it cost more, the two H2 runs that talked past its matching, the $0.00 limit one description fix taught the model to invent, and the code it took to build: 1,069 lines of Java against the generator's 347, not counting blank lines, comments, or package and import lines. |
@@ -162,7 +186,7 @@ Java and Spring developers and architects putting an agent in front of an API th
 | The benchmark runner and the verifier that classifies failures | `benchmark/` |
 | The run viewer that replays two runs side by side | `viewer/` |
 | Raw run records, transcripts, and the results summary | `results/` |
-| What each run asked the store for, against what the screens ask for | `results/final/qwen/export/frontend-steps.csv` |
+| What each run asked the store for, against what the screens ask for | `frontend-steps.csv` in `results/final/qwen/export/` and `results/final/gpt/export/` |
 | The experiment design, and the choices the build made | [`docs/project-plan.md`](../docs/project-plan.md), [`docs/decisions.md`](../docs/decisions.md) |
 
 ## The post from the same runs
@@ -172,8 +196,9 @@ Java and Spring developers and architects putting an agent in front of an API th
 ## Before this talk can be given
 
 - [x] Milestones 1 to 4 of the project plan complete for the local model, with the held-out run frozen.
-- [ ] The GPT-5 and Claude final runs, 290 each (GPT-5's started November 10), and every number here checked again with all three models.
-- [x] Opening claim checked against the results. It holds for qwen; the status lookup and the scenarios are where it's weaker, and they're in the session.
+- [x] GPT-5's 290 final runs, graded and read (November 10).
+- [ ] Claude's 290 final runs, and every number here checked again with all three models.
+- [x] Opening claim checked against the results. It holds for qwen and GPT-5. For qwen the status lookup and the scenarios are where it's weaker, and they're in the session.
 - [x] Failure gallery: one fully read transcript per recorded class, each with its run ID.
 - [ ] Run viewer tested on the presentation laptop with the network off.
 - [x] Presenter notes, with a fallback for each live demo.
